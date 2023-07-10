@@ -5,6 +5,7 @@
 #pragma once
 
 #include <string>
+#include <cstdint>
 
 #include "candid.h"
 #include "ic_api.h"
