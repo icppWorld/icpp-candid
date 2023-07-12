@@ -5,9 +5,10 @@
 #include "candid_opcode.h"
 #include "pro.h"
 
-CandidTypeReserved::CandidTypeReserved() : CandidTypePrim() {
+CandidTypeReserved::CandidTypeReserved() {
 
   set_datatype();
+  encode_T();
   encode_I();
   encode_M();
 }

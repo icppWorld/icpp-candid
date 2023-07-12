@@ -5,10 +5,10 @@
 
 #include "candid_opcode.h"
 
-CandidTypeInt::CandidTypeInt() : CandidTypePrim() { initialize(0); }
+CandidTypeInt::CandidTypeInt() { initialize(0); }
 
 // This constructor allows for setting the value during Deserialization
-CandidTypeInt::CandidTypeInt(__int128_t *p_v) : CandidTypePrim() {
+CandidTypeInt::CandidTypeInt(__int128_t *p_v) {
   set_pv(p_v);
 
   const __int128_t v = const_cast<__int128_t &>(*p_v);
@@ -16,7 +16,7 @@ CandidTypeInt::CandidTypeInt(__int128_t *p_v) : CandidTypePrim() {
 }
 
 // This constructor is only for encoding
-CandidTypeInt::CandidTypeInt(const __int128_t &v) : CandidTypePrim() {
+CandidTypeInt::CandidTypeInt(const __int128_t &v) {
   initialize(v);
 }
 
@@ -26,6 +26,7 @@ CandidTypeInt::~CandidTypeInt() {}
 void CandidTypeInt::initialize(const __int128_t &v) {
   m_v = v;
   set_datatype();
+  encode_T();
   encode_I();
   encode_M();
 }

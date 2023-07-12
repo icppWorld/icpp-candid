@@ -8,10 +8,10 @@
 
 
 
-CandidTypeText::CandidTypeText() : CandidTypePrim() { initialize(""); }
+CandidTypeText::CandidTypeText() { initialize(""); }
 
 // These constructors allows for setting the value during Deserialization
-CandidTypeText::CandidTypeText(std::string *p_v) : CandidTypePrim() {
+CandidTypeText::CandidTypeText(std::string *p_v) {
   set_pv(p_v);
 
   const std::string v = const_cast<std::string &>(*p_v);
@@ -19,11 +19,11 @@ CandidTypeText::CandidTypeText(std::string *p_v) : CandidTypePrim() {
 }
 
 // These constructors are only for encoding
-CandidTypeText::CandidTypeText(const char *c) : CandidTypePrim() {
+CandidTypeText::CandidTypeText(const char *c) {
   std::string v(c);
   initialize(v);
 }
-CandidTypeText::CandidTypeText(const std::string v) : CandidTypePrim() {
+CandidTypeText::CandidTypeText(const std::string v) {
   initialize(v);
 }
 
@@ -33,6 +33,7 @@ CandidTypeText::~CandidTypeText() {}
 void CandidTypeText::initialize(const std::string &v) {
   m_v = v;
   set_datatype();
+  encode_T();
   encode_I();
   encode_M();
 }

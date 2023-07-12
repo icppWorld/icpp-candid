@@ -5,10 +5,10 @@
 
 #include "candid_opcode.h"
 
-CandidTypeBool::CandidTypeBool() : CandidTypePrim() { initialize(true); }
+CandidTypeBool::CandidTypeBool() { initialize(true); }
 
 // This constructor allows for setting the value during Deserialization
-CandidTypeBool::CandidTypeBool(bool *p_v) : CandidTypePrim() {
+CandidTypeBool::CandidTypeBool(bool *p_v) {
   set_pv(p_v);
 
   const bool v = const_cast<bool &>(*p_v);
@@ -16,7 +16,7 @@ CandidTypeBool::CandidTypeBool(bool *p_v) : CandidTypePrim() {
 }
 
 // This constructor is only for encoding
-CandidTypeBool::CandidTypeBool(const bool v) : CandidTypePrim() {
+CandidTypeBool::CandidTypeBool(const bool v) {
   initialize(v);
 }
 
@@ -26,6 +26,7 @@ CandidTypeBool::~CandidTypeBool() {}
 void CandidTypeBool::initialize(const bool &v) {
   m_v = v;
   set_datatype();
+  encode_T();
   encode_I();
   encode_M();
 }

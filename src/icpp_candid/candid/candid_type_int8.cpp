@@ -6,10 +6,10 @@
 #include "candid_opcode.h"
 #include "pro.h"
 
-CandidTypeInt8::CandidTypeInt8() : CandidTypePrim() { initialize(0); }
+CandidTypeInt8::CandidTypeInt8() { initialize(0); }
 
 // This constructor allows for setting the value during Deserialization
-CandidTypeInt8::CandidTypeInt8(int8_t *p_v) : CandidTypePrim() {
+CandidTypeInt8::CandidTypeInt8(int8_t *p_v) {
 
   set_pv(p_v);
 
@@ -18,7 +18,7 @@ CandidTypeInt8::CandidTypeInt8(int8_t *p_v) : CandidTypePrim() {
 }
 
 // This constructor is only for encoding
-CandidTypeInt8::CandidTypeInt8(const int8_t v) : CandidTypePrim() {
+CandidTypeInt8::CandidTypeInt8(const int8_t v) {
 
   initialize(v);
 }
@@ -29,6 +29,7 @@ CandidTypeInt8::~CandidTypeInt8() {}
 void CandidTypeInt8::initialize(const int8_t &v) {
   m_v = v;
   set_datatype();
+  encode_T();
   encode_I();
   encode_M();
 }

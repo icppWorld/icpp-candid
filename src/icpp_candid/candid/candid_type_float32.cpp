@@ -7,14 +7,14 @@
 #include "candid_opcode.h"
 #include "pro.h"
 
-CandidTypeFloat32::CandidTypeFloat32() : CandidTypePrim() {
+CandidTypeFloat32::CandidTypeFloat32() {
 
   float v = 0.0;
   initialize(v);
 }
 
 // This constructor allows for setting the value during Deserialization
-CandidTypeFloat32::CandidTypeFloat32(float *p_v) : CandidTypePrim() {
+CandidTypeFloat32::CandidTypeFloat32(float *p_v) {
 
   set_pv(p_v);
 
@@ -23,7 +23,7 @@ CandidTypeFloat32::CandidTypeFloat32(float *p_v) : CandidTypePrim() {
 }
 
 // This constructor is only for encoding
-CandidTypeFloat32::CandidTypeFloat32(const float v) : CandidTypePrim() {
+CandidTypeFloat32::CandidTypeFloat32(const float v) {
 
   initialize(v);
 }
@@ -39,6 +39,7 @@ void CandidTypeFloat32::initialize(const float &v) {
   }
   m_v = v;
   set_datatype();
+  encode_T();
   encode_I();
   encode_M();
 }

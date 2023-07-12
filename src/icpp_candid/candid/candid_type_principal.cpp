@@ -37,12 +37,12 @@
 // const std::string PRINCIPAL_ERROR_INVALID_BASE32_ENCODING =
 //     "Principal Error: Text must be in valid Base32 encoding. Decoding/Encoding roundtrip fails.";
 
-CandidTypePrincipal::CandidTypePrincipal() : CandidTypePrim() {
+CandidTypePrincipal::CandidTypePrincipal() {
   initialize("");
 }
 
 // These constructors allows for setting the value during Deserialization
-CandidTypePrincipal::CandidTypePrincipal(std::string *p_v) : CandidTypePrim() {
+CandidTypePrincipal::CandidTypePrincipal(std::string *p_v) {
   set_pv(p_v);
 
   const std::string v = const_cast<std::string &>(*p_v);
@@ -50,17 +50,17 @@ CandidTypePrincipal::CandidTypePrincipal(std::string *p_v) : CandidTypePrim() {
 }
 
 // These constructors are only for encoding
-CandidTypePrincipal::CandidTypePrincipal(const char *c) : CandidTypePrim() {
+CandidTypePrincipal::CandidTypePrincipal(const char *c) {
   std::string v(c);
   initialize(v);
 }
 CandidTypePrincipal::CandidTypePrincipal(const std::string v)
-    : CandidTypePrim() {
+    {
   initialize(v);
 }
 // Constructor used by ICPP_HOOKS::from_wire to store caller
 CandidTypePrincipal::CandidTypePrincipal(const std::vector<uint8_t> &bytes)
-    : CandidTypePrim() {
+    {
   std::string v = string_from_bytes(bytes);
   initialize(v);
 }
@@ -76,6 +76,7 @@ void CandidTypePrincipal::initialize(const std::string &v) {
   } else m_v = v;
   bytes_from_string();
   set_datatype();
+  encode_T();
   encode_I();
   encode_M();
 }

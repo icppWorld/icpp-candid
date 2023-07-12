@@ -6,10 +6,10 @@
 #include "candid_opcode.h"
 #include "pro.h"
 
-CandidTypeInt16::CandidTypeInt16() : CandidTypePrim() { initialize(0); }
+CandidTypeInt16::CandidTypeInt16() { initialize(0); }
 
 // This constructor allows for setting the value during Deserialization
-CandidTypeInt16::CandidTypeInt16(int16_t *p_v) : CandidTypePrim() {
+CandidTypeInt16::CandidTypeInt16(int16_t *p_v) {
 
   set_pv(p_v);
 
@@ -18,7 +18,7 @@ CandidTypeInt16::CandidTypeInt16(int16_t *p_v) : CandidTypePrim() {
 }
 
 // This constructor is only for encoding
-CandidTypeInt16::CandidTypeInt16(const int16_t v) : CandidTypePrim() {
+CandidTypeInt16::CandidTypeInt16(const int16_t v) {
 
   initialize(v);
 }
@@ -29,6 +29,7 @@ CandidTypeInt16::~CandidTypeInt16() {}
 void CandidTypeInt16::initialize(const int16_t &v) {
   m_v = v;
   set_datatype();
+  encode_T();
   encode_I();
   encode_M();
 }

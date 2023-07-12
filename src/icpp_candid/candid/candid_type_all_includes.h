@@ -13,7 +13,6 @@
 // The Candid Type base classes
 #include "candid_type_base.h"
 #include "candid_type_opt_base.h"
-#include "candid_type_prim.h"
 #include "candid_type_vec_base.h"
 
 // The Candid Type classes

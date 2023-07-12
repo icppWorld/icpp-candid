@@ -6,10 +6,10 @@
 #include "candid_opcode.h"
 #include "pro.h"
 
-CandidTypeNat32::CandidTypeNat32() : CandidTypePrim() { initialize(0); }
+CandidTypeNat32::CandidTypeNat32() { initialize(0); }
 
 // This constructor allows for setting the value during Deserialization
-CandidTypeNat32::CandidTypeNat32(uint32_t *p_v) : CandidTypePrim() {
+CandidTypeNat32::CandidTypeNat32(uint32_t *p_v) {
 
   set_pv(p_v);
 
@@ -18,7 +18,7 @@ CandidTypeNat32::CandidTypeNat32(uint32_t *p_v) : CandidTypePrim() {
 }
 
 // This constructor is only for encoding
-CandidTypeNat32::CandidTypeNat32(const uint32_t v) : CandidTypePrim() {
+CandidTypeNat32::CandidTypeNat32(const uint32_t v) {
 
   initialize(v);
 }
@@ -29,6 +29,7 @@ CandidTypeNat32::~CandidTypeNat32() {}
 void CandidTypeNat32::initialize(const uint32_t &v) {
   m_v = v;
   set_datatype();
+  encode_T();
   encode_I();
   encode_M();
 }

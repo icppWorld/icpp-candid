@@ -2,10 +2,10 @@
 
 #pragma once
 
-#include "candid_type_prim.h"
+#include "candid_type_base.h"
 #include "vec_bytes.h"
 
-class CandidTypeFloat32 : public CandidTypePrim {
+class CandidTypeFloat32 : public CandidTypeBase {
 public:
   // Constructors
   CandidTypeFloat32();
@@ -16,6 +16,9 @@ public:
   // Destructor
   ~CandidTypeFloat32();
 
+  bool decode_T(VecBytes B, __uint128_t &offset, std::string &parse_error) {
+    return false; // type table for Primitives is empty
+  }
   bool decode_M(VecBytes B, __uint128_t &offset, std::string &parse_error);
   float get_v() { return m_v; }
 
@@ -23,6 +26,7 @@ protected:
   void set_pv(float *v);
   void initialize(const float &v);
   void set_datatype();
+  void encode_T() { m_T.clear(); } // type table for Primitives is empty
   void encode_I();
   void encode_M();
 

@@ -8,10 +8,10 @@
 #include <cmath>
 #include <cstring>
 
-#include "candid_type_prim.h"
+#include "candid_type_base.h"
 #include "vec_bytes.h"
 
-class CandidTypePrincipal : public CandidTypePrim {
+class CandidTypePrincipal : public CandidTypeBase {
 public:
   // Constructors
   CandidTypePrincipal();
@@ -28,6 +28,9 @@ public:
   // Destructor
   ~CandidTypePrincipal();
 
+  bool decode_T(VecBytes B, __uint128_t &offset, std::string &parse_error) {
+    return false; // type table for Primitives is empty
+  }
   bool decode_M(VecBytes B, __uint128_t &offset, std::string &parse_error);
   std::string get_v() { return m_v; }
   std::string get_text() { return m_v; }
@@ -38,6 +41,7 @@ protected:
   void set_pv(std::string *v);
   void initialize(const std::string &v);
   void set_datatype();
+  void encode_T() { m_T.clear(); } // type table for Primitives is empty
   void encode_I();
   void encode_M();
   void bytes_from_string();

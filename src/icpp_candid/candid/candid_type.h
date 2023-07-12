@@ -15,7 +15,6 @@ class VecBytes;
 
 // The Candid Type base classes
 class CandidTypeBase;
-class CandidTypePrim;
 class CandidTypeVecBase;
 class CandidTypeOptBase;
 

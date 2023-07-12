@@ -5,8 +5,9 @@
 
 #include "candid_opcode.h"
 
-CandidTypeEmpty::CandidTypeEmpty() : CandidTypePrim() {
+CandidTypeEmpty::CandidTypeEmpty() {
   set_datatype();
+  encode_T();
   encode_I();
   encode_M();
 }
