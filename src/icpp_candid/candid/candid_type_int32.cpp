@@ -1,6 +1,7 @@
 // The class for the Primitive Candid Type: int32
 
-#include "candid.h"
+#include "candid_type_int32.h"
+#include "candid_assert.h"
 
 #include "candid_opcode.h"
 #include "pro.h"
@@ -61,7 +62,7 @@ bool CandidTypeInt32::decode_M(VecBytes B, __uint128_t &offset,
   parse_error = "";
   if (B.parse_int_fixed_width(offset, m_v, parse_error)) {
     std::string to_be_parsed = "Value for CandidTypeInt32";
-    CandidDeserialize::trap_with_parse_error(offset_start, offset, to_be_parsed,
+    CandidAssert::trap_with_parse_error(offset_start, offset, to_be_parsed,
                                              parse_error);
   }
 

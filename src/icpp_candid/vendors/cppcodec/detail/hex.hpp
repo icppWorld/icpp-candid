@@ -32,7 +32,7 @@
 #include "../parse_error.hpp"
 #include "stream_codec.hpp"
 
-#include "ic_api.h" // for trap iso throw
+#include "icpp_hooks.h" // for trap iso throw
 
 namespace cppcodec {
 namespace detail {
@@ -74,7 +74,7 @@ public:
   template <uint8_t I>
   static CPPCODEC_ALWAYS_INLINE uint8_if<I != 0>
   index_last(const uint8_t * /*binary block*/) {
-    IC_API::trap("invalid last encoding symbol index in a tail");
+    ICPP_HOOKS::trap("invalid last encoding symbol index in a tail");
     // throw std::domain_error("invalid last encoding symbol index in a tail");
   }
 
@@ -101,7 +101,7 @@ template <typename Result, typename ResultState>
 CPPCODEC_ALWAYS_INLINE void
 hex<CodecVariant>::decode_tail(Result &, ResultState &,
                                const alphabet_index_t *, size_t) {
-  IC_API::trap(
+  ICPP_HOOKS::trap(
       "odd-length hex input is not supported by the streaming octet decoder, "
       "use a place-based number decoder instead");
   //   throw invalid_input_length(

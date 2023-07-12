@@ -1,11 +1,12 @@
 // The class for the Primitive Candid Type: text
 
-#include "candid.h"
+#include "candid_type_text.h"
+#include "candid_assert.h"
 #include "candid_opcode.h"
 
 #include <cassert>
 
-#include "ic_api.h"
+
 
 CandidTypeText::CandidTypeText() : CandidTypePrim() { initialize(""); }
 
@@ -75,14 +76,14 @@ bool CandidTypeText::decode_M(VecBytes B, __uint128_t &offset,
   __uint128_t numBytes_text;
   if (B.parse_uleb128(offset, numBytes_text, numbytes, parse_error)) {
     std::string to_be_parsed = "Size of text- leb128(|utf8(t)|)";
-    CandidDeserialize::trap_with_parse_error(offset_start, offset, to_be_parsed,
+    CandidAssert::trap_with_parse_error(offset_start, offset, to_be_parsed,
                                              parse_error);
   }
 
   std::vector<std::byte> data_bytes;
   if (B.parse_bytes(offset, data_bytes, numBytes_text, numbytes, parse_error)) {
     std::string to_be_parsed = "Data bytes for Text";
-    CandidDeserialize::trap_with_parse_error(offset_start, offset, to_be_parsed,
+    CandidAssert::trap_with_parse_error(offset_start, offset, to_be_parsed,
                                              parse_error);
   }
 

@@ -32,7 +32,7 @@
 #include "../parse_error.hpp"
 #include "config.hpp"
 
-#include "ic_api.h" // for trap iso throw
+#include "icpp_hooks.h" // for trap iso throw
 
 namespace cppcodec {
 namespace detail {
@@ -395,7 +395,7 @@ inline void stream_codec<Codec, CodecVariant>::decode(Result &binary_result,
   }
 
   if (alphabet_index_info<CodecVariant>::is_invalid(*alphabet_index_ptr)) {
-    IC_API::trap("Symbol Error");
+    ICPP_HOOKS::trap("Symbol Error");
     // throw symbol_error(*src);
   }
   ++src;
@@ -405,7 +405,7 @@ inline void stream_codec<Codec, CodecVariant>::decode(Result &binary_result,
     if (last_index_ptr == alphabet_index_start) {
       // Don't accept padding at the start of a block.
       // The encoder should have omitted that padding altogether.
-      IC_API::trap("Padding Error");
+      ICPP_HOOKS::trap("Padding Error");
       // throw padding_error();
     }
     // We're in here because we just read a (first) padding character. Try to read more.
@@ -420,13 +420,13 @@ inline void stream_codec<Codec, CodecVariant>::decode(Result &binary_result,
         break;
       }
       if (!alphabet_index_info<CodecVariant>::is_padding(*alphabet_index_ptr)) {
-        IC_API::trap("Padding Error");
+        ICPP_HOOKS::trap("Padding Error");
         // throw padding_error();
       }
 
       ++last_index_ptr;
       if (last_index_ptr > alphabet_index_end) {
-        IC_API::trap("Padding Error");
+        ICPP_HOOKS::trap("Padding Error");
         // throw padding_error();
       }
     }
@@ -437,7 +437,7 @@ inline void stream_codec<Codec, CodecVariant>::decode(Result &binary_result,
          alphabet_index_info<CodecVariant>::is_padding(*alphabet_index_ptr)) &&
         last_index_ptr != alphabet_index_end) {
       // If the input is not a multiple of the block size then the input is incorrect.
-      IC_API::trap("Padding Error");
+      ICPP_HOOKS::trap("Padding Error");
       // throw padding_error();
     }
     if (alphabet_index_ptr >= alphabet_index_end) {

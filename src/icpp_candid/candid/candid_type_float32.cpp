@@ -1,6 +1,8 @@
 // The class for the Primitive Candid Type: float32
 
-#include "candid.h"
+#include "candid_type_float32.h"
+#include "icpp_hooks.h"
+#include "candid_assert.h"
 
 #include "candid_opcode.h"
 #include "pro.h"
@@ -31,7 +33,7 @@ CandidTypeFloat32::~CandidTypeFloat32() {}
 // Initialize things
 void CandidTypeFloat32::initialize(const float &v) {
   if (sizeof(v) != 4) {
-    IC_API::trap(
+    ICPP_HOOKS::trap(
         "ERROR: The type float is not 4 bytes. \nThis is not yet supported.\n" +
         std::string(__func__));
   }
@@ -69,7 +71,7 @@ bool CandidTypeFloat32::decode_M(VecBytes B, __uint128_t &offset,
   parse_error = "";
   if (B.parse_float_ieee754(offset, m_v, parse_error)) {
     std::string to_be_parsed = "Value for CandidTypeFloat32";
-    CandidDeserialize::trap_with_parse_error(offset_start, offset, to_be_parsed,
+    CandidAssert::trap_with_parse_error(offset_start, offset, to_be_parsed,
                                              parse_error);
   }
 

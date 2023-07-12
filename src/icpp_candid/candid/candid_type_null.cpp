@@ -1,6 +1,6 @@
 // The class for the Primitive Candid Type: null
 
-#include "candid.h"
+#include "candid_type_null.h"
 
 #include "candid_opcode.h"
 

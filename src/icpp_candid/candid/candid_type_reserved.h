@@ -1,7 +1,8 @@
 // The class for the Primitive Candid Type: reserved
 #pragma once
 
-#include "candid.h"
+#include "candid_type_prim.h"
+#include "vec_bytes.h"
 
 class CandidTypeReserved : public CandidTypePrim {
 public:

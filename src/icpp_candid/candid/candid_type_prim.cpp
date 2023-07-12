@@ -1,6 +1,6 @@
 // The class for the Candid <primtype>
 
-#include "candid.h"
+#include "candid_type_prim.h"
 
 CandidTypePrim::CandidTypePrim() { encode_T(); }
 

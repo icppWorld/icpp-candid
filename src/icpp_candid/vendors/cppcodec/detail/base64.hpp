@@ -37,7 +37,7 @@
 #include "config.hpp"
 #include "stream_codec.hpp"
 
-#include "ic_api.h" // for trap iso throw
+#include "icpp_hooks.h" // for trap iso throw
 
 namespace cppcodec {
 namespace detail {
@@ -58,7 +58,7 @@ public:
     uint8_t v = (num_bytes == 1)   ? 2 // 2 symbols, 2 padding characters
                 : (num_bytes == 2) ? 3 // 3 symbols, 1 padding character
                                    : 0;
-    if (v == 0) IC_API::trap("invalid number of bytes in a tail block");
+    if (v == 0) ICPP_HOOKS::trap("invalid number of bytes in a tail block");
     return v;
   }
 
@@ -86,7 +86,7 @@ public:
   template <uint8_t I>
   static CPPCODEC_ALWAYS_INLINE uint8_if<I != 1 && I != 2>
   index_last(const uint8_t * /*binary block*/) {
-    IC_API::trap("invalid last encoding symbol index in a tail");
+    ICPP_HOOKS::trap("invalid last encoding symbol index in a tail");
     // throw std::domain_error("invalid last encoding symbol index in a tail");
   }
 
@@ -117,7 +117,7 @@ CPPCODEC_ALWAYS_INLINE void
 base64<CodecVariant>::decode_tail(Result &decoded, ResultState &state,
                                   const alphabet_index_t *idx, size_t idx_len) {
   if (idx_len == 1) {
-    IC_API::trap(
+    ICPP_HOOKS::trap(
         "invalid number of symbols in last base64 block: found 1, expected 2 or 3");
     // throw invalid_input_length(
     // "invalid number of symbols in last base64 block: found 1, expected 2 or 3");

@@ -1,11 +1,13 @@
 // The class for the Candid Type: opt
 
-#include "candid.h"
+#include "candid_type_opt_text.h"
+#include "candid_type_text.h"
+#include "candid_assert.h"
 #include "candid_opcode.h"
 
 #include <cassert>
 
-#include "ic_api.h"
+#include "icpp_hooks.h"
 
 CandidTypeOptText::CandidTypeOptText() : CandidTypeOptBase() {
   std::optional<std::string> v;
@@ -74,7 +76,7 @@ bool CandidTypeOptText::decode_M(VecBytes B, __uint128_t &offset,
   uint8_t tag;
   if (B.parse_int_fixed_width(offset, tag, parse_error)) {
     std::string to_be_parsed = "Opt tag.";
-    CandidDeserialize::trap_with_parse_error(offset_start, offset, to_be_parsed,
+    CandidAssert::trap_with_parse_error(offset_start, offset, to_be_parsed,
                                              parse_error);
   }
   if (tag == 1) {
@@ -83,13 +85,13 @@ bool CandidTypeOptText::decode_M(VecBytes B, __uint128_t &offset,
     CandidTypeText c{}; // dummy so we can use it's decode_M
     if (c.decode_M(B, offset, parse_error)) {
       std::string to_be_parsed = "Opt: Value for CandidTypeText";
-      CandidDeserialize::trap_with_parse_error(offset_start, offset,
+      CandidAssert::trap_with_parse_error(offset_start, offset,
                                                to_be_parsed, parse_error);
     }
     m_v = c.get_v();
 
   } else if (tag != 0) {
-    IC_API::trap("ERROR: tag in opt text coming from wire is not 0 or 1");
+    ICPP_HOOKS::trap("ERROR: tag in opt text coming from wire is not 0 or 1");
   }
 
   // Fill the user's data placeholder, if a pointer was provided

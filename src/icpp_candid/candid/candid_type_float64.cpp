@@ -1,7 +1,8 @@
 // The class for the Primitive Candid Type: float64
 
-#include "candid.h"
-
+#include "candid_type_float64.h"
+#include "icpp_hooks.h"
+#include "candid_assert.h"
 #include "candid_opcode.h"
 #include "pro.h"
 
@@ -31,7 +32,7 @@ CandidTypeFloat64::~CandidTypeFloat64() {}
 // Initialize things
 void CandidTypeFloat64::initialize(const double &v) {
   if (sizeof(v) != 8) {
-    IC_API::trap(
+    ICPP_HOOKS::trap(
         "ERROR: The type double is not 8 bytes. \nThis is not yet supported.\n" +
         std::string(__func__));
   }
@@ -69,7 +70,7 @@ bool CandidTypeFloat64::decode_M(VecBytes B, __uint128_t &offset,
   parse_error = "";
   if (B.parse_float_ieee754(offset, m_v, parse_error)) {
     std::string to_be_parsed = "Value for CandidTypeFloat64";
-    CandidDeserialize::trap_with_parse_error(offset_start, offset, to_be_parsed,
+    CandidAssert::trap_with_parse_error(offset_start, offset, to_be_parsed,
                                              parse_error);
   }
 
