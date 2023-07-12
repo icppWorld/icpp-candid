@@ -1,6 +1,7 @@
 // The class for the Primitive Candid Type: text
 
-#include "candid.h"
+#include "candid_type_principal.h"
+#include "candid_assert.h"
 #include "candid_opcode.h"
 #include "pro.h"
 
@@ -9,7 +10,7 @@
 #include "cppcodec/base32_rfc4648.hpp"
 #include "hash-library/crc32.h"
 
-#include "ic_api.h"
+#include "icpp_hooks.h"
 
 // DON'T PUT DATA IN GLOBAL/STATIC MEMORY. IT BREAKS ALL UPDATE CALLS
 //                                                               data_bytes
@@ -57,7 +58,7 @@ CandidTypePrincipal::CandidTypePrincipal(const std::string v)
     : CandidTypePrim() {
   initialize(v);
 }
-// Constructor used by IC_API::from_wire to store caller
+// Constructor used by ICPP_HOOKS::from_wire to store caller
 CandidTypePrincipal::CandidTypePrincipal(const std::vector<uint8_t> &bytes)
     : CandidTypePrim() {
   std::string v = string_from_bytes(bytes);
@@ -123,11 +124,11 @@ bool CandidTypePrincipal::decode_M(VecBytes B, __uint128_t &offset,
   uint8_t ref_r;
   if (B.parse_int_fixed_width(offset, ref_r, parse_error)) {
     std::string to_be_parsed = "Unused opaque reference.";
-    CandidDeserialize::trap_with_parse_error(offset_start, offset, to_be_parsed,
+    CandidAssert::trap_with_parse_error(offset_start, offset, to_be_parsed,
                                              parse_error);
   }
   if (ref_r != 1) {
-    IC_API::trap(
+    ICPP_HOOKS::trap(
         "Principal Error: Found a value different that 1 for the reference. Opaque reference not supported.");
   }
 
@@ -137,7 +138,7 @@ bool CandidTypePrincipal::decode_M(VecBytes B, __uint128_t &offset,
   __uint128_t numBytes_principal;
   if (B.parse_uleb128(offset, numBytes_principal, numbytes, parse_error)) {
     std::string to_be_parsed = "Size of data bytes for principal";
-    CandidDeserialize::trap_with_parse_error(offset_start, offset, to_be_parsed,
+    CandidAssert::trap_with_parse_error(offset_start, offset, to_be_parsed,
                                              parse_error);
   }
 
@@ -146,7 +147,7 @@ bool CandidTypePrincipal::decode_M(VecBytes B, __uint128_t &offset,
   if (B.parse_bytes(offset, data_bytes, numBytes_principal, numbytes,
                     parse_error)) {
     std::string to_be_parsed = "Data bytes for principal";
-    CandidDeserialize::trap_with_parse_error(offset_start, offset, to_be_parsed,
+    CandidAssert::trap_with_parse_error(offset_start, offset, to_be_parsed,
                                              parse_error);
   }
 
@@ -169,7 +170,7 @@ void CandidTypePrincipal::bytes_from_string() {
   std::vector<uint8_t> bytes = base32_decode(s);
 
   if (bytes.size() < 4) {
-    IC_API::trap("Principal Error: Text is too short.");
+    ICPP_HOOKS::trap("Principal Error: Text is too short.");
   }
 
   // First 4 bytes are a CRC32 checksum of the data that follows. The data bytes are the principal ID
@@ -177,13 +178,13 @@ void CandidTypePrincipal::bytes_from_string() {
   std::vector<uint8_t> data_bytes(bytes.begin() + 4, bytes.end());
 
   if (data_bytes.size() > 29) {
-    IC_API::trap("Principal Error: Text is too long.");
+    ICPP_HOOKS::trap("Principal Error: Text is too long.");
   }
 
   // Verify the CRC32 checksum of the data bytes
   std::array<uint8_t, 4> crc_data = crc32(data_bytes);
   if (!std::equal(crc_bytes.begin(), crc_bytes.end(), crc_data.begin())) {
-    IC_API::trap("Principal Error: CRC32 checksum doesn't match.");
+    ICPP_HOOKS::trap("Principal Error: CRC32 checksum doesn't match.");
   }
 
   // from https://internetcomputer.org/docs/current/references/id-encoding-spec
@@ -193,7 +194,7 @@ void CandidTypePrincipal::bytes_from_string() {
   // Verify that roundtrip back to string gives same result
   std::string s_roundtrip = string_from_bytes(data_bytes);
   if (s_roundtrip != m_v) {
-    IC_API::trap(
+    ICPP_HOOKS::trap(
         "Principal Error: Text must be in valid Base32 encoding. Decoding/Encoding roundtrip fails.");
   }
 
@@ -208,7 +209,7 @@ CandidTypePrincipal::string_from_bytes(const std::vector<uint8_t> &data_bytes) {
   // m_v = Encode(data) := Group(LowerCase(Base32(CRC32(data) || data)))
 
   if (data_bytes.size() > 29) {
-    IC_API::trap("Principal Error: Text is too long.");
+    ICPP_HOOKS::trap("Principal Error: Text is too long.");
   }
 
   // CRC32(data) - checksum of the data bytes
@@ -229,7 +230,7 @@ CandidTypePrincipal::string_from_bytes(const std::vector<uint8_t> &data_bytes) {
 void CandidTypePrincipal::ungroup(std::string &s) {
   for (size_t i = 5; i < s.size(); i += 6) {
     if (s[i] != '-') {
-      IC_API::trap(
+      ICPP_HOOKS::trap(
           "Principal Error: Text should be separated by - (dash) every 5 characters");
     }
   }

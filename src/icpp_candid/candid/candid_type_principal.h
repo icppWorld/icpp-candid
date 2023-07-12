@@ -8,7 +8,6 @@
 #include <cmath>
 #include <cstring>
 
-#include "candid.h"
 #include "candid_type_prim.h"
 #include "vec_bytes.h"
 

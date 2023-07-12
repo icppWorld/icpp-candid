@@ -1,11 +1,11 @@
 // Candid deserialization class
 // https://github.com/dfinity/candid/blob/master/spec/Candid.md#parameters-and-results
 
-#include "candid.h"
+#include "candid_deserialize.h"
 #include "candid_assert.h"
 #include "candid_opcode.h"
 
-#include "ic_api.h"
+#include "icpp_hooks.h"
 
 CandidDeserialize::CandidDeserialize() { deserialize(); }
 CandidDeserialize::CandidDeserialize(const VecBytes &B,
@@ -67,7 +67,7 @@ void CandidDeserialize::deserialize() {
     if (m_B.parse_uleb128(B_offset, num_typetables, numbytes, parse_error)) {
       std::string to_be_parsed =
           "Number of unique type tables, T*(<comptype>*)";
-      trap_with_parse_error(B_offset_start, B_offset, to_be_parsed,
+      CandidAssert::trap_with_parse_error(B_offset_start, B_offset, to_be_parsed,
                             parse_error);
     }
   }
@@ -97,7 +97,7 @@ void CandidDeserialize::deserialize() {
     __uint128_t numbytes;
     if (m_B.parse_uleb128(B_offset, num_args, numbytes, parse_error)) {
       std::string to_be_parsed = "Number of arguments, I*(<datatype>*)";
-      trap_with_parse_error(B_offset_start, B_offset, to_be_parsed,
+      CandidAssert::trap_with_parse_error(B_offset_start, B_offset, to_be_parsed,
                             parse_error);
     }
   }
@@ -108,8 +108,8 @@ void CandidDeserialize::deserialize() {
     msg.append("       Expected number of arguments:" +
                std::to_string(m_A.size()) + "\n");
     msg.append("       Number of arguments on wire :" +
-               IC_API::to_string_128(num_args));
-    IC_API::trap(msg);
+               ICPP_HOOKS::to_string_128(num_args));
+    ICPP_HOOKS::trap(msg);
   }
 
   for (size_t i = 0; i < num_args; ++i) {
@@ -119,7 +119,7 @@ void CandidDeserialize::deserialize() {
     __int128_t datatype;
     if (m_B.parse_sleb128(B_offset, datatype, numbytes, parse_error)) {
       std::string to_be_parsed = "datatype, I*(<datatype>*)";
-      trap_with_parse_error(B_offset_start, B_offset, to_be_parsed,
+      CandidAssert::trap_with_parse_error(B_offset_start, B_offset, to_be_parsed,
                             parse_error);
     }
     m_args_datatypes.push_back(int(datatype));
@@ -162,10 +162,10 @@ void CandidDeserialize::deserialize() {
               "ERROR: expecting an Opcode, but a type table reference was found on wire instead.\n");
           msg.append("       Argument index    : " + std::to_string(i) + "\n");
           msg.append("       Bytes offset start: " +
-                     IC_API::to_string_128(m_args_datatypes_offset_start[i]) +
+                     ICPP_HOOKS::to_string_128(m_args_datatypes_offset_start[i]) +
                      "\n");
           msg.append("       Bytes offset end  : " +
-                     IC_API::to_string_128(m_args_datatypes_offset_end[i]) +
+                     ICPP_HOOKS::to_string_128(m_args_datatypes_offset_end[i]) +
                      "\n");
           msg.append(
               "       Expecting opcode  :" + std::to_string(opcode_expected) +
@@ -173,22 +173,22 @@ void CandidDeserialize::deserialize() {
               "\n");
           msg.append("       Found type table    :" +
                      std::to_string(opcode_found));
-          IC_API::trap(msg);
+          ICPP_HOOKS::trap(msg);
         } else {
           std::string msg;
           msg.append("ERROR: wrong type table reference found on wire.\n");
           msg.append("       Argument index: " + std::to_string(i) + "\n");
           msg.append("       Bytes offset start: " +
-                     IC_API::to_string_128(m_args_datatypes_offset_start[i]) +
+                     ICPP_HOOKS::to_string_128(m_args_datatypes_offset_start[i]) +
                      "\n");
           msg.append("       Bytes offset end  : " +
-                     IC_API::to_string_128(m_args_datatypes_offset_end[i]) +
+                     ICPP_HOOKS::to_string_128(m_args_datatypes_offset_end[i]) +
                      "\n");
           msg.append("       Expecting type table:" +
                      std::to_string(opcode_expected) + "\n");
           msg.append("       Found type table    :" +
                      std::to_string(opcode_found));
-          IC_API::trap(msg);
+          ICPP_HOOKS::trap(msg);
         }
       }
       if (opcode_found == CandidOpcode().Record) {
@@ -226,10 +226,10 @@ void CandidDeserialize::deserialize() {
 
           msg.append("       Argument index: " + std::to_string(i) + "\n");
           msg.append("       Bytes offset start: " +
-                     IC_API::to_string_128(m_args_datatypes_offset_start[i]) +
+                     ICPP_HOOKS::to_string_128(m_args_datatypes_offset_start[i]) +
                      "\n");
           msg.append("       Bytes offset end  : " +
-                     IC_API::to_string_128(m_args_datatypes_offset_end[i]) +
+                     ICPP_HOOKS::to_string_128(m_args_datatypes_offset_end[i]) +
                      "\n");
           msg.append("       Expecting content opcode:" +
                      std::to_string(content_opcode_expected) + " (" +
@@ -239,10 +239,10 @@ void CandidDeserialize::deserialize() {
                      std::to_string(content_opcode_found) + " (" +
                      CandidOpcode().name_from_opcode(content_opcode_found) +
                      ")" + "\n");
-          IC_API::trap(msg);
+          ICPP_HOOKS::trap(msg);
         }
       } else {
-        IC_API::trap(
+        ICPP_HOOKS::trap(
             "ERROR: Deserialization not yet implemented for this constype");
       }
 
@@ -266,10 +266,10 @@ void CandidDeserialize::deserialize() {
           msg.append("ERROR: wrong opcode found on wire.\n");
           msg.append("       Argument index: " + std::to_string(i) + "\n");
           msg.append("       Bytes offset start: " +
-                     IC_API::to_string_128(m_args_datatypes_offset_start[i]) +
+                     ICPP_HOOKS::to_string_128(m_args_datatypes_offset_start[i]) +
                      "\n");
           msg.append("       Bytes offset end  : " +
-                     IC_API::to_string_128(m_args_datatypes_offset_end[i]) +
+                     ICPP_HOOKS::to_string_128(m_args_datatypes_offset_end[i]) +
                      "\n");
           msg.append(
               "       Expecting opcode:" + std::to_string(opcode_expected) +
@@ -278,7 +278,7 @@ void CandidDeserialize::deserialize() {
           msg.append("       Found opcode    :" + std::to_string(opcode_found) +
                      " (" + CandidOpcode().name_from_opcode(opcode_found) +
                      ")");
-          IC_API::trap(msg);
+          ICPP_HOOKS::trap(msg);
         }
       }
     }
@@ -302,7 +302,7 @@ void CandidDeserialize::deserialize() {
             m_A[i])) {
       std::string to_be_parsed =
           "Values (decoding M) for argument at index " + std::to_string(i);
-      CandidDeserialize::trap_with_parse_error(B_offset_start, B_offset,
+      CandidAssert::trap_with_parse_error(B_offset_start, B_offset,
                                                to_be_parsed, parse_error);
     }
   }
@@ -316,18 +316,4 @@ void CandidDeserialize::deserialize() {
 int CandidDeserialize::assert_candid(const std::string &candid_expected,
                                      const bool &assert_value) {
   return CandidAssert::assert_candid(m_B, candid_expected, assert_value);
-}
-
-// Trap with parse error message
-void CandidDeserialize::trap_with_parse_error(const __uint128_t &B_offset_start,
-                                              const __uint128_t &B_offset,
-                                              const std::string &to_be_parsed,
-                                              const std::string &parse_error) {
-  std::string msg;
-  msg.append("ERROR: decoding of Candid byte stream failed.\n");
-  msg.append("       trying to extract: " + to_be_parsed + "\n");
-  msg.append("       parsing error:" + parse_error + "\n");
-  msg.append("       byte offset:" + IC_API::to_string_128(B_offset_start) +
-             "\n");
-  IC_API::trap(msg);
 }

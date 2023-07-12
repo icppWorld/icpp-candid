@@ -5,8 +5,6 @@
 #include <string>
 #include <vector>
 
-#include "candid.h"
-
 #include "candid_opcode.h"
 #include "vec_bytes.h"
 

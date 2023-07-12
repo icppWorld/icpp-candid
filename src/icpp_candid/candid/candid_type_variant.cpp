@@ -1,10 +1,11 @@
 // The class for the Candid Type: variant
 
-#include "candid.h"
+#include "candid_type_variant.h"
+#include "candid_assert.h"
 #include "candid_opcode.h"
 #include "pro.h"
 
-#include "ic_api.h"
+#include "icpp_hooks.h"
 
 #include <algorithm>
 #include <cassert>
@@ -81,7 +82,7 @@ void CandidTypeVariant::append(CandidType field) {
                std::to_string(m_field_ids.back()) + "\n");
     msg.append(
         "       because no field_id was specified for current field, we want to increase it by 1");
-    IC_API::trap(msg);
+    ICPP_HOOKS::trap(msg);
   }
 }
 
@@ -109,7 +110,7 @@ void CandidTypeVariant::_append(uint32_t field_id, std::string field_name,
     msg.append("       field id (hash): " + std::to_string(field_id) + "\n");
     msg.append("       field name 1   : " + m_field_names[i] + "\n");
     msg.append("       field name 2   : " + field_name + "\n");
-    IC_API::trap(msg);
+    ICPP_HOOKS::trap(msg);
   }
   // Add the field
   m_field_ids.push_back(field_id);
@@ -176,7 +177,7 @@ bool CandidTypeVariant::decode_T(VecBytes B, __uint128_t &offset,
     numbytes = 0;
     if (B.parse_sleb128(offset, datatype, numbytes, parse_error)) {
       std::string to_be_parsed = "Type table: datatype";
-      CandidDeserialize::trap_with_parse_error(offset_start, offset,
+      CandidAssert::trap_with_parse_error(offset_start, offset,
                                                to_be_parsed, parse_error);
     }
     m_field_datatypes.push_back(int(datatype));
@@ -191,7 +192,7 @@ bool CandidTypeVariant::decode_T(VecBytes B, __uint128_t &offset,
       if (B.parse_sleb128(offset, content_opcode, numbytes, parse_error)) {
         std::string to_be_parsed =
             "Type table: a variant field of type Vec -> the Vec's content type";
-        CandidDeserialize::trap_with_parse_error(offset_start, offset,
+        CandidAssert::trap_with_parse_error(offset_start, offset,
                                                  to_be_parsed, parse_error);
       }
       CandidOpcode().candid_type_vec_from_opcode(c, content_opcode);
@@ -203,7 +204,7 @@ bool CandidTypeVariant::decode_T(VecBytes B, __uint128_t &offset,
       if (B.parse_sleb128(offset, content_opcode, numbytes, parse_error)) {
         std::string to_be_parsed =
             "Type table: a variant field of type Opt -> the Opt's content type";
-        CandidDeserialize::trap_with_parse_error(offset_start, offset,
+        CandidAssert::trap_with_parse_error(offset_start, offset,
                                                  to_be_parsed, parse_error);
       }
       CandidOpcode().candid_type_opt_from_opcode(c, content_opcode);
@@ -215,7 +216,7 @@ bool CandidTypeVariant::decode_T(VecBytes B, __uint128_t &offset,
               [&](auto &&c) { return c.decode_T(B, offset, parse_error); },
               c)) {
         std::string to_be_parsed = "Type table: variant field";
-        CandidDeserialize::trap_with_parse_error(offset_start, offset,
+        CandidAssert::trap_with_parse_error(offset_start, offset,
                                                  to_be_parsed, parse_error);
       }
     }
@@ -270,7 +271,7 @@ bool CandidTypeVariant::decode_M(VecBytes B, __uint128_t &offset,
   __uint128_t j;
   if (B.parse_uleb128(offset, j, numbytes, parse_error)) {
     std::string to_be_parsed = "Size of vec- leb128(N)";
-    CandidDeserialize::trap_with_parse_error(offset_start, offset, to_be_parsed,
+    CandidAssert::trap_with_parse_error(offset_start, offset, to_be_parsed,
                                              parse_error);
   }
 
@@ -296,7 +297,7 @@ bool CandidTypeVariant::decode_M(VecBytes B, __uint128_t &offset,
       msg.append("       - " + std::to_string(m_field_ids[i]) + " (" +
                  m_field_names[i] + ")" + "\n");
     }
-    IC_API::trap(msg);
+    ICPP_HOOKS::trap(msg);
   }
   // verify that the types match
   int datatype = m_field_datatypes[m_variant_index];
@@ -314,7 +315,7 @@ bool CandidTypeVariant::decode_M(VecBytes B, __uint128_t &offset,
     msg.append("       datatype on wire                    : " +
                std::to_string(datatype_wire) + " (" +
                CandidOpcode().name_from_opcode(datatype_wire) + ")" + "\n");
-    IC_API::trap(msg);
+    ICPP_HOOKS::trap(msg);
   }
 
   // decode the value
@@ -326,11 +327,11 @@ bool CandidTypeVariant::decode_M(VecBytes B, __uint128_t &offset,
     if (std::visit([&](auto &&c) { return c.decode_M(B, offset, parse_error); },
                    m_fields[m_variant_index])) {
       std::string to_be_parsed = "Value for a Variant";
-      CandidDeserialize::trap_with_parse_error(offset_start, offset,
+      CandidAssert::trap_with_parse_error(offset_start, offset,
                                                to_be_parsed, parse_error);
     }
   } else {
-    IC_API::trap(
+    ICPP_HOOKS::trap(
         "TODO: Implement decode for non primitive type as a variant field, using recursion " +
         std::to_string(datatype) + std::string(__func__));
   }

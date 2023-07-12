@@ -3,8 +3,8 @@
 #include <string>
 #include <unordered_map>
 
-#include "candid.h"
-#include "ic_api.h"
+#include "candid_opcode.h"
+#include "icpp_hooks.h"
 
 CandidOpcode::CandidOpcode() {}
 
@@ -92,14 +92,14 @@ void CandidOpcode::candid_type_from_opcode(CandidType &c, int opcode) {
         "ERROR: NOT SUPPORTED FOR VEC. (use candid_vec_type_from_opcode)");
     msg.append("       datatype = " + std::to_string(opcode));
     msg.append("      " + std::string(__func__));
-    IC_API::trap(msg);
+    ICPP_HOOKS::trap(msg);
   } else if (opcode == Opt) {
     std::string msg;
     msg.append(
         "ERROR: NOT SUPPORTED FOR OPT. (use candid_opt_type_from_opcode)");
     msg.append("       datatype = " + std::to_string(opcode));
     msg.append("      " + std::string(__func__));
-    IC_API::trap(msg);
+    ICPP_HOOKS::trap(msg);
   } else if (opcode == Record) {
     c = CandidTypeRecord();
   } else if (opcode == Variant) {
@@ -109,7 +109,7 @@ void CandidOpcode::candid_type_from_opcode(CandidType &c, int opcode) {
     msg.append("ERROR: NOT YET IMPLEMENTED FOR THIS OPCODE.");
     msg.append("       datatype = " + std::to_string(opcode));
     msg.append("      " + std::string(__func__));
-    IC_API::trap(msg);
+    ICPP_HOOKS::trap(msg);
   }
 }
 
@@ -160,7 +160,7 @@ void CandidOpcode::candid_type_vec_from_opcode(CandidType &c, int opcode) {
     msg.append("ERROR: NOT YET IMPLEMENTED CandidTypeVecXXX.");
     msg.append("       for content type = " + std::to_string(opcode));
     msg.append("      " + std::string(__func__));
-    IC_API::trap(msg);
+    ICPP_HOOKS::trap(msg);
   }
 }
 
@@ -212,6 +212,6 @@ void CandidOpcode::candid_type_opt_from_opcode(CandidType &c, int opcode) {
     msg.append("ERROR: NOT YET IMPLEMENTED CandidTypeOptXXX.");
     msg.append("       for content type = " + std::to_string(opcode));
     msg.append("      " + std::string(__func__));
-    IC_API::trap(msg);
+    ICPP_HOOKS::trap(msg);
   }
 }

@@ -1,6 +1,7 @@
 // The class for the Primitive Candid Type: bool
 
-#include "candid.h"
+#include "candid_type_bool.h"
+#include "candid_assert.h"
 
 #include "candid_opcode.h"
 
@@ -59,7 +60,7 @@ bool CandidTypeBool::decode_M(VecBytes B, __uint128_t &offset,
   __uint128_t iv{0};
   if (B.parse_uleb128(offset, iv, numbytes, parse_error)) {
     std::string to_be_parsed = "Value for CandidTypeBool";
-    CandidDeserialize::trap_with_parse_error(offset_start, offset, to_be_parsed,
+    CandidAssert::trap_with_parse_error(offset_start, offset, to_be_parsed,
                                              parse_error);
   }
   if (iv == 0) {

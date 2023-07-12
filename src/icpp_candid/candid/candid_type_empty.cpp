@@ -1,7 +1,7 @@
 // The class for the Primitive Candid Type: empty
 
-#include "candid.h"
-#include "ic_api.h"
+#include "candid_type_empty.h"
+#include "icpp_hooks.h"
 
 #include "candid_opcode.h"
 
@@ -28,12 +28,12 @@ void CandidTypeEmpty::encode_I() {
 void CandidTypeEmpty::encode_M() {
   // https://github.com/dfinity/candid/blob/master/spec/Candid.md#memory
   // NB: M(_ : empty) just ignore
-  // IC_API::trap("ERROR - CandidTypeEmpty cannot have a value to encode.");
+  // ICPP_HOOKS::trap("ERROR - CandidTypeEmpty cannot have a value to encode.");
 }
 
 // Decode the values, starting at & updating offset
 bool CandidTypeEmpty::decode_M(VecBytes B, __uint128_t &offset,
                                std::string &parse_error) {
-  IC_API::trap("ERROR - CandidTypeEmpty cannot have a value to decode.");
+  ICPP_HOOKS::trap("ERROR - CandidTypeEmpty cannot have a value to decode.");
   return false;
 }

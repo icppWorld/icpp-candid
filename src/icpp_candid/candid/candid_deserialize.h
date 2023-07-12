@@ -6,7 +6,8 @@
 #include <string>
 #include <vector>
 
-#include "candid.h"
+#include "candid_type.h"
+#include "candid_type_all_includes.h"
 
 class CandidDeserialize {
 public:
@@ -20,11 +21,6 @@ public:
 
   int assert_candid(const std::string &candid_expected,
                     const bool &assert_value);
-
-  static void trap_with_parse_error(const __uint128_t &B_offset_start,
-                                    const __uint128_t &B_offset,
-                                    const std::string &to_be_parsed,
-                                    const std::string &parse_error);
 
 private:
   void deserialize();

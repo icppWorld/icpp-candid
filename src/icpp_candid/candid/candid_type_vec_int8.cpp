@@ -1,11 +1,12 @@
 // The class for the Candid Type: vec
 
-#include "candid.h"
+#include "candid_type_vec_int8.h"
+#include "candid_assert.h"
 #include "candid_opcode.h"
 
 #include <cassert>
 
-#include "ic_api.h"
+
 
 CandidTypeVecInt8::CandidTypeVecInt8() : CandidTypeVecBase() {
   std::vector<int8_t> v;
@@ -62,7 +63,7 @@ bool CandidTypeVecInt8::decode_M(VecBytes B, __uint128_t &offset,
   __uint128_t size_vec;
   if (B.parse_uleb128(offset, size_vec, numbytes, parse_error)) {
     std::string to_be_parsed = "Size of vec- leb128(N)";
-    CandidDeserialize::trap_with_parse_error(offset_start, offset, to_be_parsed,
+    CandidAssert::trap_with_parse_error(offset_start, offset, to_be_parsed,
                                              parse_error);
   }
 
@@ -73,7 +74,7 @@ bool CandidTypeVecInt8::decode_M(VecBytes B, __uint128_t &offset,
   for (size_t i = 0; i < size_vec; ++i) {
     if (B.parse_int_fixed_width(offset, v, parse_error)) {
       std::string to_be_parsed = "Vec: Value for CandidTypeInt8";
-      CandidDeserialize::trap_with_parse_error(offset_start, offset,
+      CandidAssert::trap_with_parse_error(offset_start, offset,
                                                to_be_parsed, parse_error);
     }
     m_v.push_back(v);

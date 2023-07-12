@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "candid.h"
+#include "candid_type_prim.h"
 
 class CandidTypeNull : public CandidTypePrim {
 public:

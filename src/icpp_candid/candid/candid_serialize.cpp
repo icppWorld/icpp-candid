@@ -1,10 +1,11 @@
 // Candid serialization class
 // https://github.com/dfinity/candid/blob/master/spec/Candid.md#parameters-and-results
 
-#include "candid.h"
+#include <variant>
+#include "candid_serialize.h"
 #include "candid_assert.h"
 
-#include "ic_api.h"
+
 
 // Default constructor handles nullary input '()'
 CandidSerialize::CandidSerialize() { serialize(); }

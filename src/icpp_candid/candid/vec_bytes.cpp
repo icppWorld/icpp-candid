@@ -13,7 +13,7 @@
 #include <limits>
 #include <sstream>
 
-#include "ic_api.h"
+#include "icpp_hooks.h"
 
 #define INT_STR_SIZE (sizeof(int) * CHAR_BIT / 3 + 3)
 
@@ -84,7 +84,7 @@ void VecBytes::c_int_to_hex(char *str, unsigned int x) {
       if (str[j] != '0') {
         found_non_zero = true;
         if (i < 6) {
-          IC_API::trap(
+          ICPP_HOOKS::trap(
               "PROGRAM ERROR in int_to_hex. Hex string has more than 2 "
               "characters?");
         }
@@ -113,7 +113,7 @@ void VecBytes::c_int_to_dec(char *str, size_t size, int x) {
   }
   size_t len = (size_t)(&buf[INT_STR_SIZE] - p);
   if (len > size) {
-    IC_API::trap(
+    ICPP_HOOKS::trap(
         "PROGRAM ERROR in c_int_to_dec - Buffer to small to store decimal "
         "representation of int");
   }
@@ -209,9 +209,9 @@ bool VecBytes::parse_bytes(__uint128_t &offset, std::vector<std::byte> &v,
   if (n > len) {
     parse_error =
         "Not enough bytes left. The remaining bytes in the byte stream on wire is ";
-    parse_error.append(IC_API::to_string_128(len));
+    parse_error.append(ICPP_HOOKS::to_string_128(len));
     parse_error.append(", but specified number to parse is ");
-    parse_error.append(IC_API::to_string_128(n));
+    parse_error.append(ICPP_HOOKS::to_string_128(n));
     return true;
   }
 
@@ -236,9 +236,9 @@ bool VecBytes::parse_bytes(__uint128_t &offset, std::vector<uint8_t> &v,
   if (n > len) {
     parse_error =
         "Not enough bytes left. The remaining bytes in the byte stream on wire is ";
-    parse_error.append(IC_API::to_string_128(len));
+    parse_error.append(ICPP_HOOKS::to_string_128(len));
     parse_error.append(", but specified number to parse is ");
-    parse_error.append(IC_API::to_string_128(n));
+    parse_error.append(ICPP_HOOKS::to_string_128(n));
     return true;
   }
 
@@ -306,13 +306,13 @@ void VecBytes::trap_if_vec_does_not_start_with_DIDL() {
   s.append(byte_to_char(m_vec[2]));
   s.append(byte_to_char(m_vec[3]));
   if (s != "DIDL") {
-    IC_API::trap("ERROR: Message does not start with DIDL");
+    ICPP_HOOKS::trap("ERROR: Message does not start with DIDL");
   }
 }
 
 // Prints the bytes of the vec in hex, dec & bits
 void VecBytes::debug_print() {
-  IC_API::debug_print("  hex, decimal, char");
+  ICPP_HOOKS::debug_print("  hex, decimal, char");
 
   std::string s_hex;
   for (std::byte b : m_vec) {
@@ -325,9 +325,9 @@ void VecBytes::debug_print() {
     s.append(byte_to_char(b));
     s_hex.append(byte_to_hex(b, ""));
 
-    IC_API::debug_print(s); // Print a nice table: hex, decimal, char
+    ICPP_HOOKS::debug_print(s); // Print a nice table: hex, decimal, char
   }
-  IC_API::debug_print(
+  ICPP_HOOKS::debug_print(
       s_hex); // Print the whole thing in hex on one line, for didc decode !
 }
 
@@ -355,7 +355,7 @@ __int128_t VecBytes::atoint128_t(const std::string &in) {
   for (; i < in.size(); ++i) {
     const char c = in[i];
     if (not std::isdigit(c))
-      IC_API::trap(std::string("Non-numeric character: ") + c);
+      ICPP_HOOKS::trap(std::string("Non-numeric character: ") + c);
 
     // TODO: implement multiplication overflow protection: https://stackoverflow.com/a/1815371/5480536
     res *= 10;
@@ -363,7 +363,7 @@ __int128_t VecBytes::atoint128_t(const std::string &in) {
     res += c - '0';
     // https://stackoverflow.com/a/6472982/5480536
     if (res < c - '0') {
-      IC_API::trap(
+      ICPP_HOOKS::trap(
           std::string(
               "ERROR: Overflow - Cannot convert string to __uint128t.\n       Number is too big: ") +
           in);
@@ -389,7 +389,7 @@ __uint128_t VecBytes::atouint128_t(const std::string &in) {
   for (; i < in.size(); ++i) {
     const char c = in[i];
     if (not std::isdigit(c))
-      IC_API::trap(std::string("Non-numeric character: ") + c);
+      ICPP_HOOKS::trap(std::string("Non-numeric character: ") + c);
 
     // TODO: implement multiplication overflow protection: https://stackoverflow.com/a/1815371/5480536
     res *= 10;
@@ -397,7 +397,7 @@ __uint128_t VecBytes::atouint128_t(const std::string &in) {
     res += c - '0';
     // https://stackoverflow.com/a/6472982/5480536
     if (res < c - '0') {
-      IC_API::trap(
+      ICPP_HOOKS::trap(
           std::string(
               "ERROR: Overflow - Cannot convert string to __uint128t.\n       Number is too big: ") +
           in);
@@ -556,8 +556,8 @@ void VecBytes::check_endian() {
   } else if (is_mixed_endian()) {
     m_endian_type = "mixed";
   } else {
-    IC_API::trap("Could not determine endianness of architecture. ");
+    ICPP_HOOKS::trap("Could not determine endianness of architecture. ");
   }
 }
 
-void VecBytes::trap(const std::string &msg) { IC_API::trap(msg); }
+void VecBytes::trap(const std::string &msg) { ICPP_HOOKS::trap(msg); }

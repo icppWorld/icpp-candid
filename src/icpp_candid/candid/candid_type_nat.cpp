@@ -1,6 +1,7 @@
 // The class for the Primitive Candid Type: nat
 
-#include "candid.h"
+#include "candid_type_nat.h"
+#include "candid_assert.h"
 
 #include "candid_opcode.h"
 #include "pro.h"
@@ -61,7 +62,7 @@ bool CandidTypeNat::decode_M(VecBytes B, __uint128_t &offset,
   parse_error = "";
   if (B.parse_uleb128(offset, m_v, numbytes, parse_error)) {
     std::string to_be_parsed = "Value for CandidTypeNat";
-    CandidDeserialize::trap_with_parse_error(offset_start, offset, to_be_parsed,
+    CandidAssert::trap_with_parse_error(offset_start, offset, to_be_parsed,
                                              parse_error);
   }
 

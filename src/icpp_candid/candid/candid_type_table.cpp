@@ -1,9 +1,10 @@
 // Candid type table
 // https://github.com/dfinity/candid/blob/master/spec/Candid.md#parameters-and-results
 
-#include "candid.h"
+#include "candid_type_table.h"
+#include "candid_assert.h"
 #include "candid_opcode.h"
-#include "ic_api.h"
+
 
 #include <cassert>
 #include <utility>
@@ -26,7 +27,7 @@ void CandidTypeTable::deserialize(__uint128_t &B_offset) {
   __uint128_t numbytes;
   if (m_B.parse_sleb128(B_offset, datatype, numbytes, parse_error)) {
     std::string to_be_parsed = "Type table: opcode";
-    CandidDeserialize::trap_with_parse_error(B_offset_start, B_offset,
+    CandidAssert::trap_with_parse_error(B_offset_start, B_offset,
                                              to_be_parsed, parse_error);
   }
   m_opcode = int(datatype);
@@ -40,7 +41,7 @@ void CandidTypeTable::deserialize(__uint128_t &B_offset) {
     __int128_t content_opcode;
     if (m_B.parse_sleb128(B_offset, content_opcode, numbytes, parse_error)) {
       std::string to_be_parsed = "Type table: a Vec's content type";
-      CandidDeserialize::trap_with_parse_error(B_offset_start, B_offset,
+      CandidAssert::trap_with_parse_error(B_offset_start, B_offset,
                                                to_be_parsed, parse_error);
     }
     CandidOpcode().candid_type_vec_from_opcode(m_c, content_opcode);
@@ -51,7 +52,7 @@ void CandidTypeTable::deserialize(__uint128_t &B_offset) {
     __int128_t content_opcode;
     if (m_B.parse_sleb128(B_offset, content_opcode, numbytes, parse_error)) {
       std::string to_be_parsed = "Type table: an Opt's content type";
-      CandidDeserialize::trap_with_parse_error(B_offset_start, B_offset,
+      CandidAssert::trap_with_parse_error(B_offset_start, B_offset,
                                                to_be_parsed, parse_error);
     }
     CandidOpcode().candid_type_opt_from_opcode(m_c, content_opcode);
@@ -63,7 +64,7 @@ void CandidTypeTable::deserialize(__uint128_t &B_offset) {
             [&](auto &&c) { return c.decode_T(m_B, B_offset, parse_error); },
             m_c)) {
       std::string to_be_parsed = "Type table";
-      CandidDeserialize::trap_with_parse_error(B_offset_start, B_offset,
+      CandidAssert::trap_with_parse_error(B_offset_start, B_offset,
                                                to_be_parsed, parse_error);
     }
   }

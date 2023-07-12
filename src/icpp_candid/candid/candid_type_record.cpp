@@ -1,10 +1,11 @@
 // The class for the Candid Type: Record
 
-#include "candid.h"
+#include "candid_type_record.h"
+#include "candid_assert.h"
 #include "candid_opcode.h"
 #include "pro.h"
 
-#include "ic_api.h"
+#include "icpp_hooks.h"
 
 #include <algorithm>
 #include <cassert>
@@ -55,7 +56,7 @@ void CandidTypeRecord::append(CandidType field) {
                std::to_string(m_field_ids.back()) + "\n");
     msg.append(
         "       because no field_id was specified for current field, we want to increase it by 1");
-    IC_API::trap(msg);
+    ICPP_HOOKS::trap(msg);
   }
 }
 
@@ -70,7 +71,7 @@ void CandidTypeRecord::_append(uint32_t field_id, std::string field_name,
     msg.append("       field id (hash): " + std::to_string(field_id) + "\n");
     msg.append("       field name 1   : " + m_field_names[i] + "\n");
     msg.append("       field name 2   : " + field_name + "\n");
-    IC_API::trap(msg);
+    ICPP_HOOKS::trap(msg);
   }
 
   // Add the field
@@ -157,7 +158,7 @@ bool CandidTypeRecord::decode_T(VecBytes B, __uint128_t &offset,
     numbytes = 0;
     if (B.parse_sleb128(offset, datatype, numbytes, parse_error)) {
       std::string to_be_parsed = "Type table: datatype";
-      CandidDeserialize::trap_with_parse_error(offset_start, offset,
+      CandidAssert::trap_with_parse_error(offset_start, offset,
                                                to_be_parsed, parse_error);
     }
     m_field_datatypes.push_back(int(datatype));
@@ -172,7 +173,7 @@ bool CandidTypeRecord::decode_T(VecBytes B, __uint128_t &offset,
       if (B.parse_sleb128(offset, content_opcode, numbytes, parse_error)) {
         std::string to_be_parsed =
             "Type table: a record field of type Vec -> the Vec's content type";
-        CandidDeserialize::trap_with_parse_error(offset_start, offset,
+        CandidAssert::trap_with_parse_error(offset_start, offset,
                                                  to_be_parsed, parse_error);
       }
       CandidOpcode().candid_type_vec_from_opcode(c, content_opcode);
@@ -184,7 +185,7 @@ bool CandidTypeRecord::decode_T(VecBytes B, __uint128_t &offset,
       if (B.parse_sleb128(offset, content_opcode, numbytes, parse_error)) {
         std::string to_be_parsed =
             "Type table: a record field of type Opt -> the Opt's content type";
-        CandidDeserialize::trap_with_parse_error(offset_start, offset,
+        CandidAssert::trap_with_parse_error(offset_start, offset,
                                                  to_be_parsed, parse_error);
       }
       CandidOpcode().candid_type_opt_from_opcode(c, content_opcode);
@@ -196,7 +197,7 @@ bool CandidTypeRecord::decode_T(VecBytes B, __uint128_t &offset,
               [&](auto &&c) { return c.decode_T(B, offset, parse_error); },
               c)) {
         std::string to_be_parsed = "Type table: record field";
-        CandidDeserialize::trap_with_parse_error(offset_start, offset,
+        CandidAssert::trap_with_parse_error(offset_start, offset,
                                                  to_be_parsed, parse_error);
       }
     }
@@ -244,11 +245,11 @@ bool CandidTypeRecord::decode_M(VecBytes B, __uint128_t &offset,
               [&](auto &&c) { return c.decode_M(B, offset, parse_error); },
               m_fields[i])) {
         std::string to_be_parsed = "Value for a Record field";
-        CandidDeserialize::trap_with_parse_error(offset_start, offset,
+        CandidAssert::trap_with_parse_error(offset_start, offset,
                                                  to_be_parsed, parse_error);
       }
     } else {
-      IC_API::trap(
+      ICPP_HOOKS::trap(
           "TODO: Implement decode for non primitive type as a record field, using recursion " +
           std::to_string(datatype) + std::string(__func__));
     }
@@ -271,7 +272,7 @@ void CandidTypeRecord::check_type_table(const CandidTypeRecord *p_from_wire) {
       msg.append("       expected value of the hashed id: " +
                  std::to_string(id) + " (" + m_field_names[i] + ")" + "\n");
       msg.append("       found on wire  : " + std::to_string(id_wire) + "\n");
-      IC_API::trap(msg);
+      ICPP_HOOKS::trap(msg);
     }
 
     int datatype = m_field_datatypes[i];
@@ -293,7 +294,7 @@ void CandidTypeRecord::check_type_table(const CandidTypeRecord *p_from_wire) {
         msg.append("       type on wire : " + std::to_string(datatype_wire) +
                    " (" + CandidOpcode().name_from_opcode(datatype_wire) + ")" +
                    "\n");
-        IC_API::trap(msg);
+        ICPP_HOOKS::trap(msg);
       }
     }
   }

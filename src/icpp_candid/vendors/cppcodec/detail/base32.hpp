@@ -39,7 +39,7 @@
 #include "config.hpp"
 #include "stream_codec.hpp"
 
-#include "ic_api.h" // for trap iso throw
+#include "icpp_hooks.h" // for trap iso throw
 
 namespace cppcodec {
 namespace detail {
@@ -64,7 +64,7 @@ public:
                 : (num_bytes == 3) ? 5 // 5 symbols, 3 padding characters
                 : (num_bytes == 4) ? 7 // 7 symbols, 1 padding characters
                                    : 0;
-    if (v == 0) IC_API::trap("invalid number of bytes in a tail block");
+    if (v == 0) ICPP_HOOKS::trap("invalid number of bytes in a tail block");
     return v;
   }
 
@@ -100,7 +100,7 @@ public:
   template <uint8_t I>
   static CPPCODEC_ALWAYS_INLINE uint8_if<I != 1 && I != 3 && I != 4 && I != 6>
   index_last(const uint8_t * /*binary block*/) {
-    IC_API::trap("invalid last encoding symbol index in a tail");
+    ICPP_HOOKS::trap("invalid last encoding symbol index in a tail");
     return 0; // AB - avoid compiler warning
     // throw std::domain_error("invalid last encoding symbol index in a tail");
   }
@@ -145,19 +145,19 @@ CPPCODEC_ALWAYS_INLINE void
 base32<CodecVariant>::decode_tail(Result &decoded, ResultState &state,
                                   const alphabet_index_t *idx, size_t idx_len) {
   if (idx_len == 1) {
-    IC_API::trap(
+    ICPP_HOOKS::trap(
         "invalid number of symbols in last base32 block: found 1, expected 2, 4, 5 or 7");
     // throw invalid_input_length(
     // "invalid number of symbols in last base32 block: found 1, expected 2, 4, 5 or 7");
   }
   if (idx_len == 3) {
-    IC_API::trap(
+    ICPP_HOOKS::trap(
         "invalid number of symbols in last base32 block: found 3, expected 2, 4, 5 or 7");
     // throw invalid_input_length(
     //         "invalid number of symbols in last base32 block: found 3, expected 2, 4, 5 or 7");
   }
   if (idx_len == 6) {
-    IC_API::trap(
+    ICPP_HOOKS::trap(
         "invalid number of symbols in last base32 block: found 6, expected 2, 4, 5 or 7");
     // throw invalid_input_length(
     // "invalid number of symbols in last base32 block: found 6, expected 2, 4, 5 or 7");

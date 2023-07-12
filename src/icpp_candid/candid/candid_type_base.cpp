@@ -1,12 +1,12 @@
 // The base class for all Candid Types
 
-#include "candid.h"
+#include "candid_type_base.h"
 
 #include <charconv>
 #include <cmath>
 #include <system_error>
 
-#include "ic_api.h"
+#include "icpp_hooks.h"
 
 CandidTypeBase::CandidTypeBase() {}
 
@@ -19,7 +19,7 @@ void CandidTypeBase::trap_if_wrong_type_on_wire(
     msg.append("ERROR: wrong Candid type on wire.\n");
     msg.append("       Candid type on wire  = " + type_on_wire + "\n");
     msg.append("       Expected Candid type = " + m_datatype_textual);
-    IC_API::trap(msg);
+    ICPP_HOOKS::trap(msg);
   };
 }
 
@@ -27,21 +27,21 @@ void CandidTypeBase::trap_if_wrong_type_on_wire(
 // Non <comptype> should not call this method.
 bool CandidTypeBase::decode_T(const VecBytes B, __uint128_t &offset,
                               std::string &parse_error) {
-  IC_API::trap("ERROR: decode_T not implemented...");
+  ICPP_HOOKS::trap("ERROR: decode_T not implemented...");
   return true;
 }
 void CandidTypeBase::set_content_type() {
-  IC_API::trap("ERROR: set_content_type not implemented...");
+  ICPP_HOOKS::trap("ERROR: set_content_type not implemented...");
 }
 
 // Virtual method to be implemented by all CandidTypes to support deserialization
 bool CandidTypeBase::decode_M(const VecBytes B, __uint128_t &offset,
                               std::string &parse_error) {
-  IC_API::trap("ERROR: decode_M not implemented...");
+  ICPP_HOOKS::trap("ERROR: decode_M not implemented...");
   return true;
 }
 void CandidTypeBase::encode_M() {
-  IC_API::trap("ERROR: encode_M not implemented...");
+  ICPP_HOOKS::trap("ERROR: encode_M not implemented...");
 }
 
 // https://github.com/dfinity/candid/blob/master/spec/Candid.md#records

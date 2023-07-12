@@ -4,7 +4,8 @@
 
 #include <cstring>
 
-#include "candid.h"
+#include "candid_type_opt_base.h"
+#include "vec_bytes.h"
 
 class CandidTypeOptFloat64 : public CandidTypeOptBase {
 public:

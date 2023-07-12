@@ -2,7 +2,8 @@
 
 #pragma once
 
-#include "candid.h"
+#include "candid_type_prim.h"
+#include "vec_bytes.h"
 
 class CandidTypeNat32 : public CandidTypePrim {
 public:

@@ -1,11 +1,12 @@
 // The class for the Candid Type: opt
 
-#include "candid.h"
+#include "candid_type_opt_nat64.h"
+#include "candid_assert.h"
 #include "candid_opcode.h"
 
 #include <cassert>
 
-#include "ic_api.h"
+#include "icpp_hooks.h"
 
 CandidTypeOptNat64::CandidTypeOptNat64() : CandidTypeOptBase() {
   std::optional<uint64_t> v;
@@ -65,7 +66,7 @@ bool CandidTypeOptNat64::decode_M(VecBytes B, __uint128_t &offset,
   uint8_t tag;
   if (B.parse_int_fixed_width(offset, tag, parse_error)) {
     std::string to_be_parsed = "Opt tag.";
-    CandidDeserialize::trap_with_parse_error(offset_start, offset, to_be_parsed,
+    CandidAssert::trap_with_parse_error(offset_start, offset, to_be_parsed,
                                              parse_error);
   }
   if (tag == 1) {
@@ -74,13 +75,13 @@ bool CandidTypeOptNat64::decode_M(VecBytes B, __uint128_t &offset,
     parse_error = "";
     if (B.parse_int_fixed_width(offset, v, parse_error)) {
       std::string to_be_parsed = "Opt: Value for CandidTypeNat64";
-      CandidDeserialize::trap_with_parse_error(offset_start, offset,
+      CandidAssert::trap_with_parse_error(offset_start, offset,
                                                to_be_parsed, parse_error);
     }
     m_v = v;
 
   } else if (tag != 0) {
-    IC_API::trap("ERROR: tag in opt nat64 coming from wire is not 0 or 1");
+    ICPP_HOOKS::trap("ERROR: tag in opt nat64 coming from wire is not 0 or 1");
   }
 
   // Fill the user's data placeholder, if a pointer was provided

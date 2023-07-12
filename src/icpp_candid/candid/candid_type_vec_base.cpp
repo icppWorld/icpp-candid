@@ -1,12 +1,13 @@
 // The base class for the Candid Type: vec
 
-#include "candid.h"
+#include "candid_type_vec_base.h"
+#include "candid_assert.h"
 #include "candid_opcode.h"
 #include "pro.h"
 
 #include <cassert>
 
-#include "ic_api.h"
+
 
 CandidTypeVecBase::CandidTypeVecBase() : CandidTypeBase() {}
 
@@ -45,7 +46,7 @@ bool CandidTypeVecBase::decode_T(VecBytes B, __uint128_t &offset,
   __uint128_t numbytes;
   if (B.parse_sleb128(offset, content_type, numbytes, parse_error)) {
     std::string to_be_parsed = "Type table: a Vec's content type";
-    CandidDeserialize::trap_with_parse_error(offset_start, offset, to_be_parsed,
+    CandidAssert::trap_with_parse_error(offset_start, offset, to_be_parsed,
                                              parse_error);
   }
 
