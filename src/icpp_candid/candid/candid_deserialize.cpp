@@ -1,6 +1,8 @@
 // Candid deserialization class
 // https://github.com/dfinity/candid/blob/master/spec/Candid.md#parameters-and-results
 
+#include "candid_type.h"
+#include "candid_type_all_includes.h"
 #include "candid_deserialize.h"
 #include "candid_assert.h"
 #include "candid_opcode.h"
@@ -317,3 +319,6 @@ int CandidDeserialize::assert_candid(const std::string &candid_expected,
                                      const bool &assert_value) {
   return CandidAssert::assert_candid(m_B, candid_expected, assert_value);
 }
+
+std::vector<CandidType> CandidDeserialize::get_A() { return m_A; }
+VecBytes CandidDeserialize::get_B() { return m_B; }

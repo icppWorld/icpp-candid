@@ -12,12 +12,9 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
+#include <optional>
 
-// #include "candid.h"
-#include "candid_type.h"
-#include "candid_type_all_includes.h"
-// #include "candid_type_principal.h"
-// #include "canister.h"
+// #include "candid_type.h"
 #include "vec_bytes.h"
 
 class ICPP_HOOKS {

@@ -2,10 +2,11 @@
 // https://github.com/dfinity/candid/blob/master/spec/Candid.md#parameters-and-results
 
 #include <variant>
+
+#include "candid_type.h"
+#include "candid_type_all_includes.h"
 #include "candid_serialize.h"
 #include "candid_assert.h"
-
-
 
 // Default constructor handles nullary input '()'
 CandidSerialize::CandidSerialize() { serialize(); }

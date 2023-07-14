@@ -5,6 +5,7 @@
 #include <cstring>
 
 #include "candid_type_vec_base.h"
+#include "candid_type_int8.h"
 #include "vec_bytes.h"
 
 class CandidTypeVecInt8 : public CandidTypeVecBase {

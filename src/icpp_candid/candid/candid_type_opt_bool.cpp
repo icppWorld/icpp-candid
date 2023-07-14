@@ -1,5 +1,6 @@
 // The class for the Candid Type: opt
 
+#include "candid_type.h"
 #include "candid_type_opt_bool.h"
 #include "candid_assert.h"
 #include "candid_opcode.h"

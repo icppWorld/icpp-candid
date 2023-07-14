@@ -1,5 +1,6 @@
 // The class for the Primitive Candid Type: int
 
+#include "candid_type.h"
 #include "candid_type_int.h"
 #include "candid_assert.h"
 

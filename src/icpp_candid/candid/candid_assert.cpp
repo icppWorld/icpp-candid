@@ -1,7 +1,6 @@
 // Candid Assert helper class
 
 #include "candid_assert.h"
-
 #include "icpp_hooks.h"
 
 CandidAssert::CandidAssert() {}

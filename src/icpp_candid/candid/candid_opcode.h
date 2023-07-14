@@ -7,9 +7,7 @@
 #include <string>
 #include <cstdint>
 
-// //#include "candid.h"
-#include "candid_type.h"
-
+// #include "candid_type.h"
 
 class CandidOpcode {
 public:

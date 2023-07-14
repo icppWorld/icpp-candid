@@ -4,7 +4,6 @@
 
 #include <cstring>
 
-#include "candid_type_base.h"
 #include "vec_bytes.h"
 
 class CandidTypeRecord : public CandidTypeBase {

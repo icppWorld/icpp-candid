@@ -1,5 +1,7 @@
 // The class for the Candid Type: variant
 
+#include "candid_type.h"
+#include "candid_type_all_includes.h"
 #include "candid_type_variant.h"
 #include "candid_assert.h"
 #include "candid_opcode.h"

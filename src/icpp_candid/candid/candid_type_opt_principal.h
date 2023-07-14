@@ -5,6 +5,7 @@
 #include <cstring>
 
 #include "candid_type_opt_base.h"
+#include "candid_type_principal.h"
 #include "vec_bytes.h"
 
 class CandidTypeOptPrincipal : public CandidTypeOptBase {

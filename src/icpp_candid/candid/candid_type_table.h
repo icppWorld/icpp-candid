@@ -3,11 +3,7 @@
 
 #pragma once
 
-#include <string>
-#include <vector>
-
-#include "candid_type.h"
-#include "candid_type_all_includes.h"
+// #include "candid_type.h"
 
 class CandidTypeTable {
 public:
