@@ -1,5 +1,6 @@
 // The base class for all Candid Types
 
+#include "candid_type.h"
 #include "candid_type_base.h"
 
 #include <charconv>

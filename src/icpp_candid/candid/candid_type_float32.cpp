@@ -1,5 +1,6 @@
 // The class for the Primitive Candid Type: float32
 
+#include "candid_type.h"
 #include "candid_type_float32.h"
 #include "icpp_hooks.h"
 #include "candid_assert.h"

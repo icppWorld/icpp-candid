@@ -1,5 +1,6 @@
 // The class for the Primitive Candid Type: empty
 
+#include "candid_type.h"
 #include "candid_type_empty.h"
 #include "icpp_hooks.h"
 

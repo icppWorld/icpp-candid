@@ -6,8 +6,7 @@
 #include <string>
 #include <vector>
 
-#include "candid_type.h"
-#include "candid_type_all_includes.h"
+#include "candid_type_table.h"
 
 class CandidDeserialize {
 public:
@@ -16,8 +15,8 @@ public:
   CandidDeserialize(const std::string hex_string, std::vector<CandidType> A);
   ~CandidDeserialize();
 
-  std::vector<CandidType> get_A() { return m_A; }
-  VecBytes get_B() { return m_B; }
+  std::vector<CandidType> get_A();
+  VecBytes get_B();
 
   int assert_candid(const std::string &candid_expected,
                     const bool &assert_value);

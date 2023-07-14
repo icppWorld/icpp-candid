@@ -3,6 +3,8 @@
 #include <string>
 #include <unordered_map>
 
+#include "candid_type.h"
+#include "candid_type_all_includes.h"
 #include "candid_opcode.h"
 #include "icpp_hooks.h"
 

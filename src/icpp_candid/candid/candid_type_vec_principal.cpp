@@ -1,5 +1,6 @@
 // The class for the Candid Type: vec
 
+#include "candid_type.h"
 #include "candid_type_vec_principal.h"
 #include "candid_type_principal.h"
 #include "candid_assert.h"

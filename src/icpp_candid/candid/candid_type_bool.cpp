@@ -1,5 +1,6 @@
 // The class for the Primitive Candid Type: bool
 
+#include "candid_type.h"
 #include "candid_type_bool.h"
 #include "candid_assert.h"
 

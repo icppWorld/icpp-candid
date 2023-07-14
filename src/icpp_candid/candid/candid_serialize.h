@@ -6,8 +6,8 @@
 #include <string>
 #include <vector>
 
-#include "candid_type.h"
-#include "candid_type_all_includes.h"
+// #include "candid_type.h"
+#include "vec_bytes.h"
 
 class CandidSerialize {
 public:

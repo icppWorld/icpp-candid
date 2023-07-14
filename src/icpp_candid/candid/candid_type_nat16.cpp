@@ -1,5 +1,6 @@
 // The class for the Primitive Candid Type: nat16
 
+#include "candid_type.h"
 #include "candid_type_nat16.h"
 #include "candid_assert.h"
 
