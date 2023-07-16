@@ -7,8 +7,6 @@
 #include <string>
 #include <cstdint>
 
-// #include "candid_type.h"
-
 class CandidOpcode {
 public:
   CandidOpcode();

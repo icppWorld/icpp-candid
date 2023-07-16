@@ -11,14 +11,14 @@
 
 CandidDeserialize::CandidDeserialize() { deserialize(); }
 CandidDeserialize::CandidDeserialize(const VecBytes &B,
-                                     std::vector<CandidType> A) {
+                                     CandidArgs A) {
   m_A = A;
   m_B = B;
   m_hex_string = ""; // TOdo
   deserialize();
 }
 CandidDeserialize::CandidDeserialize(const std::string hex_string,
-                                     std::vector<CandidType> A) {
+                                     CandidArgs A) {
   m_A = A;
   m_hex_string = hex_string;
   m_B.store_hex_string(hex_string);
@@ -104,11 +104,11 @@ void CandidDeserialize::deserialize() {
     }
   }
 
-  if (num_args != m_A.size()) {
+  if (num_args != m_A.m_args_ptrs.size()) {
     std::string msg;
     msg.append("ERROR: wrong number of arguments on wire.\n");
     msg.append("       Expected number of arguments:" +
-               std::to_string(m_A.size()) + "\n");
+               std::to_string(m_A.m_args_ptrs.size()) + "\n");
     msg.append("       Number of arguments on wire :" +
                ICPP_HOOKS::to_string_128(num_args));
     ICPP_HOOKS::trap(msg);
@@ -154,8 +154,7 @@ void CandidDeserialize::deserialize() {
       int opcode_found = type_table.get_opcode();
       v_opcode_found.push_back(opcode_found);
 
-      int opcode_expected =
-          std::visit([](auto &&c) { return c.get_datatype_opcode(); }, m_A[i]);
+      int opcode_expected = m_A.m_args_ptrs[i]->get_datatype_opcode();
 
       if (opcode_found != opcode_expected) {
         if (opcode_expected < 0) {
@@ -196,23 +195,36 @@ void CandidDeserialize::deserialize() {
       if (opcode_found == CandidOpcode().Record) {
         CandidTypeRecord *p_wire =
             get_if<CandidTypeRecord>(type_table.get_candidType_ptr());
-        CandidTypeRecord *p_expected = get_if<CandidTypeRecord>(&m_A[i]);
-
-        // Trap if type table does not match the wire
-        p_expected->check_type_table(p_wire);
+        // CandidTypeRecord *p_expected = get_if<CandidTypeRecord>(&m_A[i]);
+        std::shared_ptr<CandidTypeRecord> p_expected = std::dynamic_pointer_cast<CandidTypeRecord>(m_A.m_args_ptrs[i]);
+        if (!p_expected) {
+            ICPP_HOOKS::trap("ERROR: Expecting a CandidTypeRecord during deserialization.");
+        } else if(p_wire) {
+          // Traps if type table of Record does not match the wire
+          p_expected->check_type_table(p_wire);  
+        } else {
+          ICPP_HOOKS::trap("ERROR: Logic error during deserialization of a CandidTypeRecord.");
+        }
       } else if (opcode_found == CandidOpcode().Variant) {
         CandidTypeVariant *p_wire =
             get_if<CandidTypeVariant>(type_table.get_candidType_ptr());
-        CandidTypeVariant *p_expected = get_if<CandidTypeVariant>(&m_A[i]);
-        p_expected->check_type_table(p_wire);
+        // CandidTypeVariant *p_expected = get_if<CandidTypeVariant>(&m_A[i]);
+        std::shared_ptr<CandidTypeVariant> p_expected = std::dynamic_pointer_cast<CandidTypeVariant>(m_A.m_args_ptrs[i]);
+        if (!p_expected) {
+            ICPP_HOOKS::trap("ERROR: Expecting a CandidTypeVariant during deserialization.");
+        } else if(p_wire) {
+          // Traps if type table of Variant does not match the wire
+          p_expected->check_type_table(p_wire);  
+        } else {
+          ICPP_HOOKS::trap("ERROR: Logic error during deserialization of a CandidTypeVariant.");
+        }
       } else if (opcode_found == CandidOpcode().Vec ||
                  opcode_found == CandidOpcode().Opt) {
 
         int content_opcode_found =
             std::visit([](auto &&c) { return c.get_content_type_opcode(); },
                        *type_table.get_candidType_ptr());
-        int content_opcode_expected = std::visit(
-            [](auto &&c) { return c.get_content_type_opcode(); }, m_A[i]);
+        int content_opcode_expected = m_A.m_args_ptrs[i]->get_content_type_opcode();
 
         if (content_opcode_found != content_opcode_expected) {
           std::string msg;
@@ -255,8 +267,7 @@ void CandidDeserialize::deserialize() {
       int opcode_found = m_args_datatypes[i];
       v_opcode_found.push_back(opcode_found);
 
-      int opcode_expected =
-          std::visit([](auto &&c) { return c.get_datatype_opcode(); }, m_A[i]);
+      int opcode_expected = m_A.m_args_ptrs[i]->get_datatype_opcode();
 
       if (opcode_found != opcode_expected) {
         if (opcode_found == CandidOpcode().Null &&
@@ -299,9 +310,7 @@ void CandidDeserialize::deserialize() {
     std::string parse_error = "";
     __uint128_t numbytes;
 
-    if (std::visit(
-            [&](auto &&c) { return c.decode_M(m_B, B_offset, parse_error); },
-            m_A[i])) {
+    if (m_A.m_args_ptrs[i]->decode_M(m_B, B_offset, parse_error)) {
       std::string to_be_parsed =
           "Values (decoding M) for argument at index " + std::to_string(i);
       CandidAssert::trap_with_parse_error(B_offset_start, B_offset,
@@ -320,5 +329,5 @@ int CandidDeserialize::assert_candid(const std::string &candid_expected,
   return CandidAssert::assert_candid(m_B, candid_expected, assert_value);
 }
 
-std::vector<CandidType> CandidDeserialize::get_A() { return m_A; }
+CandidArgs CandidDeserialize::get_A() { return m_A; }
 VecBytes CandidDeserialize::get_B() { return m_B; }

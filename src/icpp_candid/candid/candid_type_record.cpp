@@ -43,7 +43,7 @@ void CandidTypeRecord::append(std::string field_name, CandidType field) {
 
 // Tuple notation without field_id -> generate sequential uint32_t field_id
 void CandidTypeRecord::append(CandidType field) {
-  if (m_fields.size() == 0) {
+  if (m_fields_ptrs.size() == 0) {
     uint32_t field_id = 0;
     append(field_id, field);
   }
@@ -82,7 +82,10 @@ void CandidTypeRecord::_append(uint32_t field_id, std::string field_name,
   int datatype =
       std::visit([](auto &&c) { return c.get_datatype_opcode(); }, field);
   m_field_datatypes.push_back(datatype);
-  m_fields.push_back(field);
+  // Store the shared pointer to a CandidTypeBase class
+  m_fields_ptrs.push_back(std::visit([](auto&& arg) -> std::shared_ptr<CandidTypeBase> {
+    return std::make_shared<std::decay_t<decltype(arg)>>(arg);
+  }, field));
 
   // Sort by field_id (hash)
   for (std::size_t i = 0; i < m_field_ids.size(); ++i) {
@@ -96,9 +99,9 @@ void CandidTypeRecord::_append(uint32_t field_id, std::string field_name,
         m_field_names[i] = std::move(m_field_names[j]);
         m_field_names[j] = std::move(temp_field_name);
 
-        auto temp_field = std::move(m_fields[i]);
-        m_fields[i] = std::move(m_fields[j]);
-        m_fields[j] = std::move(temp_field);
+        auto temp_field = std::move(m_fields_ptrs[i]);
+        m_fields_ptrs[i] = std::move(m_fields_ptrs[j]);
+        m_fields_ptrs[j] = std::move(temp_field);
 
         auto temp_field_datatype = std::move(m_field_datatypes[i]);
         m_field_datatypes[i] = std::move(m_field_datatypes[j]);
@@ -116,15 +119,18 @@ void CandidTypeRecord::encode_T() {
   m_T.clear();
 
   m_T.append_byte((std::byte)m_datatype_hex);
-  m_T.append_uleb128(__uint128_t(m_fields.size()));
-  for (size_t i = 0; i < m_fields.size(); ++i) {
+  m_T.append_uleb128(__uint128_t(m_fields_ptrs.size()));
+  for (size_t i = 0; i < m_fields_ptrs.size(); ++i) {
     // id or hash of the record field, append without packing into a fixed width
     m_T.append_uleb128(__uint128_t(m_field_ids[i]));
 
     // data type of the record field
-    VecBytes I = std::visit([](auto &&c) { return c.get_I(); }, m_fields[i]);
-    for (std::byte b : I.vec()) {
-      m_T.append_byte(b);
+    // The get_I method is in the CandidTypeBase class.
+    if(m_fields_ptrs[i]) {
+      VecBytes I = m_fields_ptrs[i]->get_I();
+      for (std::byte b : I.vec()) {
+        m_T.append_byte(b);
+      }
     }
   }
 }
@@ -134,7 +140,7 @@ bool CandidTypeRecord::decode_T(VecBytes B, __uint128_t &offset,
                                 std::string &parse_error) {
   m_field_ids.clear();
   m_field_names.clear();
-  m_fields.clear();
+  m_fields_ptrs.clear();
   m_field_datatypes.clear();
 
   __uint128_t num_fields;
@@ -203,8 +209,10 @@ bool CandidTypeRecord::decode_T(VecBytes B, __uint128_t &offset,
                                                  to_be_parsed, parse_error);
       }
     }
-    // Store the CandidType in m_fields vector
-    m_fields.push_back(c);
+    // Store a shared pointer to the CandidTypeBase class
+    m_fields_ptrs.push_back(std::visit([](auto&& arg) -> std::shared_ptr<CandidTypeBase> {
+        return std::make_shared<std::decay_t<decltype(arg)>>(arg);
+    }, c));
   }
   return false;
 }
@@ -223,10 +231,13 @@ void CandidTypeRecord::encode_I() {
 void CandidTypeRecord::encode_M() {
   m_M.clear();
 
-  for (CandidType field : m_fields) {
-    VecBytes M = std::visit([](auto &&c) { return c.get_M(); }, field);
-    for (std::byte b : M.vec()) {
-      m_M.append_byte(b);
+  for (auto p_field : m_fields_ptrs) {
+    // The get_M method is in the CandidTypeBase class
+    if(p_field) {
+      VecBytes M = p_field->get_M();
+      for (std::byte b : M.vec()) {
+        m_M.append_byte(b);
+      }
     }
   }
 }
@@ -234,7 +245,7 @@ void CandidTypeRecord::encode_M() {
 // Decode the values, starting at & updating offset
 bool CandidTypeRecord::decode_M(VecBytes B, __uint128_t &offset,
                                 std::string &parse_error) {
-  for (size_t i = 0; i < m_fields.size(); ++i) {
+  for (size_t i = 0; i < m_fields_ptrs.size(); ++i) {
     if (m_field_datatypes_wire[i] == CandidOpcode().Null) {
       // There is no value to decode
       continue;
@@ -243,12 +254,12 @@ bool CandidTypeRecord::decode_M(VecBytes B, __uint128_t &offset,
     if (CandidOpcode().is_primtype(datatype)) {
       parse_error = "";
       __uint128_t offset_start = offset;
-      if (std::visit(
-              [&](auto &&c) { return c.decode_M(B, offset, parse_error); },
-              m_fields[i])) {
-        std::string to_be_parsed = "Value for a Record field";
-        CandidAssert::trap_with_parse_error(offset_start, offset,
-                                                 to_be_parsed, parse_error);
+      if(m_fields_ptrs[i]) {
+        if(m_fields_ptrs[i]->decode_M(B, offset, parse_error)){
+          std::string to_be_parsed = "Value for a Record field at index " + std::to_string(i);
+          CandidAssert::trap_with_parse_error(offset_start, offset,
+                                                  to_be_parsed, parse_error);
+        }
       }
     } else {
       ICPP_HOOKS::trap(
@@ -263,7 +274,7 @@ bool CandidTypeRecord::decode_M(VecBytes B, __uint128_t &offset,
 // Traps if the type table does not match the type table on the wire
 void CandidTypeRecord::check_type_table(const CandidTypeRecord *p_from_wire) {
   m_field_datatypes_wire.clear();
-  for (size_t i = 0; i < m_fields.size(); ++i) {
+  for (size_t i = 0; i < m_fields_ptrs.size(); ++i) {
     // id or hash of the record field
     uint32_t id = m_field_ids[i];
     uint32_t id_wire = p_from_wire->m_field_ids[i];

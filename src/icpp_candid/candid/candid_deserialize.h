@@ -6,16 +6,17 @@
 #include <string>
 #include <vector>
 
+#include "candid_args.h"
 #include "candid_type_table.h"
 
 class CandidDeserialize {
 public:
   CandidDeserialize();
-  CandidDeserialize(const VecBytes &B, std::vector<CandidType> A);
-  CandidDeserialize(const std::string hex_string, std::vector<CandidType> A);
+  CandidDeserialize(const VecBytes &B, CandidArgs A);
+  CandidDeserialize(const std::string hex_string, CandidArgs A);
   ~CandidDeserialize();
 
-  std::vector<CandidType> get_A();
+  CandidArgs get_A();
   VecBytes get_B();
 
   int assert_candid(const std::string &candid_expected,
@@ -25,7 +26,7 @@ private:
   void deserialize();
 
   // The vector with placeholders for the expected arguments of the byte stream coming in
-  std::vector<CandidType> m_A;
+  CandidArgs m_A;
 
   // The deserialized type tables
   std::vector<CandidTypeTable> m_typetables;
