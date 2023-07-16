@@ -14,7 +14,6 @@
 #include <vector>
 #include <optional>
 
-// #include "candid_type.h"
 #include "vec_bytes.h"
 
 class ICPP_HOOKS {

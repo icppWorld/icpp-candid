@@ -3,8 +3,8 @@
 #pragma once
 
 #include <cstring>
+#include <memory>
 
-// #include "candid_type.h"
 #include "vec_bytes.h"
 
 class CandidTypeVariant : public CandidTypeBase {
@@ -42,7 +42,7 @@ protected:
   std::vector<uint32_t> m_field_ids; // id | hash
   std::vector<std::string> m_field_names;
   std::vector<int> m_field_datatypes;
-  std::vector<CandidType> m_fields;
+  std::vector<std::shared_ptr<CandidTypeBase>> m_fields_ptrs;
 
   // Label & id (hash) of the field that contains the Variant's data
   std::string m_label{""};

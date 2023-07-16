@@ -3,18 +3,6 @@
 #pragma once
 
 // ------------------------------------------------------------------
-// The include files
-
-// The helper classes
-// #include "candid_assert.h"
-// #include "candid_opcode.h"
-// #include "vec_bytes.h"
-
-// The Candid Type base classes
-// #include "candid_type_base.h"
-// #include "candid_type_opt_base.h"
-// #include "candid_type_vec_base.h"
-
 // The Candid Type classes
 // <primtype>
 #include "candid_type_bool.h"
@@ -78,13 +66,7 @@
 // #include "candid_type_opt_empty.h"
 // #include "candid_type_opt_null.h"
 // #include "candid_type_opt_reserved.h"
-
 #include "candid_type_record.h"
 #include "candid_type_variant.h"
 
-// The Candid Type Table class
-// #include "candid_type_table.h"
-
-// The (De)Serialization classes
-// #include "candid_deserialize.h"
-// #include "candid_serialize.h"
+#include "candid_args.h"

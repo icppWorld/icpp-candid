@@ -93,6 +93,9 @@ class CandidTypeTable;
 class CandidDeserialize;
 class CandidSerialize;
 
+// The Candid Args class
+class CandidArgs;
+
 // The std::variant alias
 using CandidType = std::variant<
     CandidTypeNull, CandidTypeEmpty, CandidTypeReserved, CandidTypeBool,
@@ -108,7 +111,7 @@ using CandidType = std::variant<
     CandidTypeOptFloat64, CandidTypeOptInt, CandidTypeOptNat, CandidTypeOptNat8,
     CandidTypeOptNat16, CandidTypeOptNat32, CandidTypeOptNat64,
     CandidTypeOptInt8, CandidTypeOptInt16, CandidTypeOptInt32,
-    CandidTypeOptInt64, CandidTypeOptText, CandidTypeOptPrincipal,
+    CandidTypeOptInt64, CandidTypeOptText, CandidTypeOptPrincipal, 
     CandidTypeRecord, CandidTypeVariant>;
 
 // https://subscription.packtpub.com/book/programming/9781787120495/8/ch08lvl1sec91/storing-different-types-with-stdvariant

@@ -3,8 +3,6 @@
 
 #pragma once
 
-// #include "candid_type.h"
-
 class CandidTypeTable {
 public:
   CandidTypeTable();

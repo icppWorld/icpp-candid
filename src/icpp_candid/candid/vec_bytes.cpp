@@ -4,6 +4,7 @@
 
 #include <cassert>
 #include <cstring>
+#include <cstdint>
 
 #include <algorithm>
 #include <bit>
@@ -561,3 +562,117 @@ void VecBytes::check_endian() {
 }
 
 void VecBytes::trap(const std::string &msg) { ICPP_HOOKS::trap(msg); }
+
+// -----------------------------------------------------------------------------
+// template definitions with Explicit Template Instantiations
+// Doing it this way avoids the COMDAT warnings & multiple definitions errors
+
+template <typename T>
+  requires MyFixedWidthInts<T>
+void VecBytes::append_int_fixed_width(const T &v) {
+  uint8_t *bytes{nullptr};
+  if (is_little_endian()) bytes = (uint8_t *)&v;
+  else
+    // Probably best to do a memcpy and then a byteswap
+    trap(
+        "ERROR: append_int_fixed_width not yet implemented on big endian architecture");
+
+  append_bytes(bytes, sizeof(v));
+}
+// clang-format off
+template void VecBytes::append_int_fixed_width<int8_t>  (const int8_t   &v);
+template void VecBytes::append_int_fixed_width<int16_t> (const int16_t  &v);
+template void VecBytes::append_int_fixed_width<int32_t> (const int32_t  &v);
+template void VecBytes::append_int_fixed_width<int64_t> (const int64_t  &v);
+template void VecBytes::append_int_fixed_width<uint8_t> (const uint8_t  &v);
+template void VecBytes::append_int_fixed_width<uint16_t>(const uint16_t &v);
+template void VecBytes::append_int_fixed_width<uint32_t>(const uint32_t &v);
+template void VecBytes::append_int_fixed_width<uint64_t>(const uint64_t &v);
+// clang-format on
+
+// --
+template <typename T>
+  requires MyFloats<T>
+void VecBytes::append_float_ieee754(const T &v) {
+  if (is_float_ieee754()) {
+    // https://github.com/dfinity/candid/blob/master/spec/Candid.md#floating-point-numbers
+    // Floating-point values are represented in IEEE 754 binary format and are
+    // supported in single precision (32 bit) and double precision (64 bit).
+    // https://github.com/dfinity/candid/blob/master/spec/Candid.md#memory
+    // M(z : float<N>) = f<N>(z)
+    uint32_t off_now = 0;
+    uint8_t *bytes = (uint8_t *)&v;
+    append_bytes(bytes, sizeof(v));
+  } else
+    trap("ERROR in " + std::string(__func__) +
+         ". The encoding method requires that your system is using IEEE "
+         "754 floating point which it does not. "
+         "(std::numeric_limits<double>::is_iec559 == false)");
+}
+// clang-format off
+template void VecBytes::append_float_ieee754<float>  (const float &v);
+template void VecBytes::append_float_ieee754<double> (const double &v);
+// clang-format on
+
+// --
+template <typename T>
+  requires MyFixedWidthInts<T>
+bool VecBytes::parse_int_fixed_width(__uint128_t &offset, T &v,
+                                     std::string &parse_error) {
+  __uint128_t len = m_vec.size() - offset;
+
+  uint8_t *buf = &m_vec_uint8_t[offset];
+  uint8_t *buf_end = &m_vec_uint8_t[offset + len];
+
+  parse_error = "";
+  std::memcpy(&v, buf, sizeof(v));
+
+  offset += sizeof(v);
+
+  return false;
+}
+
+// clang-format off
+template bool VecBytes::parse_int_fixed_width<int8_t>  (__uint128_t &offset, int8_t   &v, std::string &parse_error);
+template bool VecBytes::parse_int_fixed_width<int16_t> (__uint128_t &offset, int16_t  &v, std::string &parse_error);
+template bool VecBytes::parse_int_fixed_width<int32_t> (__uint128_t &offset, int32_t  &v, std::string &parse_error);
+template bool VecBytes::parse_int_fixed_width<int64_t> (__uint128_t &offset, int64_t  &v, std::string &parse_error);
+template bool VecBytes::parse_int_fixed_width<uint8_t> (__uint128_t &offset, uint8_t  &v, std::string &parse_error);
+template bool VecBytes::parse_int_fixed_width<uint16_t>(__uint128_t &offset, uint16_t &v, std::string &parse_error);
+template bool VecBytes::parse_int_fixed_width<uint32_t>(__uint128_t &offset, uint32_t &v, std::string &parse_error);
+template bool VecBytes::parse_int_fixed_width<uint64_t>(__uint128_t &offset, uint64_t &v, std::string &parse_error);
+// clang-format on
+
+// --
+template <typename T>
+  requires MyFloats<T>
+bool VecBytes::parse_float_ieee754(__uint128_t &offset, T &v,
+                                   std::string &parse_error) {
+  if (is_float_ieee754()) {
+    // https://github.com/dfinity/candid/blob/master/spec/Candid.md#floating-point-numbers
+    // Floating-point values are represented in IEEE 754 binary format and are
+    // supported in single precision (32 bit) and double precision (64 bit).
+    // https://github.com/dfinity/candid/blob/master/spec/Candid.md#memory
+    // M(z : float<N>) = f<N>(z)
+    __uint128_t len = m_vec.size() - offset;
+
+    uint8_t *buf = &m_vec_uint8_t[offset];
+    uint8_t *buf_end = &m_vec_uint8_t[offset + len];
+
+    parse_error = "";
+    std::memcpy(&v, buf, sizeof(v));
+
+    offset += sizeof(v);
+
+  } else
+    trap("ERROR in " + std::string(__func__) +
+         ". The encoding method requires that your system is using IEEE "
+         "754 floating point which it does not. "
+         "(std::numeric_limits<double>::is_iec559 == false)");
+
+  return false;
+}
+// clang-format off
+template bool VecBytes::parse_float_ieee754<float>  (__uint128_t &offset, float  &v, std::string &parse_error);
+template bool VecBytes::parse_float_ieee754<double> (__uint128_t &offset, double &v, std::string &parse_error);
+// clang-format on

@@ -6,17 +6,17 @@
 #include <string>
 #include <vector>
 
-// #include "candid_type.h"
+#include "candid_args.h"
 #include "vec_bytes.h"
 
 class CandidSerialize {
 public:
   CandidSerialize(const CandidType &a);
-  CandidSerialize(const std::vector<CandidType> &A);
+  CandidSerialize(const CandidArgs &A);
   CandidSerialize();
   ~CandidSerialize();
 
-  std::vector<CandidType> get_A() { return m_A; }
+  CandidArgs get_A() { return m_A; }
   VecBytes get_B() { return m_B; }
   __uint128_t get_num_typetables() { return m_num_typetables; }
 
@@ -27,7 +27,7 @@ private:
   void serialize();
 
   // The argument list to be serialized
-  std::vector<CandidType> m_A;
+  CandidArgs m_A;
 
   // The serialized byte stream
   VecBytes m_B;
