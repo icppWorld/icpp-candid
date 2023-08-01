@@ -10,14 +10,14 @@
 class CandidTypeRecord : public CandidTypeBase {
 public:
   // Constructors
+  // docs start: demo_candid_type_record
   CandidTypeRecord();
+  void append(uint32_t field_id, CandidType field);
+  void append(std::string field_name, CandidType field);
+  void append(CandidType field); // docs end: demo_candid_type_record
 
   // Destructor
   ~CandidTypeRecord();
-
-  void append(uint32_t field_id, CandidType field);
-  void append(std::string field_name, CandidType field);
-  void append(CandidType field);
 
   bool decode_T(VecBytes B, __uint128_t &offset, std::string &parse_error);
   bool decode_M(VecBytes B, __uint128_t &offset, std::string &parse_error);
