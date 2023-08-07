@@ -23,6 +23,8 @@ public:
   int assert_candid(const std::string &candid_expected,
                     const bool &assert_value);
 
+  std::string as_hex_string() { return m_B.as_hex_string(); }
+
 private:
   void serialize();
 

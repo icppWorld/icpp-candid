@@ -3,8 +3,8 @@
 #include "vec_bytes.h"
 
 #include <cassert>
-#include <cstring>
 #include <cstdint>
+#include <cstring>
 
 #include <algorithm>
 #include <bit>
@@ -311,6 +311,15 @@ void VecBytes::trap_if_vec_does_not_start_with_DIDL() {
   }
 }
 
+// Returns the bytes of the vec as a hex string
+std::string VecBytes::as_hex_string() {
+  std::string s_hex;
+  for (std::byte b : m_vec) {
+    s_hex.append(byte_to_hex(b, ""));
+  }
+  return s_hex;
+}
+
 // Prints the bytes of the vec in hex, dec & bits
 void VecBytes::debug_print() {
   ICPP_HOOKS::debug_print("  hex, decimal, char");
@@ -568,7 +577,7 @@ void VecBytes::trap(const std::string &msg) { ICPP_HOOKS::trap(msg); }
 // Doing it this way avoids the COMDAT warnings & multiple definitions errors
 
 template <typename T>
-  requires MyFixedWidthInts<T>
+requires MyFixedWidthInts<T>
 void VecBytes::append_int_fixed_width(const T &v) {
   uint8_t *bytes{nullptr};
   if (is_little_endian()) bytes = (uint8_t *)&v;
@@ -592,7 +601,7 @@ template void VecBytes::append_int_fixed_width<uint64_t>(const uint64_t &v);
 
 // --
 template <typename T>
-  requires MyFloats<T>
+requires MyFloats<T>
 void VecBytes::append_float_ieee754(const T &v) {
   if (is_float_ieee754()) {
     // https://github.com/dfinity/candid/blob/master/spec/Candid.md#floating-point-numbers
@@ -616,7 +625,7 @@ template void VecBytes::append_float_ieee754<double> (const double &v);
 
 // --
 template <typename T>
-  requires MyFixedWidthInts<T>
+requires MyFixedWidthInts<T>
 bool VecBytes::parse_int_fixed_width(__uint128_t &offset, T &v,
                                      std::string &parse_error) {
   __uint128_t len = m_vec.size() - offset;
@@ -645,7 +654,7 @@ template bool VecBytes::parse_int_fixed_width<uint64_t>(__uint128_t &offset, uin
 
 // --
 template <typename T>
-  requires MyFloats<T>
+requires MyFloats<T>
 bool VecBytes::parse_float_ieee754(__uint128_t &offset, T &v,
                                    std::string &parse_error) {
   if (is_float_ieee754()) {
