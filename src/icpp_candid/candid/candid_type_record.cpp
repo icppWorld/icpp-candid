@@ -1,10 +1,13 @@
 // The class for the Candid Type: Record
 
-#include "candid_type.h"
-#include "candid_type_all_includes.h"
-#include "candid_type_record.h"
 #include "candid_assert.h"
 #include "candid_opcode.h"
+#include "candid_serialize_type_table_registry.h"
+#include "candid_type.h"
+#include "candid_type_all_includes.h"
+
+#include "candid_type_record.h"
+
 #include "pro.h"
 
 #include "icpp_hooks.h"
@@ -83,9 +86,11 @@ void CandidTypeRecord::_append(uint32_t field_id, std::string field_name,
       std::visit([](auto &&c) { return c.get_datatype_opcode(); }, field);
   m_field_datatypes.push_back(datatype);
   // Store the shared pointer to a CandidTypeBase class
-  m_fields_ptrs.push_back(std::visit([](auto&& arg) -> std::shared_ptr<CandidTypeBase> {
-    return std::make_shared<std::decay_t<decltype(arg)>>(arg);
-  }, field));
+  m_fields_ptrs.push_back(std::visit(
+      [](auto &&arg) -> std::shared_ptr<CandidTypeBase> {
+        return std::make_shared<std::decay_t<decltype(arg)>>(arg);
+      },
+      field));
 
   // Sort by field_id (hash)
   for (std::size_t i = 0; i < m_field_ids.size(); ++i) {
@@ -116,6 +121,7 @@ void CandidTypeRecord::_append(uint32_t field_id, std::string field_name,
 
 // (re-)build the type table encoding
 void CandidTypeRecord::encode_T() {
+  CandidSerializeTypeTableRegistry::get_instance().remove_type_table(m_T);
   m_T.clear();
 
   m_T.append_byte((std::byte)m_datatype_hex);
@@ -124,15 +130,27 @@ void CandidTypeRecord::encode_T() {
     // id or hash of the record field, append without packing into a fixed width
     m_T.append_uleb128(__uint128_t(m_field_ids[i]));
 
-    // data type of the record field
-    // The get_I method is in the CandidTypeBase class.
-    if(m_fields_ptrs[i]) {
-      VecBytes I = m_fields_ptrs[i]->get_I();
-      for (std::byte b : I.vec()) {
-        m_T.append_byte(b);
+    // type table or the data type of the record field
+    if (m_fields_ptrs[i]) {
+      VecBytes T = m_fields_ptrs[i]->get_T();
+      if (T.size() > 0) {
+        // For <comptypes>, we use the index into the type table we defined above
+        __uint128_t type_table_index = m_fields_ptrs[i]->get_type_table_index();
+        m_T.append_uleb128(type_table_index);
+      } else {
+        // For <primtypes>, use the Opcode, already stored
+        VecBytes I = m_fields_ptrs[i]->get_I();
+        for (std::byte b : I.vec()) {
+          m_T.append_byte(b);
+        }
       }
     }
   }
+
+  // Add the type table to the registry,
+  // Which checks uniqueness and returns the index into the registry
+  m_type_table_index =
+      CandidSerializeTypeTableRegistry::get_instance().add_type_table(m_T);
 }
 
 // Decode the type table, starting at & updating offset
@@ -166,8 +184,8 @@ bool CandidTypeRecord::decode_T(VecBytes B, __uint128_t &offset,
     numbytes = 0;
     if (B.parse_sleb128(offset, datatype, numbytes, parse_error)) {
       std::string to_be_parsed = "Type table: datatype";
-      CandidAssert::trap_with_parse_error(offset_start, offset,
-                                               to_be_parsed, parse_error);
+      CandidAssert::trap_with_parse_error(offset_start, offset, to_be_parsed,
+                                          parse_error);
     }
     m_field_datatypes.push_back(int(datatype));
 
@@ -181,8 +199,8 @@ bool CandidTypeRecord::decode_T(VecBytes B, __uint128_t &offset,
       if (B.parse_sleb128(offset, content_opcode, numbytes, parse_error)) {
         std::string to_be_parsed =
             "Type table: a record field of type Vec -> the Vec's content type";
-        CandidAssert::trap_with_parse_error(offset_start, offset,
-                                                 to_be_parsed, parse_error);
+        CandidAssert::trap_with_parse_error(offset_start, offset, to_be_parsed,
+                                            parse_error);
       }
       CandidOpcode().candid_type_vec_from_opcode(c, content_opcode);
     } else if (int(datatype) == CandidOpcode().Opt) {
@@ -193,8 +211,8 @@ bool CandidTypeRecord::decode_T(VecBytes B, __uint128_t &offset,
       if (B.parse_sleb128(offset, content_opcode, numbytes, parse_error)) {
         std::string to_be_parsed =
             "Type table: a record field of type Opt -> the Opt's content type";
-        CandidAssert::trap_with_parse_error(offset_start, offset,
-                                                 to_be_parsed, parse_error);
+        CandidAssert::trap_with_parse_error(offset_start, offset, to_be_parsed,
+                                            parse_error);
       }
       CandidOpcode().candid_type_opt_from_opcode(c, content_opcode);
     } else {
@@ -205,14 +223,16 @@ bool CandidTypeRecord::decode_T(VecBytes B, __uint128_t &offset,
               [&](auto &&c) { return c.decode_T(B, offset, parse_error); },
               c)) {
         std::string to_be_parsed = "Type table: record field";
-        CandidAssert::trap_with_parse_error(offset_start, offset,
-                                                 to_be_parsed, parse_error);
+        CandidAssert::trap_with_parse_error(offset_start, offset, to_be_parsed,
+                                            parse_error);
       }
     }
     // Store a shared pointer to the CandidTypeBase class
-    m_fields_ptrs.push_back(std::visit([](auto&& arg) -> std::shared_ptr<CandidTypeBase> {
-        return std::make_shared<std::decay_t<decltype(arg)>>(arg);
-    }, c));
+    m_fields_ptrs.push_back(std::visit(
+        [](auto &&arg) -> std::shared_ptr<CandidTypeBase> {
+          return std::make_shared<std::decay_t<decltype(arg)>>(arg);
+        },
+        c));
   }
   return false;
 }
@@ -233,7 +253,7 @@ void CandidTypeRecord::encode_M() {
 
   for (auto p_field : m_fields_ptrs) {
     // The get_M method is in the CandidTypeBase class
-    if(p_field) {
+    if (p_field) {
       VecBytes M = p_field->get_M();
       for (std::byte b : M.vec()) {
         m_M.append_byte(b);
@@ -254,11 +274,12 @@ bool CandidTypeRecord::decode_M(VecBytes B, __uint128_t &offset,
     if (CandidOpcode().is_primtype(datatype)) {
       parse_error = "";
       __uint128_t offset_start = offset;
-      if(m_fields_ptrs[i]) {
-        if(m_fields_ptrs[i]->decode_M(B, offset, parse_error)){
-          std::string to_be_parsed = "Value for a Record field at index " + std::to_string(i);
+      if (m_fields_ptrs[i]) {
+        if (m_fields_ptrs[i]->decode_M(B, offset, parse_error)) {
+          std::string to_be_parsed =
+              "Value for a Record field at index " + std::to_string(i);
           CandidAssert::trap_with_parse_error(offset_start, offset,
-                                                  to_be_parsed, parse_error);
+                                              to_be_parsed, parse_error);
         }
       }
     } else {

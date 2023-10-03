@@ -2,10 +2,12 @@
 
 #pragma once
 
+#include <memory>
 #include <string>
 #include <vector>
 
 #include "candid_opcode.h"
+#include "icpp_hooks.h"
 #include "vec_bytes.h"
 
 class CandidTypeBase {
@@ -21,8 +23,17 @@ public:
   uint8_t get_content_type_hex() { return m_datatype_hex; }
   std::string get_content_type_textual() { return m_datatype_textual; }
   VecBytes get_T() { return m_T; }
+  __uint128_t get_type_table_index() { return m_type_table_index; }
   VecBytes get_I() { return m_I; }
   VecBytes get_M() { return m_M; }
+  uint64_t get_v_size() { return m_v_size; }
+
+  std::vector<uint32_t> get_field_ids() { return m_field_ids; }
+  std::vector<std::string> get_field_names() { return m_field_names; }
+  std::vector<int> get_field_datatypes() { return m_field_datatypes; }
+  std::vector<std::shared_ptr<CandidTypeBase>> get_field_ptrs() {
+    return m_fields_ptrs;
+  }
 
   uint32_t idl_hash(const std::string &s);
 
@@ -53,8 +64,21 @@ protected:
   uint8_t m_content_type_hex{0x00};
   std::string m_content_type_textual{""};
 
+  // The data vector size (only used by vector)
+  uint64_t m_v_size{0};
+
+  // The field data (only used by record)
+  std::vector<uint32_t> m_field_ids; // id | hash
+  std::vector<std::string> m_field_names;
+  std::vector<int> m_field_datatypes;
+  std::vector<std::shared_ptr<CandidTypeBase>> m_fields_ptrs;
+
   // The encoded byte vector for the Type Table
   VecBytes m_T;
+
+  // The unique type table index into the registry,
+  // As maintained by the CandidSerializeTypeTableRegistry singleton
+  __uint128_t m_type_table_index{0};
 
   // The encoded byte vector for the Candid Type
   VecBytes m_I;

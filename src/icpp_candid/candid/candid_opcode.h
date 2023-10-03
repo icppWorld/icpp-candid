@@ -4,8 +4,10 @@
 
 #pragma once
 
-#include <string>
+#include "candid_type.h"
+
 #include <cstdint>
+#include <string>
 
 class CandidOpcode {
 public:

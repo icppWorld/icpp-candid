@@ -39,6 +39,7 @@
 #include "candid_type_vec_nat64.h"
 #include "candid_type_vec_nat8.h"
 #include "candid_type_vec_principal.h"
+#include "candid_type_vec_record.h"
 #include "candid_type_vec_text.h"
 // These types are not used for vectors
 // #include "candid_type_vec_empty.h"

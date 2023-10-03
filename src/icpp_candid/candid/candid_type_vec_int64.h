@@ -4,8 +4,8 @@
 
 #include <cstring>
 
-#include "candid_type_vec_base.h"
 #include "candid_type_int64.h"
+#include "candid_type_vec_base.h"
 #include "vec_bytes.h"
 
 class CandidTypeVecInt64 : public CandidTypeVecBase {
@@ -24,7 +24,10 @@ public:
 
 protected:
   void set_pv(std::vector<int64_t> *v) { m_pv = v; }
-  void set_v(const std::vector<int64_t> &v) { m_v = v; }
+  void set_v(const std::vector<int64_t> &v) {
+    m_v = v;
+    m_v_size = v.size();
+  }
   void set_content_type();
   void encode_M();
 

@@ -3,9 +3,9 @@
 #include <string>
 #include <unordered_map>
 
+#include "candid_opcode.h"
 #include "candid_type.h"
 #include "candid_type_all_includes.h"
-#include "candid_opcode.h"
 #include "icpp_hooks.h"
 
 CandidOpcode::CandidOpcode() {}
@@ -155,8 +155,8 @@ void CandidOpcode::candid_type_vec_from_opcode(CandidType &c, int opcode) {
     c = CandidTypeVecPrincipal();
     // } else if (opcode == Vec) {
     //   c = CandidTypeVecVec();
-    // } else if (opcode == Record) {
-    //   c = CandidTypeVecRecord();
+  } else if (opcode == Record) {
+    c = CandidTypeVecRecord();
   } else {
     std::string msg;
     msg.append("ERROR: NOT YET IMPLEMENTED CandidTypeVecXXX.");

@@ -56,6 +56,7 @@ class CandidTypeVecInt32;
 class CandidTypeVecInt64;
 class CandidTypeVecText;
 class CandidTypeVecPrincipal;
+class CandidTypeVecRecord;
 // These types are not used for vecs
 // class CandidTypeVecNull;
 // class CandidTypeVecEmpty;
@@ -107,12 +108,12 @@ using CandidType = std::variant<
     CandidTypeVecNat, CandidTypeVecNat8, CandidTypeVecNat16, CandidTypeVecNat32,
     CandidTypeVecNat64, CandidTypeVecInt8, CandidTypeVecInt16,
     CandidTypeVecInt32, CandidTypeVecInt64, CandidTypeVecText,
-    CandidTypeVecPrincipal, CandidTypeOptBool, CandidTypeOptFloat32,
-    CandidTypeOptFloat64, CandidTypeOptInt, CandidTypeOptNat, CandidTypeOptNat8,
-    CandidTypeOptNat16, CandidTypeOptNat32, CandidTypeOptNat64,
-    CandidTypeOptInt8, CandidTypeOptInt16, CandidTypeOptInt32,
-    CandidTypeOptInt64, CandidTypeOptText, CandidTypeOptPrincipal, 
-    CandidTypeRecord, CandidTypeVariant>;
+    CandidTypeVecPrincipal, CandidTypeVecRecord, CandidTypeOptBool,
+    CandidTypeOptFloat32, CandidTypeOptFloat64, CandidTypeOptInt,
+    CandidTypeOptNat, CandidTypeOptNat8, CandidTypeOptNat16, CandidTypeOptNat32,
+    CandidTypeOptNat64, CandidTypeOptInt8, CandidTypeOptInt16,
+    CandidTypeOptInt32, CandidTypeOptInt64, CandidTypeOptText,
+    CandidTypeOptPrincipal, CandidTypeRecord, CandidTypeVariant>;
 
 // https://subscription.packtpub.com/book/programming/9781787120495/8/ch08lvl1sec91/storing-different-types-with-stdvariant
 template <typename T> bool is_CandidType(const CandidType &c) {
