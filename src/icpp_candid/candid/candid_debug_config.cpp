@@ -2,4 +2,4 @@
 
 #include "candid_debug_config.h"
 
-bool CANDID_DESERIALIZE_DEBUG_PRINT{true};
+bool CANDID_DESERIALIZE_DEBUG_PRINT{false};
