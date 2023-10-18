@@ -3,9 +3,9 @@
 #include <string>
 #include <unordered_map>
 
+#include "candid_opcode.h"
 #include "candid_type.h"
 #include "candid_type_all_includes.h"
-#include "candid_opcode.h"
 #include "icpp_hooks.h"
 
 CandidOpcode::CandidOpcode() {}
@@ -13,19 +13,24 @@ CandidOpcode::CandidOpcode() {}
 CandidOpcode::~CandidOpcode() {}
 
 bool CandidOpcode::is_primtype(const int &t) {
+  //     Null    Bool       Nat        Int        Nat8       Nat16
   if (t == -1 || t == -2 || t == -3 || t == -4 || t == -5 || t == -6 ||
+      // Nat32   Nat64      Int8       Int16       Int32       Int64
       t == -7 || t == -8 || t == -9 || t == -10 || t == -11 || t == -12 ||
+      // Float32  Float64     Text        Reserved    Empty       Principal
       t == -13 || t == -14 || t == -15 || t == -16 || t == -17 || t == -24)
     return true;
   return false;
 }
 
 bool CandidOpcode::is_constype(const int &t) {
+  //  Opt         Vec         Record      Variant
   if (t == -18 || t == -19 || t == -20 || t == -21) return true;
   return false;
 }
 
 bool CandidOpcode::is_reftype(const int &t) {
+  //  Func        Service
   if (t == -22 || t == -23) return true;
   return false;
 }
@@ -45,7 +50,7 @@ std::string CandidOpcode::name_from_opcode(int opcode) {
   if (names.count(opcode)) {
     return names[opcode];
   } else if (opcode >= 0) {
-    return "Unknown (The value >= 0, so probably it is a type table reference)";
+    return ">= 0, type table reference";
   } else {
     return "Unknown";
   }
@@ -115,104 +120,107 @@ void CandidOpcode::candid_type_from_opcode(CandidType &c, int opcode) {
   }
 }
 
-void CandidOpcode::candid_type_vec_from_opcode(CandidType &c, int opcode) {
-  // if (opcode == Null) {
+void CandidOpcode::candid_type_vec_from_opcode(CandidType &c,
+                                               int content_opcode) {
+  // if (content_opcode == Null) {
   //   c = CandidTypeVecNull();
-  // } else if (opcode == Empty) {
+  // } else if (content_opcode == Empty) {
   //   c = CandidTypeVecEmpty();
-  // } else if (opcode == Reserved) {
+  // } else if (content_opcode == Reserved) {
   //   c = CandidTypeVecReserved();
   // } else
-  if (opcode == Bool) {
+  if (content_opcode == Bool) {
     c = CandidTypeVecBool();
-  } else if (opcode == Float32) {
+  } else if (content_opcode == Float32) {
     c = CandidTypeVecFloat32();
-  } else if (opcode == Float64) {
+  } else if (content_opcode == Float64) {
     c = CandidTypeVecFloat64();
-  } else if (opcode == Int) {
+  } else if (content_opcode == Int) {
     c = CandidTypeVecInt();
-  } else if (opcode == Nat) {
+  } else if (content_opcode == Nat) {
     c = CandidTypeVecNat();
-  } else if (opcode == Nat8) {
+  } else if (content_opcode == Nat8) {
     c = CandidTypeVecNat8();
-  } else if (opcode == Nat16) {
+  } else if (content_opcode == Nat16) {
     c = CandidTypeVecNat16();
-  } else if (opcode == Nat32) {
+  } else if (content_opcode == Nat32) {
     c = CandidTypeVecNat32();
-  } else if (opcode == Nat64) {
+  } else if (content_opcode == Nat64) {
     c = CandidTypeVecNat64();
-  } else if (opcode == Int8) {
+  } else if (content_opcode == Int8) {
     c = CandidTypeVecInt8();
-  } else if (opcode == Int16) {
+  } else if (content_opcode == Int16) {
     c = CandidTypeVecInt16();
-  } else if (opcode == Int32) {
+  } else if (content_opcode == Int32) {
     c = CandidTypeVecInt32();
-  } else if (opcode == Int64) {
+  } else if (content_opcode == Int64) {
     c = CandidTypeVecInt64();
-  } else if (opcode == Text) {
+  } else if (content_opcode == Text) {
     c = CandidTypeVecText();
-  } else if (opcode == Principal) {
+  } else if (content_opcode == Principal) {
     c = CandidTypeVecPrincipal();
-    // } else if (opcode == Vec) {
+    // } else if (content_opcode == Vec) {
     //   c = CandidTypeVecVec();
-    // } else if (opcode == Record) {
-    //   c = CandidTypeVecRecord();
+  } else if (content_opcode == Record) {
+    c = CandidTypeVecRecord();
   } else {
+    c = CandidTypeVecBool(); // We have to assign something, but then we trap
     std::string msg;
     msg.append("ERROR: NOT YET IMPLEMENTED CandidTypeVecXXX.");
-    msg.append("       for content type = " + std::to_string(opcode));
+    msg.append("       for content type = " + std::to_string(content_opcode));
     msg.append("      " + std::string(__func__));
     ICPP_HOOKS::trap(msg);
   }
 }
 
-void CandidOpcode::candid_type_opt_from_opcode(CandidType &c, int opcode) {
-  // if (opcode == Null) {
+void CandidOpcode::candid_type_opt_from_opcode(CandidType &c,
+                                               int content_opcode) {
+  // if (content_opcode == Null) {
   //   c = CandidTypeOptNull();
-  // } else if (opcode == Empty) {
+  // } else if (content_opcode == Empty) {
   //   c = CandidTypeOptEmpty();
-  // } else if (opcode == Reserved) {
+  // } else if (content_opcode == Reserved) {
   //   c = CandidTypeOptReserved();
   // } else
   //
-  if (opcode == Bool) {
+  if (content_opcode == Bool) {
     c = CandidTypeOptBool();
-  } else if (opcode == Float32) {
+  } else if (content_opcode == Float32) {
     c = CandidTypeOptFloat32();
-  } else if (opcode == Float64) {
+  } else if (content_opcode == Float64) {
     c = CandidTypeOptFloat64();
-  } else if (opcode == Int) {
+  } else if (content_opcode == Int) {
     c = CandidTypeOptInt();
-  } else if (opcode == Nat) {
+  } else if (content_opcode == Nat) {
     c = CandidTypeOptNat();
-  } else if (opcode == Nat8) {
+  } else if (content_opcode == Nat8) {
     c = CandidTypeOptNat8();
-  } else if (opcode == Nat16) {
+  } else if (content_opcode == Nat16) {
     c = CandidTypeOptNat16();
-  } else if (opcode == Nat32) {
+  } else if (content_opcode == Nat32) {
     c = CandidTypeOptNat32();
-  } else if (opcode == Nat64) {
+  } else if (content_opcode == Nat64) {
     c = CandidTypeOptNat64();
-  } else if (opcode == Int8) {
+  } else if (content_opcode == Int8) {
     c = CandidTypeOptInt8();
-  } else if (opcode == Int16) {
+  } else if (content_opcode == Int16) {
     c = CandidTypeOptInt16();
-  } else if (opcode == Int32) {
+  } else if (content_opcode == Int32) {
     c = CandidTypeOptInt32();
-  } else if (opcode == Int64) {
+  } else if (content_opcode == Int64) {
     c = CandidTypeOptInt64();
-  } else if (opcode == Text) {
+  } else if (content_opcode == Text) {
     c = CandidTypeOptText();
-  } else if (opcode == Principal) {
+  } else if (content_opcode == Principal) {
     c = CandidTypeOptPrincipal();
-    // } else if (opcode == Vec) {
+    // } else if (content_opcode == Vec) {
     //   c = CandidTypeOptVec();
-    // } else if (opcode == Record) {
+    // } else if (content_opcode == Record) {
     //   c = CandidTypeOptRecord();
   } else {
     std::string msg;
     msg.append("ERROR: NOT YET IMPLEMENTED CandidTypeOptXXX.");
-    msg.append("       for content type = " + std::to_string(opcode));
+    msg.append("       for content type = " + std::to_string(content_opcode));
     msg.append("      " + std::string(__func__));
     ICPP_HOOKS::trap(msg);
   }

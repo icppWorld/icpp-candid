@@ -17,9 +17,7 @@ CandidTypeBool::CandidTypeBool(bool *p_v) {
 }
 
 // This constructor is only for encoding
-CandidTypeBool::CandidTypeBool(const bool v) {
-  initialize(v);
-}
+CandidTypeBool::CandidTypeBool(const bool v) { initialize(v); }
 
 CandidTypeBool::~CandidTypeBool() {}
 
@@ -63,7 +61,7 @@ bool CandidTypeBool::decode_M(VecBytes B, __uint128_t &offset,
   if (B.parse_uleb128(offset, iv, numbytes, parse_error)) {
     std::string to_be_parsed = "Value for CandidTypeBool";
     CandidAssert::trap_with_parse_error(offset_start, offset, to_be_parsed,
-                                             parse_error);
+                                        parse_error);
   }
   if (iv == 0) {
     m_v = false;

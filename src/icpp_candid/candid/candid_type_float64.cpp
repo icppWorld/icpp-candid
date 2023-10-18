@@ -23,10 +23,7 @@ CandidTypeFloat64::CandidTypeFloat64(double *p_v) {
 }
 
 // This constructor is only for encoding
-CandidTypeFloat64::CandidTypeFloat64(const double v) {
-
-  initialize(v);
-}
+CandidTypeFloat64::CandidTypeFloat64(const double v) { initialize(v); }
 
 CandidTypeFloat64::~CandidTypeFloat64() {}
 
@@ -73,7 +70,7 @@ bool CandidTypeFloat64::decode_M(VecBytes B, __uint128_t &offset,
   if (B.parse_float_ieee754(offset, m_v, parse_error)) {
     std::string to_be_parsed = "Value for CandidTypeFloat64";
     CandidAssert::trap_with_parse_error(offset_start, offset, to_be_parsed,
-                                             parse_error);
+                                        parse_error);
   }
 
   // Fill the user's data placeholder, if a pointer was provided

@@ -38,9 +38,7 @@
 // const std::string PRINCIPAL_ERROR_INVALID_BASE32_ENCODING =
 //     "Principal Error: Text must be in valid Base32 encoding. Decoding/Encoding roundtrip fails.";
 
-CandidTypePrincipal::CandidTypePrincipal() {
-  initialize("");
-}
+CandidTypePrincipal::CandidTypePrincipal() { initialize(""); }
 
 // These constructors allows for setting the value during Deserialization
 CandidTypePrincipal::CandidTypePrincipal(std::string *p_v) {
@@ -55,13 +53,9 @@ CandidTypePrincipal::CandidTypePrincipal(const char *c) {
   std::string v(c);
   initialize(v);
 }
-CandidTypePrincipal::CandidTypePrincipal(const std::string v)
-    {
-  initialize(v);
-}
+CandidTypePrincipal::CandidTypePrincipal(const std::string v) { initialize(v); }
 // Constructor used by ICPP_HOOKS::from_wire to store caller
-CandidTypePrincipal::CandidTypePrincipal(const std::vector<uint8_t> &bytes)
-    {
+CandidTypePrincipal::CandidTypePrincipal(const std::vector<uint8_t> &bytes) {
   std::string v = string_from_bytes(bytes);
   initialize(v);
 }
@@ -127,7 +121,7 @@ bool CandidTypePrincipal::decode_M(VecBytes B, __uint128_t &offset,
   if (B.parse_int_fixed_width(offset, ref_r, parse_error)) {
     std::string to_be_parsed = "Unused opaque reference.";
     CandidAssert::trap_with_parse_error(offset_start, offset, to_be_parsed,
-                                             parse_error);
+                                        parse_error);
   }
   if (ref_r != 1) {
     ICPP_HOOKS::trap(
@@ -141,7 +135,7 @@ bool CandidTypePrincipal::decode_M(VecBytes B, __uint128_t &offset,
   if (B.parse_uleb128(offset, numBytes_principal, numbytes, parse_error)) {
     std::string to_be_parsed = "Size of data bytes for principal";
     CandidAssert::trap_with_parse_error(offset_start, offset, to_be_parsed,
-                                             parse_error);
+                                        parse_error);
   }
 
   // Get the encoded principal bytes as uint8_t
@@ -150,7 +144,7 @@ bool CandidTypePrincipal::decode_M(VecBytes B, __uint128_t &offset,
                     parse_error)) {
     std::string to_be_parsed = "Data bytes for principal";
     CandidAssert::trap_with_parse_error(offset_start, offset, to_be_parsed,
-                                             parse_error);
+                                        parse_error);
   }
 
   m_v = string_from_bytes(data_bytes);

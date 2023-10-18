@@ -1,10 +1,14 @@
 // The class for the Candid Type: variant
 
-#include "candid_type.h"
-#include "candid_type_all_includes.h"
-#include "candid_type_variant.h"
+#include "candid_debug_config.h"
 #include "candid_assert.h"
 #include "candid_opcode.h"
+#include "candid_serialize_type_table_registry.h"
+#include "candid_type.h"
+#include "candid_type_all_includes.h"
+
+#include "candid_type_variant.h"
+
 #include "pro.h"
 
 #include "icpp_hooks.h"
@@ -121,10 +125,11 @@ void CandidTypeVariant::_append(uint32_t field_id, std::string field_name,
       std::visit([](auto &&c) { return c.get_datatype_opcode(); }, field);
   m_field_datatypes.push_back(datatype);
   // Store the shared pointer to a CandidTypeBase class
-  m_fields_ptrs.push_back(std::visit([](auto&& arg) -> std::shared_ptr<CandidTypeBase> {
-    return std::make_shared<std::decay_t<decltype(arg)>>(arg);
-  }, field));
-
+  m_fields_ptrs.push_back(std::visit(
+      [](auto &&arg) -> std::shared_ptr<CandidTypeRoot> {
+        return std::make_shared<std::decay_t<decltype(arg)>>(arg);
+      },
+      field));
 
   if (field_name == m_label) {
     m_label_value_set = true;
@@ -144,20 +149,38 @@ void CandidTypeVariant::encode_T() {
     // id or hash of the variant field, append without packing into a fixed width
     m_T.append_uleb128(__uint128_t(m_field_ids[i]));
 
-    // data type of the variant field
-    // The get_I method is in the CandidTypeBase class.
-    if(m_fields_ptrs[i]) {
-      VecBytes I = m_fields_ptrs[i]->get_I();
-      for (std::byte b : I.vec()) {
-        m_T.append_byte(b);
+    // type table or the data type of the record field
+    if (m_fields_ptrs[i]) {
+      VecBytes T = m_fields_ptrs[i]->get_T();
+      if (T.size() > 0) {
+        // For <comptypes>, we use the index into the type table we defined above
+        __uint128_t type_table_index = m_fields_ptrs[i]->get_type_table_index();
+        m_T.append_uleb128(type_table_index);
+      } else {
+        // For <primtypes>, use the Opcode, already stored
+        VecBytes I = m_fields_ptrs[i]->get_I();
+        for (std::byte b : I.vec()) {
+          m_T.append_byte(b);
+        }
       }
     }
   }
+
+  // Update the type table registry,
+  m_type_table_index = CandidSerializeTypeTableRegistry::get_instance()
+                           .add_or_replace_type_table(m_type_table_index, m_T);
+  ;
 }
 
 // Decode the type table, starting at & updating offset
 bool CandidTypeVariant::decode_T(VecBytes B, __uint128_t &offset,
                                  std::string &parse_error) {
+  if (CANDID_DESERIALIZE_DEBUG_PRINT) {
+    ICPP_HOOKS::debug_print("+++++");
+    ICPP_HOOKS::debug_print("Entered CandidTypeVariant::decode_T");
+    ICPP_HOOKS::debug_print("Start deserialization of a Variants' Type Table");
+    ICPP_HOOKS::debug_print("offset = " + ICPP_HOOKS::to_string_128(offset));
+  }
   m_field_ids.clear();
   m_field_names.clear();
   m_fields_ptrs.clear();
@@ -167,6 +190,11 @@ bool CandidTypeVariant::decode_T(VecBytes B, __uint128_t &offset,
   __uint128_t numbytes;
   if (B.parse_uleb128(offset, num_fields, numbytes, parse_error)) {
     return true;
+  }
+  if (CANDID_DESERIALIZE_DEBUG_PRINT) {
+    ICPP_HOOKS::debug_print("num_fields = " +
+                            ICPP_HOOKS::to_string_128(num_fields));
+    ICPP_HOOKS::debug_print("offset = " + ICPP_HOOKS::to_string_128(offset));
   }
 
   for (size_t i = 0; i < num_fields; ++i) {
@@ -178,6 +206,11 @@ bool CandidTypeVariant::decode_T(VecBytes B, __uint128_t &offset,
     }
     m_field_ids.push_back(field_id);
     m_field_names.push_back("");
+    if (CANDID_DESERIALIZE_DEBUG_PRINT) {
+      ICPP_HOOKS::debug_print("field " + std::to_string(i) + " - id (hash) = " +
+                              ICPP_HOOKS::to_string_128(field_id));
+      ICPP_HOOKS::debug_print("offset = " + ICPP_HOOKS::to_string_128(offset));
+    }
 
     // Get the datatype of the type table
     __uint128_t offset_start = offset;
@@ -186,53 +219,24 @@ bool CandidTypeVariant::decode_T(VecBytes B, __uint128_t &offset,
     numbytes = 0;
     if (B.parse_sleb128(offset, datatype, numbytes, parse_error)) {
       std::string to_be_parsed = "Type table: datatype";
-      CandidAssert::trap_with_parse_error(offset_start, offset,
-                                               to_be_parsed, parse_error);
+      CandidAssert::trap_with_parse_error(offset_start, offset, to_be_parsed,
+                                          parse_error);
     }
     m_field_datatypes.push_back(int(datatype));
-
-    // Create a CandidType instance for the field
-    CandidType c;
-    if (int(datatype) == CandidOpcode().Vec) {
-      // for a Vec, the typetable is simple the datatype of it's content
-      offset_start = offset;
-      parse_error = "";
-      __int128_t content_opcode;
-      if (B.parse_sleb128(offset, content_opcode, numbytes, parse_error)) {
-        std::string to_be_parsed =
-            "Type table: a variant field of type Vec -> the Vec's content type";
-        CandidAssert::trap_with_parse_error(offset_start, offset,
-                                                 to_be_parsed, parse_error);
-      }
-      CandidOpcode().candid_type_vec_from_opcode(c, content_opcode);
-    } else if (int(datatype) == CandidOpcode().Opt) {
-      // for an Opt, the typetable is simple the datatype of it's content
-      offset_start = offset;
-      parse_error = "";
-      __int128_t content_opcode;
-      if (B.parse_sleb128(offset, content_opcode, numbytes, parse_error)) {
-        std::string to_be_parsed =
-            "Type table: a variant field of type Opt -> the Opt's content type";
-        CandidAssert::trap_with_parse_error(offset_start, offset,
-                                                 to_be_parsed, parse_error);
-      }
-      CandidOpcode().candid_type_opt_from_opcode(c, content_opcode);
-    } else {
-      // Decode type table using the CandidType variant's decode_T method.
-      CandidOpcode().candid_type_from_opcode(c, datatype);
-      parse_error = "";
-      if (std::visit(
-              [&](auto &&c) { return c.decode_T(B, offset, parse_error); },
-              c)) {
-        std::string to_be_parsed = "Type table: variant field";
-        CandidAssert::trap_with_parse_error(offset_start, offset,
-                                                 to_be_parsed, parse_error);
-      }
+    if (CANDID_DESERIALIZE_DEBUG_PRINT) {
+      ICPP_HOOKS::debug_print(
+          "field " + std::to_string(i) +
+          " - datatype  = " + ICPP_HOOKS::to_string_128(datatype) + " (" +
+          CandidOpcode().name_from_opcode(int(datatype)) + ")");
+      ICPP_HOOKS::debug_print("offset = " + ICPP_HOOKS::to_string_128(offset));
     }
-    // Store a shared pointer to the CandidTypeBase class
-    m_fields_ptrs.push_back(std::visit([](auto&& arg) -> std::shared_ptr<CandidTypeBase> {
-        return std::make_shared<std::decay_t<decltype(arg)>>(arg);
-    }, c));
+
+    // We only use this decode_T for a dummy CandidType during type table deserialization
+    // No need to store a reference to a CandidType, it will never be used.
+    m_fields_ptrs.push_back(nullptr);
+  }
+  if (CANDID_DESERIALIZE_DEBUG_PRINT) {
+    ICPP_HOOKS::debug_print("+++++");
   }
   return false;
 }
@@ -260,7 +264,7 @@ void CandidTypeVariant::encode_M() {
 
       // encode the variant's value
       // The get_M method is in the CandidTypeBase class
-      if(m_fields_ptrs[i]) {
+      if (m_fields_ptrs[i]) {
         VecBytes M = m_fields_ptrs[i]->get_M();
         for (std::byte b : M.vec()) {
           m_M.append_byte(b);
@@ -286,7 +290,7 @@ bool CandidTypeVariant::decode_M(VecBytes B, __uint128_t &offset,
   if (B.parse_uleb128(offset, j, numbytes, parse_error)) {
     std::string to_be_parsed = "Size of vec- leb128(N)";
     CandidAssert::trap_with_parse_error(offset_start, offset, to_be_parsed,
-                                             parse_error);
+                                        parse_error);
   }
 
   // match the variant's id (hash) of wire with passed in variant fields
@@ -333,25 +337,24 @@ bool CandidTypeVariant::decode_M(VecBytes B, __uint128_t &offset,
   }
 
   // decode the value
-  if (datatype_wire == CandidOpcode().Null) {
-    // There is no value to decode
-    // TODO: REMOVE THIS LINE.
-  // } else if (CandidOpcode().is_primtype(datatype_wire)) {
-  } else {
-    // We can just call the decode_M method on the base class, use runtime polymorphism
-    // (-) The method decode_M is declared as a virtual function the base class
-    // (-) It is implemented for ALL derived classes
-    parse_error = "";
-    __uint128_t offset_start = offset;
+  // TODO: what was this for?
+  // if (datatype_wire == CandidOpcode().Null) {
+  //   // There is no value to decode
+  // } else {
+  // We can just call the decode_M method on the base class, use runtime polymorphism
+  // (-) The method decode_M is declared as a virtual function the base class
+  // (-) It is implemented for ALL derived classes
+  parse_error = "";
+  offset_start = offset;
 
-    if(m_fields_ptrs[m_variant_index]) {
-      if (m_fields_ptrs[m_variant_index]->decode_M(B, offset, parse_error)){
-        std::string to_be_parsed = "Value for a Variant";
-        CandidAssert::trap_with_parse_error(offset_start, offset,
-                                                to_be_parsed, parse_error);
-      }
+  if (m_fields_ptrs[m_variant_index]) {
+    if (m_fields_ptrs[m_variant_index]->decode_M(B, offset, parse_error)) {
+      std::string to_be_parsed = "Value for a Variant";
+      CandidAssert::trap_with_parse_error(offset_start, offset, to_be_parsed,
+                                          parse_error);
     }
-  } 
+  }
+  // }
   // else {
   //   ICPP_HOOKS::trap(
   //       "TODO: Implement decode for non primitive type as a variant field, using recursion " +
@@ -365,7 +368,6 @@ bool CandidTypeVariant::decode_M(VecBytes B, __uint128_t &offset,
 }
 
 void CandidTypeVariant::check_type_table(const CandidTypeVariant *p_from_wire) {
-  // Save type table data on wire for use in decode_M
   m_field_ids_wire.clear();
   m_field_datatypes_wire.clear();
   for (size_t i = 0; i < p_from_wire->m_fields_ptrs.size(); ++i) {

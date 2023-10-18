@@ -19,10 +19,7 @@ CandidTypeNat32::CandidTypeNat32(uint32_t *p_v) {
 }
 
 // This constructor is only for encoding
-CandidTypeNat32::CandidTypeNat32(const uint32_t v) {
-
-  initialize(v);
-}
+CandidTypeNat32::CandidTypeNat32(const uint32_t v) { initialize(v); }
 
 CandidTypeNat32::~CandidTypeNat32() {}
 
@@ -64,7 +61,7 @@ bool CandidTypeNat32::decode_M(VecBytes B, __uint128_t &offset,
   if (B.parse_int_fixed_width(offset, m_v, parse_error)) {
     std::string to_be_parsed = "Value for CandidTypeNat32";
     CandidAssert::trap_with_parse_error(offset_start, offset, to_be_parsed,
-                                             parse_error);
+                                        parse_error);
   }
 
   // Fill the user's data placeholder, if a pointer was provided

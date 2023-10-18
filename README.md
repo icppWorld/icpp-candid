@@ -3,7 +3,8 @@
 The C++ Candid Library of [icpp-pro](https://docs.icpp.world/)
 
 - [API Reference](https://docs.icpp.world/api-reference.html#candidtypes)
-- The C++ Candid Library is extensively tested in our [QA Canister](https://github.com/icppWorld/icpp-pro/tree/main/test/canisters/canister_1). *(\*)*
+- The C++ Candid Library is extensively tested in our [QA Canister](https://github.com/icppWorld/icpp-pro/tree/main/test/canisters/canister_1).
+- If you want to contribute, please reach out.
 
   
 ## How to use

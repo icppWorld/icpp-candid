@@ -1,6 +1,9 @@
 // The base class for all Candid Types
 
 #include "candid_type.h"
+#include "candid_type_all_includes.h"
+
+#include "candid_opcode.h"
 #include "candid_type_base.h"
 
 #include <charconv>
@@ -9,11 +12,10 @@
 
 #include "icpp_hooks.h"
 
-CandidTypeBase::CandidTypeBase() {}
+CandidTypeRoot::CandidTypeRoot() {}
+CandidTypeRoot::~CandidTypeRoot() {}
 
-CandidTypeBase::~CandidTypeBase() {}
-
-void CandidTypeBase::trap_if_wrong_type_on_wire(
+void CandidTypeRoot::trap_if_wrong_type_on_wire(
     const std::string &type_on_wire) {
   if (type_on_wire != m_datatype_textual) {
     std::string msg;
@@ -24,29 +26,45 @@ void CandidTypeBase::trap_if_wrong_type_on_wire(
   };
 }
 
+// Virtual method to be implemented by all derived classes
+CandidType CandidTypeRoot::toCandidType() {
+  ICPP_HOOKS::trap("ERROR: toCandidType not implemented for " +
+                   m_datatype_textual);
+  return CandidTypeBool{false}; // Need to return something
+}
+
 // Virtual method to be implemented by the <comptype> CandidTypes
 // Non <comptype> should not call this method.
-bool CandidTypeBase::decode_T(const VecBytes B, __uint128_t &offset,
+bool CandidTypeRoot::decode_T(const VecBytes B, __uint128_t &offset,
                               std::string &parse_error) {
-  ICPP_HOOKS::trap("ERROR: decode_T not implemented...");
+  ICPP_HOOKS::trap("ERROR: decode_T not implemented for " + m_datatype_textual);
   return true;
 }
-void CandidTypeBase::set_content_type() {
-  ICPP_HOOKS::trap("ERROR: set_content_type not implemented...");
+
+void CandidTypeRoot::set_content_type() {
+  ICPP_HOOKS::trap("ERROR: set_content_type not implemented for " +
+                   m_datatype_textual);
+}
+
+// Virtual method to be implemented by all CandidTypeVecXXX to push_back a value into the internal std::vector<T>
+void CandidTypeRoot::push_back_value(CandidTypeRoot &value) {
+  ICPP_HOOKS::trap("ERROR: set_content_type not implemented for " +
+                   m_datatype_textual);
 }
 
 // Virtual method to be implemented by all CandidTypes to support deserialization
-bool CandidTypeBase::decode_M(const VecBytes B, __uint128_t &offset,
+bool CandidTypeRoot::decode_M(const VecBytes B, __uint128_t &offset,
                               std::string &parse_error) {
-  ICPP_HOOKS::trap("ERROR: decode_M not implemented...");
+  ICPP_HOOKS::trap("ERROR: decode_M not implemented for " + m_datatype_textual);
   return true;
 }
-void CandidTypeBase::encode_M() {
-  ICPP_HOOKS::trap("ERROR: encode_M not implemented...");
+
+void CandidTypeRoot::encode_M() {
+  ICPP_HOOKS::trap("ERROR: encode_M not implemented for " + m_datatype_textual);
 }
 
 // https://github.com/dfinity/candid/blob/master/spec/Candid.md#records
-uint32_t CandidTypeBase::idl_hash(const std::string &s) {
+uint32_t CandidTypeRoot::idl_hash(const std::string &s) {
   uint32_t hash{};
 
   // hash(id) = ( Sum_(i=0..k) utf8(id)[i] * 223^(k-i) ) mod 2^32 where k = |utf8(id)|-1
@@ -58,3 +76,65 @@ uint32_t CandidTypeBase::idl_hash(const std::string &s) {
 
   return hash;
 }
+
+template <typename Derived> CandidTypeBase<Derived>::CandidTypeBase() {}
+
+template <typename Derived> CandidTypeBase<Derived>::~CandidTypeBase() {}
+
+template <typename Derived> CandidType CandidTypeBase<Derived>::toCandidType() {
+  // static_cast to the derived type
+  return static_cast<Derived &>(*this);
+}
+
+// Explicit instantiations, to force the compiler to generate code for the methods of CandidTypeBase specialized for CandidTypeXXX
+template class CandidTypeBase<CandidTypeBool>;
+template class CandidTypeBase<CandidTypeEmpty>;
+template class CandidTypeBase<CandidTypeFloat32>;
+template class CandidTypeBase<CandidTypeFloat64>;
+template class CandidTypeBase<CandidTypeInt>;
+template class CandidTypeBase<CandidTypeInt8>;
+template class CandidTypeBase<CandidTypeInt16>;
+template class CandidTypeBase<CandidTypeInt32>;
+template class CandidTypeBase<CandidTypeInt64>;
+template class CandidTypeBase<CandidTypeNat>;
+template class CandidTypeBase<CandidTypeNat8>;
+template class CandidTypeBase<CandidTypeNat16>;
+template class CandidTypeBase<CandidTypeNat32>;
+template class CandidTypeBase<CandidTypeNat64>;
+template class CandidTypeBase<CandidTypeNull>;
+template class CandidTypeBase<CandidTypeOptBool>;
+template class CandidTypeBase<CandidTypeOptFloat32>;
+template class CandidTypeBase<CandidTypeOptFloat64>;
+template class CandidTypeBase<CandidTypeOptInt>;
+template class CandidTypeBase<CandidTypeOptInt8>;
+template class CandidTypeBase<CandidTypeOptInt16>;
+template class CandidTypeBase<CandidTypeOptInt32>;
+template class CandidTypeBase<CandidTypeOptInt64>;
+template class CandidTypeBase<CandidTypeOptNat>;
+template class CandidTypeBase<CandidTypeOptNat8>;
+template class CandidTypeBase<CandidTypeOptNat16>;
+template class CandidTypeBase<CandidTypeOptNat32>;
+template class CandidTypeBase<CandidTypeOptNat64>;
+template class CandidTypeBase<CandidTypeOptPrincipal>;
+template class CandidTypeBase<CandidTypeOptText>;
+template class CandidTypeBase<CandidTypePrincipal>;
+template class CandidTypeBase<CandidTypeRecord>;
+template class CandidTypeBase<CandidTypeReserved>;
+template class CandidTypeBase<CandidTypeText>;
+template class CandidTypeBase<CandidTypeVariant>;
+template class CandidTypeBase<CandidTypeVecBool>;
+template class CandidTypeBase<CandidTypeVecFloat32>;
+template class CandidTypeBase<CandidTypeVecFloat64>;
+template class CandidTypeBase<CandidTypeVecInt>;
+template class CandidTypeBase<CandidTypeVecInt8>;
+template class CandidTypeBase<CandidTypeVecInt16>;
+template class CandidTypeBase<CandidTypeVecInt32>;
+template class CandidTypeBase<CandidTypeVecInt64>;
+template class CandidTypeBase<CandidTypeVecNat>;
+template class CandidTypeBase<CandidTypeVecNat8>;
+template class CandidTypeBase<CandidTypeVecNat16>;
+template class CandidTypeBase<CandidTypeVecNat32>;
+template class CandidTypeBase<CandidTypeVecNat64>;
+template class CandidTypeBase<CandidTypeVecPrincipal>;
+template class CandidTypeBase<CandidTypeVecRecord>;
+template class CandidTypeBase<CandidTypeVecText>;

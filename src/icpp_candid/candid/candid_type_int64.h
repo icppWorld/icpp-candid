@@ -5,7 +5,7 @@
 #include "candid_type_base.h"
 #include "vec_bytes.h"
 
-class CandidTypeInt64 : public CandidTypeBase {
+class CandidTypeInt64 : public CandidTypeBase<CandidTypeInt64> {
 public:
   // Constructors
   CandidTypeInt64();
@@ -21,6 +21,7 @@ public:
   }
   bool decode_M(VecBytes B, __uint128_t &offset, std::string &parse_error);
   int64_t get_v() { return m_v; }
+  int64_t *get_pv() { return m_pv; }
 
 protected:
   void set_pv(int64_t *v);

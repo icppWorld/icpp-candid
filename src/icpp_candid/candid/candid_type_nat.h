@@ -5,7 +5,7 @@
 #include "candid_type_base.h"
 #include "vec_bytes.h"
 
-class CandidTypeNat : public CandidTypeBase {
+class CandidTypeNat : public CandidTypeBase<CandidTypeNat> {
 public:
   // Constructors
   CandidTypeNat();
@@ -21,6 +21,7 @@ public:
   }
   bool decode_M(VecBytes B, __uint128_t &offset, std::string &parse_error);
   __uint128_t get_v() { return m_v; }
+  __uint128_t *get_pv() { return m_pv; }
 
 protected:
   void set_pv(__uint128_t *v);

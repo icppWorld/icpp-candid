@@ -11,7 +11,7 @@
 #include "candid_type_base.h"
 #include "vec_bytes.h"
 
-class CandidTypePrincipal : public CandidTypeBase {
+class CandidTypePrincipal : public CandidTypeBase<CandidTypePrincipal> {
 public:
   // Constructors
   CandidTypePrincipal();
@@ -33,6 +33,7 @@ public:
   }
   bool decode_M(VecBytes B, __uint128_t &offset, std::string &parse_error);
   std::string get_v() { return m_v; }
+  std::string *get_pv() { return m_pv; }
   std::string get_text() { return m_v; }
   const VecBytes &get_v_bytes() const { return m_v_bytes; }
   bool is_anonymous();

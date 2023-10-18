@@ -4,11 +4,10 @@
 
 #include <cstring>
 
-#include "candid_type_opt_base.h"
 #include "candid_type_nat32.h"
 #include "vec_bytes.h"
 
-class CandidTypeOptNat32 : public CandidTypeOptBase {
+class CandidTypeOptNat32 : public CandidTypeBase<CandidTypeOptNat32> {
 public:
   // Constructors
   CandidTypeOptNat32();
@@ -23,6 +22,9 @@ public:
 
   bool decode_M(VecBytes B, __uint128_t &offset, std::string &parse_error);
   std::optional<uint32_t> get_v() { return m_v; }
+  std::optional<uint32_t> *get_pv() { return m_pv; }
+
+  bool decode_T(VecBytes B, __uint128_t &offset, std::string &parse_error);
 
 protected:
   void set_pv(std::optional<uint32_t> *v) { m_pv = v; }
@@ -32,4 +34,9 @@ protected:
 
   std::optional<uint32_t> m_v;
   std::optional<uint32_t> *m_pv{nullptr};
+
+  void initialize();
+  void set_datatype();
+  void encode_T();
+  void encode_I();
 };

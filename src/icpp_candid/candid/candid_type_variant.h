@@ -7,7 +7,7 @@
 
 #include "vec_bytes.h"
 
-class CandidTypeVariant : public CandidTypeBase {
+class CandidTypeVariant : public CandidTypeBase<CandidTypeVariant> {
 public:
   // Constructors
   CandidTypeVariant();
@@ -17,6 +17,9 @@ public:
 
   // Destructor
   ~CandidTypeVariant();
+
+  std::vector<std::string> get_v() { return m_field_names; }
+  std::vector<std::string> *get_pv() { return &m_field_names; }
 
   void append(uint32_t field_id, CandidType field);
   void append(std::string field_name, CandidType field);
@@ -42,7 +45,7 @@ protected:
   std::vector<uint32_t> m_field_ids; // id | hash
   std::vector<std::string> m_field_names;
   std::vector<int> m_field_datatypes;
-  std::vector<std::shared_ptr<CandidTypeBase>> m_fields_ptrs;
+  std::vector<std::shared_ptr<CandidTypeRoot>> m_fields_ptrs;
 
   // Label & id (hash) of the field that contains the Variant's data
   std::string m_label{""};

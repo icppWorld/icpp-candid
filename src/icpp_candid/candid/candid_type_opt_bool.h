@@ -4,11 +4,10 @@
 
 #include <cstring>
 
-#include "candid_type_opt_base.h"
 #include "candid_type_bool.h"
 #include "vec_bytes.h"
 
-class CandidTypeOptBool : public CandidTypeOptBase {
+class CandidTypeOptBool : public CandidTypeBase<CandidTypeOptBool> {
 public:
   // Constructors
   CandidTypeOptBool();
@@ -23,6 +22,9 @@ public:
 
   bool decode_M(VecBytes B, __uint128_t &offset, std::string &parse_error);
   std::optional<bool> get_v() { return m_v; }
+  std::optional<bool> *get_pv() { return m_pv; }
+
+  bool decode_T(VecBytes B, __uint128_t &offset, std::string &parse_error);
 
 protected:
   void set_pv(std::optional<bool> *v) { m_pv = v; }
@@ -32,4 +34,9 @@ protected:
 
   std::optional<bool> m_v;
   std::optional<bool> *m_pv{nullptr};
+
+  void initialize();
+  void set_datatype();
+  void encode_T();
+  void encode_I();
 };

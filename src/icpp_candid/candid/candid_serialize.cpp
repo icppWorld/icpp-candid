@@ -3,10 +3,11 @@
 
 #include <variant>
 
+#include "candid_assert.h"
+#include "candid_serialize.h"
+#include "candid_serialize_type_table_registry.h"
 #include "candid_type.h"
 #include "candid_type_all_includes.h"
-#include "candid_serialize.h"
-#include "candid_assert.h"
 
 // Default constructor handles nullary input '()'
 CandidSerialize::CandidSerialize() { serialize(); }
@@ -14,9 +15,7 @@ CandidSerialize::CandidSerialize(const CandidType &a) {
   m_A.append(a);
   serialize();
 }
-CandidSerialize::CandidSerialize(const CandidArgs &A) : m_A{A} {
-  serialize();
-}
+CandidSerialize::CandidSerialize(const CandidArgs &A) : m_A{A} { serialize(); }
 
 CandidSerialize::~CandidSerialize() {}
 
@@ -29,9 +28,10 @@ void CandidSerialize::serialize() {
   // M(kv* : <datatype>*)                 values of argument list
 
   m_B.clear();
-  m_num_typetables = 0;
-  m_type_table_A_index.clear();
-  m_type_table_index.clear();
+  CandidSerializeTypeTableRegistry::get_instance().prune();
+  std::vector<CandidSerializeTypeTableEntry> unique_type_tables =
+      CandidSerializeTypeTableRegistry::get_instance().get_unique_type_tables();
+
   // -------------------------------------------------------------------------------------
   // i8('D') i8('I') i8('D') i8('L')      magic number
   m_B.append_didl();
@@ -42,44 +42,14 @@ void CandidSerialize::serialize() {
   // (-) Constructed Types (opt, vec, record, variant)
   // (-) Reference Types (func, service)
 
-  // Check how many unique typetables we have and set the index
-  const __uint128_t NO_TYPE_TABLE = -9999999999999999;
-  __uint128_t typetable_i = 0;
-
-  for (size_t i = 0; i < m_A.m_args_ptrs.size(); ++i) {
-    m_type_table_A_index.push_back(NO_TYPE_TABLE);
-    m_type_table_index.push_back(NO_TYPE_TABLE);
-    VecBytes T = m_A.m_args_ptrs[i]->get_T();
-
-    if (T.size() > 0) {
-      bool new_type_table = true;
-      for (size_t i1 = 0; i1 < i; ++i1) {
-        VecBytes T1 = m_A.m_args_ptrs[i1]->get_T();
-        if (T == T1) {
-          m_type_table_A_index[i] = m_type_table_A_index[i1];
-          m_type_table_index[i] = m_type_table_index[i1];
-          new_type_table = false;
-          break;
-        }
-      }
-      if (new_type_table) {
-        m_type_table_A_index[i] = i;
-        m_type_table_index[i] = m_num_typetables;
-        ++m_num_typetables;
-      }
-    }
-  }
-
   // Append the number of unique type tables
-  m_B.append_uleb128(m_num_typetables);
+  m_B.append_uleb128(__uint128_t(unique_type_tables.size()));
 
-  // Now write the unique type tables
-  for (size_t i = 0; i < m_A.m_args_ptrs.size(); ++i) {
-    if (m_type_table_A_index[i] == i) {
-      VecBytes T = m_A.m_args_ptrs[i]->get_T();
-      for (std::byte b : T.vec()) {
-        m_B.append_byte(b);
-      }
+  // Append the type tables
+  for (const CandidSerializeTypeTableEntry &entry : unique_type_tables) {
+    const VecBytes &T = entry.type_table_vec_bytes;
+    for (std::byte b : T.vec()) {
+      m_B.append_byte(b);
     }
   }
 
@@ -91,7 +61,8 @@ void CandidSerialize::serialize() {
     VecBytes T = m_A.m_args_ptrs[i]->get_T();
     if (T.size() > 0) {
       // For <comptypes>, we use the index into the type table we defined above
-      m_B.append_uleb128(m_type_table_index[i]);
+      __uint128_t type_table_index = m_A.m_args_ptrs[i]->get_type_table_index();
+      m_B.append_uleb128(type_table_index);
     } else {
       // For <primtypes>, use the Opcode, already stored
       VecBytes I = m_A.m_args_ptrs[i]->get_I();
@@ -103,7 +74,7 @@ void CandidSerialize::serialize() {
 
   // -------------------------------------------------------------------------------------
   // M(kv* : <datatype>*)                 values of argument list
-  for (std::shared_ptr<CandidTypeBase> p_c : m_A.m_args_ptrs) {
+  for (std::shared_ptr<CandidTypeRoot> p_c : m_A.m_args_ptrs) {
     VecBytes M = p_c->get_M();
     for (std::byte b : M.vec()) {
       m_B.append_byte(b);

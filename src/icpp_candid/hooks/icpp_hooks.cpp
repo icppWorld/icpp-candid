@@ -15,8 +15,7 @@
 
 ICPP_HOOKS::ICPP_HOOKS() : ICPP_HOOKS(false) {}
 
-ICPP_HOOKS::ICPP_HOOKS(const bool &dbug)
-    : m_debug_print(dbug) {}
+ICPP_HOOKS::ICPP_HOOKS(const bool &dbug) : m_debug_print(dbug) {}
 
 ICPP_HOOKS::~ICPP_HOOKS() {}
 
@@ -46,7 +45,8 @@ void ICPP_HOOKS::trap(const char *message) {
 void ICPP_HOOKS::trap(const std::string &s) { ICPP_HOOKS::trap(s.c_str()); }
 
 // TODO: MOVE THIS TO A HELPER METHOD, OUT OF THE HOOKS
-std::optional<__uint128_t> ICPP_HOOKS::string_to_uint128_t(const std::string &str) {
+std::optional<__uint128_t>
+ICPP_HOOKS::string_to_uint128_t(const std::string &str) {
   __uint128_t result = 0;
   for (char c : str) {
     if (c < '0' || c > '9')
@@ -65,7 +65,8 @@ std::optional<__uint128_t> ICPP_HOOKS::string_to_uint128_t(const std::string &st
 }
 
 // TODO: MOVE THIS TO A HELPER METHOD, OUT OF THE HOOKS
-std::optional<__int128_t> ICPP_HOOKS::string_to_int128_t(const std::string &str) {
+std::optional<__int128_t>
+ICPP_HOOKS::string_to_int128_t(const std::string &str) {
   bool isNegative = false;
   std::string str_copy = str;
 
