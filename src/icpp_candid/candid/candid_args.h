@@ -18,5 +18,5 @@ public:
   ~CandidArgs();
 
   void append(CandidType arg);
-  std::vector<std::shared_ptr<CandidTypeBase>> m_args_ptrs;
+  std::vector<std::shared_ptr<CandidTypeRoot>> m_args_ptrs;
 };

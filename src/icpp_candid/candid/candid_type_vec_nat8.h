@@ -5,10 +5,9 @@
 #include <cstring>
 
 #include "candid_type_nat8.h"
-#include "candid_type_vec_base.h"
 #include "vec_bytes.h"
 
-class CandidTypeVecNat8 : public CandidTypeVecBase {
+class CandidTypeVecNat8 : public CandidTypeBase<CandidTypeVecNat8> {
 public:
   // Constructors
   CandidTypeVecNat8();
@@ -21,6 +20,11 @@ public:
 
   bool decode_M(VecBytes B, __uint128_t &offset, std::string &parse_error);
   std::vector<uint8_t> get_v() { return m_v; }
+  std::vector<uint8_t> *get_pv() { return m_pv; }
+
+  bool decode_T(VecBytes B, __uint128_t &offset, std::string &parse_error);
+
+  void push_back_value(CandidTypeRoot &value);
 
 protected:
   void set_pv(std::vector<uint8_t> *v) { m_pv = v; }
@@ -33,4 +37,9 @@ protected:
 
   std::vector<uint8_t> m_v;
   std::vector<uint8_t> *m_pv{nullptr};
+
+  void initialize();
+  void set_datatype();
+  void encode_T();
+  void encode_I();
 };

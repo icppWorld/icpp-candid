@@ -5,7 +5,7 @@
 #include "candid_type_base.h"
 #include "vec_bytes.h"
 
-class CandidTypeInt : public CandidTypeBase {
+class CandidTypeInt : public CandidTypeBase<CandidTypeInt> {
 public:
   // Constructors
   CandidTypeInt();
@@ -21,6 +21,7 @@ public:
   }
   bool decode_M(VecBytes B, __uint128_t &offset, std::string &parse_error);
   __int128_t get_v() { return m_v; }
+  __int128_t *get_pv() { return m_pv; }
 
 protected:
   void set_pv(__int128_t *v);

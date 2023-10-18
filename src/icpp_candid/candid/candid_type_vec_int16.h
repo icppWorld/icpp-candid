@@ -5,10 +5,9 @@
 #include <cstring>
 
 #include "candid_type_int16.h"
-#include "candid_type_vec_base.h"
 #include "vec_bytes.h"
 
-class CandidTypeVecInt16 : public CandidTypeVecBase {
+class CandidTypeVecInt16 : public CandidTypeBase<CandidTypeVecInt16> {
 public:
   // Constructors
   CandidTypeVecInt16();
@@ -21,6 +20,11 @@ public:
 
   bool decode_M(VecBytes B, __uint128_t &offset, std::string &parse_error);
   std::vector<int16_t> get_v() { return m_v; }
+  std::vector<int16_t> *get_pv() { return m_pv; }
+
+  bool decode_T(VecBytes B, __uint128_t &offset, std::string &parse_error);
+
+  void push_back_value(CandidTypeRoot &value);
 
 protected:
   void set_pv(std::vector<int16_t> *v) { m_pv = v; }
@@ -33,4 +37,9 @@ protected:
 
   std::vector<int16_t> m_v;
   std::vector<int16_t> *m_pv{nullptr};
+
+  void initialize();
+  void set_datatype();
+  void encode_T();
+  void encode_I();
 };

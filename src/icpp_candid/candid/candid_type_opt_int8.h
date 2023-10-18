@@ -4,11 +4,10 @@
 
 #include <cstring>
 
-#include "candid_type_opt_base.h"
 #include "candid_type_int8.h"
 #include "vec_bytes.h"
 
-class CandidTypeOptInt8 : public CandidTypeOptBase {
+class CandidTypeOptInt8 : public CandidTypeBase<CandidTypeOptInt8> {
 public:
   // Constructors
   CandidTypeOptInt8();
@@ -23,6 +22,9 @@ public:
 
   bool decode_M(VecBytes B, __uint128_t &offset, std::string &parse_error);
   std::optional<int8_t> get_v() { return m_v; }
+  std::optional<int8_t> *get_pv() { return m_pv; }
+
+  bool decode_T(VecBytes B, __uint128_t &offset, std::string &parse_error);
 
 protected:
   void set_pv(std::optional<int8_t> *v) { m_pv = v; }
@@ -32,4 +34,9 @@ protected:
 
   std::optional<int8_t> m_v;
   std::optional<int8_t> *m_pv{nullptr};
+
+  void initialize();
+  void set_datatype();
+  void encode_T();
+  void encode_I();
 };

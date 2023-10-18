@@ -19,10 +19,7 @@ CandidTypeInt32::CandidTypeInt32(int32_t *p_v) {
 }
 
 // This constructor is only for encoding
-CandidTypeInt32::CandidTypeInt32(const int32_t v) {
-
-  initialize(v);
-}
+CandidTypeInt32::CandidTypeInt32(const int32_t v) { initialize(v); }
 
 CandidTypeInt32::~CandidTypeInt32() {}
 
@@ -65,7 +62,7 @@ bool CandidTypeInt32::decode_M(VecBytes B, __uint128_t &offset,
   if (B.parse_int_fixed_width(offset, m_v, parse_error)) {
     std::string to_be_parsed = "Value for CandidTypeInt32";
     CandidAssert::trap_with_parse_error(offset_start, offset, to_be_parsed,
-                                             parse_error);
+                                        parse_error);
   }
 
   // Fill the user's data placeholder, if a pointer was provided

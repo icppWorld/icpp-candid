@@ -17,9 +17,7 @@ CandidTypeInt::CandidTypeInt(__int128_t *p_v) {
 }
 
 // This constructor is only for encoding
-CandidTypeInt::CandidTypeInt(const __int128_t &v) {
-  initialize(v);
-}
+CandidTypeInt::CandidTypeInt(const __int128_t &v) { initialize(v); }
 
 CandidTypeInt::~CandidTypeInt() {}
 
@@ -62,7 +60,7 @@ bool CandidTypeInt::decode_M(VecBytes B, __uint128_t &offset,
   if (B.parse_sleb128(offset, m_v, numbytes, parse_error)) {
     std::string to_be_parsed = "Value for CandidTypeInt";
     CandidAssert::trap_with_parse_error(offset_start, offset, to_be_parsed,
-                                             parse_error);
+                                        parse_error);
   }
 
   // Fill the user's data placeholder, if a pointer was provided

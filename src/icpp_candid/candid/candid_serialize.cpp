@@ -28,6 +28,7 @@ void CandidSerialize::serialize() {
   // M(kv* : <datatype>*)                 values of argument list
 
   m_B.clear();
+  CandidSerializeTypeTableRegistry::get_instance().prune();
   std::vector<CandidSerializeTypeTableEntry> unique_type_tables =
       CandidSerializeTypeTableRegistry::get_instance().get_unique_type_tables();
 
@@ -46,7 +47,7 @@ void CandidSerialize::serialize() {
 
   // Append the type tables
   for (const CandidSerializeTypeTableEntry &entry : unique_type_tables) {
-    const VecBytes &T = entry.type_table_bytes;
+    const VecBytes &T = entry.type_table_vec_bytes;
     for (std::byte b : T.vec()) {
       m_B.append_byte(b);
     }
@@ -73,7 +74,7 @@ void CandidSerialize::serialize() {
 
   // -------------------------------------------------------------------------------------
   // M(kv* : <datatype>*)                 values of argument list
-  for (std::shared_ptr<CandidTypeBase> p_c : m_A.m_args_ptrs) {
+  for (std::shared_ptr<CandidTypeRoot> p_c : m_A.m_args_ptrs) {
     VecBytes M = p_c->get_M();
     for (std::byte b : M.vec()) {
       m_B.append_byte(b);

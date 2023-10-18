@@ -13,10 +13,13 @@ class CandidAssert;
 class Opcode;
 class VecBytes;
 
+// TODO: REEMOVE
 // The Candid Type base classes
-class CandidTypeBase;
-class CandidTypeVecBase;
-class CandidTypeOptBase;
+// template <typename Derived> class CandidTypeBase;
+// template <typename Derived> class CandidTypeBase;
+// template <typename Derived> class CandidTypeBase;
+
+// #include "candid_type_base.h"
 
 // The Candid Type classes
 // https://github.com/dfinity/candid/blob/master/spec/Candid.md#types
@@ -114,8 +117,3 @@ using CandidType = std::variant<
     CandidTypeOptNat64, CandidTypeOptInt8, CandidTypeOptInt16,
     CandidTypeOptInt32, CandidTypeOptInt64, CandidTypeOptText,
     CandidTypeOptPrincipal, CandidTypeRecord, CandidTypeVariant>;
-
-// https://subscription.packtpub.com/book/programming/9781787120495/8/ch08lvl1sec91/storing-different-types-with-stdvariant
-template <typename T> bool is_CandidType(const CandidType &c) {
-  return holds_alternative<T>(c);
-}

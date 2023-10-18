@@ -11,13 +11,21 @@ public:
 
   VecBytes get_B() { return m_B; }
   int get_opcode() { return m_opcode; }
+  int get_content_opcode() { return m_content_opcode; }
   CandidType *get_candidType_ptr() { return &m_c; }
+
+  void set_vec_and_opt(int content_opcode);
 
 private:
   void deserialize(__uint128_t &B_offset);
 
-  // The deserialized type table
   int m_opcode;
+
+  // only for Vec & Opt
+  int m_content_opcode;
+  size_t m_content_table_index{static_cast<size_t>(-1)};
+
+  // A dummy CandidType, to use it's encode & decode methods
   CandidType m_c;
 
   // The byte stream to be deserialized

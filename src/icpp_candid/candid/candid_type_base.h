@@ -6,41 +6,17 @@
 #include <string>
 #include <vector>
 
-#include "candid_opcode.h"
 #include "icpp_hooks.h"
 #include "vec_bytes.h"
 
-class CandidTypeBase {
+// non-templated base class
+class CandidTypeRoot {
 public:
-  CandidTypeBase();
-  ~CandidTypeBase();
+  CandidTypeRoot();
+  ~CandidTypeRoot();
 
-  virtual void trap_if_wrong_type_on_wire(const std::string &type_on_wire);
-  int get_datatype_opcode() { return m_datatype_opcode; }
-  uint8_t get_datatype_hex() { return m_datatype_hex; }
-  std::string get_datatype_textual() { return m_datatype_textual; }
-  int get_content_type_opcode() { return m_datatype_opcode; }
-  uint8_t get_content_type_hex() { return m_datatype_hex; }
-  std::string get_content_type_textual() { return m_datatype_textual; }
-  VecBytes get_T() { return m_T; }
-  __uint128_t get_type_table_index() { return m_type_table_index; }
-  VecBytes get_I() { return m_I; }
-  VecBytes get_M() { return m_M; }
-  uint64_t get_v_size() { return m_v_size; }
-
-  std::vector<uint32_t> get_field_ids() { return m_field_ids; }
-  std::vector<std::string> get_field_names() { return m_field_names; }
-  std::vector<int> get_field_datatypes() { return m_field_datatypes; }
-  std::vector<std::shared_ptr<CandidTypeBase>> get_field_ptrs() {
-    return m_fields_ptrs;
-  }
-
-  uint32_t idl_hash(const std::string &s);
-
-  // Provide a less than operator to enable sorting
-  friend bool operator<(CandidTypeBase const &lhs, CandidTypeBase const &rhs) {
-    return lhs.m_datatype_opcode < rhs.m_datatype_opcode;
-  }
+  // virtual methods that all derived classes MUST implement
+  virtual CandidType toCandidType();
 
   // Virtual methods to be implemented by the <comptype> CandidTypes
   // Non <comptype> should not call this method.
@@ -52,6 +28,31 @@ public:
   virtual bool decode_M(VecBytes B, __uint128_t &offset,
                         std::string &parse_error);
   virtual void encode_M();
+
+  void trap_if_wrong_type_on_wire(const std::string &type_on_wire);
+  int get_datatype_opcode() { return m_datatype_opcode; }
+  uint8_t get_datatype_hex() { return m_datatype_hex; }
+  std::string get_datatype_textual() { return m_datatype_textual; }
+  int get_content_type_opcode() { return m_content_type_opcode; }
+  uint8_t get_content_type_hex() { return m_content_type_hex; }
+  std::string get_content_type_textual() { return m_content_type_textual; }
+  VecBytes get_T() { return m_T; }
+  __uint128_t get_type_table_index() { return m_type_table_index; }
+  VecBytes get_I() { return m_I; }
+  VecBytes get_M() { return m_M; }
+  uint64_t get_v_size() { return m_v_size; }
+
+  // Virtual method to be implemented by all CandidTypeVecXXX to push_back a value into the internal std::vector<T>
+  virtual void push_back_value(CandidTypeRoot &value);
+
+  // Record: The field data
+  std::vector<uint32_t> get_field_ids() { return m_field_ids; }
+  std::vector<std::string> get_field_names() { return m_field_names; }
+  std::vector<int> get_field_datatypes() { return m_field_datatypes; }
+  std::vector<std::shared_ptr<CandidTypeRoot>> get_field_ptrs() {
+    return m_fields_ptrs;
+  }
+  uint32_t idl_hash(const std::string &s);
 
 protected:
   // The datatype
@@ -71,18 +72,34 @@ protected:
   std::vector<uint32_t> m_field_ids; // id | hash
   std::vector<std::string> m_field_names;
   std::vector<int> m_field_datatypes;
-  std::vector<std::shared_ptr<CandidTypeBase>> m_fields_ptrs;
+  std::vector<std::shared_ptr<CandidTypeRoot>> m_fields_ptrs;
 
   // The encoded byte vector for the Type Table
   VecBytes m_T;
 
   // The unique type table index into the registry,
   // As maintained by the CandidSerializeTypeTableRegistry singleton
-  __uint128_t m_type_table_index{0};
+  // Note: setting it to -1 is ok, because it relies on defined unsigned
+  //       integer underflow behavior. It will be set to to maximum
+  //       representable value of size_t.
+  size_t m_type_table_index{static_cast<size_t>(-1)};
 
   // The encoded byte vector for the Candid Type
   VecBytes m_I;
 
   // The encoded byte vector for the value
   VecBytes m_M;
+};
+
+// Templated base class
+template <typename Derived> class CandidTypeBase : public CandidTypeRoot {
+public:
+  CandidTypeBase();
+  ~CandidTypeBase();
+
+  // Returns a copy as a CandidType (a variant), to be used in std::visit
+  // we can convert pointers of derived classes that inherit from CandidTypeBase
+  // into their corresponding std::variant, CandidType. This enables us to
+  // utilize std::visit on the methods of the actual derived class.
+  CandidType toCandidType();
 };

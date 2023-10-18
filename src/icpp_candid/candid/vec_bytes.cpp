@@ -577,7 +577,7 @@ void VecBytes::trap(const std::string &msg) { ICPP_HOOKS::trap(msg); }
 // Doing it this way avoids the COMDAT warnings & multiple definitions errors
 
 template <typename T>
-requires MyFixedWidthInts<T>
+  requires MyFixedWidthInts<T>
 void VecBytes::append_int_fixed_width(const T &v) {
   uint8_t *bytes{nullptr};
   if (is_little_endian()) bytes = (uint8_t *)&v;
@@ -601,7 +601,7 @@ template void VecBytes::append_int_fixed_width<uint64_t>(const uint64_t &v);
 
 // --
 template <typename T>
-requires MyFloats<T>
+  requires MyFloats<T>
 void VecBytes::append_float_ieee754(const T &v) {
   if (is_float_ieee754()) {
     // https://github.com/dfinity/candid/blob/master/spec/Candid.md#floating-point-numbers
@@ -625,7 +625,7 @@ template void VecBytes::append_float_ieee754<double> (const double &v);
 
 // --
 template <typename T>
-requires MyFixedWidthInts<T>
+  requires MyFixedWidthInts<T>
 bool VecBytes::parse_int_fixed_width(__uint128_t &offset, T &v,
                                      std::string &parse_error) {
   __uint128_t len = m_vec.size() - offset;
@@ -654,7 +654,7 @@ template bool VecBytes::parse_int_fixed_width<uint64_t>(__uint128_t &offset, uin
 
 // --
 template <typename T>
-requires MyFloats<T>
+  requires MyFloats<T>
 bool VecBytes::parse_float_ieee754(__uint128_t &offset, T &v,
                                    std::string &parse_error) {
   if (is_float_ieee754()) {

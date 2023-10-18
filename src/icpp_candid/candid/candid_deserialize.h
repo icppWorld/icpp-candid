@@ -24,14 +24,15 @@ public:
 
 private:
   void deserialize();
+  void check_types();
 
   // The vector with placeholders for the expected arguments of the byte stream coming in
   CandidArgs m_A;
 
-  // The deserialized type tables
+  // The deserialized type tables found on wire
   std::vector<CandidTypeTable> m_typetables;
 
-  // The deserialized argument list
+  // The deserialized args found on wire
   std::vector<int> m_args_datatypes;
   std::vector<__uint128_t> m_args_datatypes_offset_start;
   std::vector<__uint128_t> m_args_datatypes_offset_end;

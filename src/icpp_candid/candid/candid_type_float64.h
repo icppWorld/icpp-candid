@@ -5,7 +5,7 @@
 #include "candid_type_base.h"
 #include "vec_bytes.h"
 
-class CandidTypeFloat64 : public CandidTypeBase {
+class CandidTypeFloat64 : public CandidTypeBase<CandidTypeFloat64> {
 public:
   // Constructors
   CandidTypeFloat64();
@@ -21,6 +21,7 @@ public:
   }
   bool decode_M(VecBytes B, __uint128_t &offset, std::string &parse_error);
   double get_v() { return m_v; }
+  double *get_pv() { return m_pv; }
 
 protected:
   void set_pv(double *v);

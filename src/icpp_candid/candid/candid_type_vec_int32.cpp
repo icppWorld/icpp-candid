@@ -1,15 +1,15 @@
 // The class for the Candid Type: vec
-
 #include "candid_type.h"
-#include "candid_type_vec_int32.h"
+
+#include "candid_serialize_type_table_registry.h"
+
 #include "candid_assert.h"
 #include "candid_opcode.h"
+#include "candid_type_vec_int32.h"
 
 #include <cassert>
 
-
-
-CandidTypeVecInt32::CandidTypeVecInt32() : CandidTypeVecBase() {
+CandidTypeVecInt32::CandidTypeVecInt32() : CandidTypeBase() {
   std::vector<int32_t> v;
   set_v(v);
   initialize();
@@ -17,7 +17,7 @@ CandidTypeVecInt32::CandidTypeVecInt32() : CandidTypeVecBase() {
 
 // These constructors allows for setting the value during Deserialization
 CandidTypeVecInt32::CandidTypeVecInt32(std::vector<int32_t> *p_v)
-    : CandidTypeVecBase() {
+    : CandidTypeBase() {
   set_pv(p_v);
 
   const std::vector<int32_t> v = const_cast<std::vector<int32_t> &>(*p_v);
@@ -27,7 +27,7 @@ CandidTypeVecInt32::CandidTypeVecInt32(std::vector<int32_t> *p_v)
 
 // These constructors are only for encoding
 CandidTypeVecInt32::CandidTypeVecInt32(const std::vector<int32_t> v)
-    : CandidTypeVecBase() {
+    : CandidTypeBase() {
   set_v(v);
   initialize();
 }
@@ -38,6 +38,17 @@ void CandidTypeVecInt32::set_content_type() {
   m_content_type_opcode = CandidOpcode().Int32;
   m_content_type_hex = OpcodeHex().Int32;
   m_content_type_textual = OpcodeTextual().Int32;
+}
+
+void CandidTypeVecInt32::push_back_value(CandidTypeRoot &value) {
+  auto &derived_value = static_cast<CandidTypeInt32 &>(value);
+  if (m_pv) {
+    // We're deserializing
+    m_pv->push_back(derived_value.get_v());
+  } else {
+    // We're serializing
+    m_v.push_back(derived_value.get_v());
+  }
 }
 
 void CandidTypeVecInt32::encode_M() {
@@ -65,7 +76,7 @@ bool CandidTypeVecInt32::decode_M(VecBytes B, __uint128_t &offset,
   if (B.parse_uleb128(offset, size_vec, numbytes, parse_error)) {
     std::string to_be_parsed = "Size of vec- leb128(N)";
     CandidAssert::trap_with_parse_error(offset_start, offset, to_be_parsed,
-                                             parse_error);
+                                        parse_error);
   }
 
   m_v.clear();
@@ -75,8 +86,8 @@ bool CandidTypeVecInt32::decode_M(VecBytes B, __uint128_t &offset,
   for (size_t i = 0; i < size_vec; ++i) {
     if (B.parse_int_fixed_width(offset, v, parse_error)) {
       std::string to_be_parsed = "Vec: Value for CandidTypeInt32";
-      CandidAssert::trap_with_parse_error(offset_start, offset,
-                                               to_be_parsed, parse_error);
+      CandidAssert::trap_with_parse_error(offset_start, offset, to_be_parsed,
+                                          parse_error);
     }
     m_v.push_back(v);
   }
@@ -85,4 +96,60 @@ bool CandidTypeVecInt32::decode_M(VecBytes B, __uint128_t &offset,
   if (m_pv) *m_pv = m_v;
 
   return false;
+}
+
+// ---------
+// Initialize things
+void CandidTypeVecInt32::initialize() {
+  set_datatype();
+  set_content_type();
+  encode_T();
+  encode_I();
+  encode_M();
+}
+
+void CandidTypeVecInt32::set_datatype() {
+  m_datatype_opcode = CandidOpcode().Vec;
+  m_datatype_hex = OpcodeHex().Vec;
+  m_datatype_textual = OpcodeTextual().Vec;
+}
+
+// build the type table encoding
+void CandidTypeVecInt32::encode_T() {
+  m_T.append_byte((std::byte)m_datatype_hex);
+  m_T.append_byte((std::byte)m_content_type_hex);
+
+  // Update the type table registry,
+  m_type_table_index = CandidSerializeTypeTableRegistry::get_instance()
+                           .add_or_replace_type_table(m_type_table_index, m_T);
+}
+
+// Decode the type table, starting at & updating offset
+bool CandidTypeVecInt32::decode_T(VecBytes B, __uint128_t &offset,
+                                  std::string &parse_error) {
+  __uint128_t len = B.size() - offset;
+
+  // The opcode for content type
+  __uint128_t offset_start = offset;
+  parse_error = "";
+  __int128_t content_type;
+  __uint128_t numbytes;
+  if (B.parse_sleb128(offset, content_type, numbytes, parse_error)) {
+    std::string to_be_parsed = "Type table: a Vec's content type";
+    CandidAssert::trap_with_parse_error(offset_start, offset, to_be_parsed,
+                                        parse_error);
+  }
+
+  m_content_type_opcode = int(content_type);
+  return false;
+}
+
+// For vecs, we set the Opcode, but note that it is not used during serialization.
+// At serialization time, we use the index in the overall type table.
+//
+// Encode the datatype
+// https://github.com/dfinity/candid/blob/master/spec/Candid.md#types
+// For <constype>: the negative Opcode
+void CandidTypeVecInt32::encode_I() {
+  m_I.append_byte((std::byte)m_datatype_hex);
 }

@@ -36,9 +36,9 @@ int CandidAssert::assert_candid(const VecBytes &B,
 
 // Trap with parse error message
 void CandidAssert::trap_with_parse_error(const __uint128_t &B_offset_start,
-                                              const __uint128_t &B_offset,
-                                              const std::string &to_be_parsed,
-                                              const std::string &parse_error) {
+                                         const __uint128_t &B_offset,
+                                         const std::string &to_be_parsed,
+                                         const std::string &parse_error) {
   std::string msg;
   msg.append("ERROR: decoding of Candid byte stream failed.\n");
   msg.append("       trying to extract: " + to_be_parsed + "\n");
