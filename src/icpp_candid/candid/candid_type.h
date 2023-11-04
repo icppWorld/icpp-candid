@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <optional>
+// #include <optional>
 #include <variant>
 
 // ------------------------------------------------------------------
@@ -65,6 +65,7 @@ class CandidTypeVecRecord;
 // class CandidTypeVecEmpty;
 // class CandidTypeVecReserved;
 
+class CandidTypeOptNull;
 class CandidTypeOptBool;
 class CandidTypeOptFloat32;
 class CandidTypeOptFloat64;
@@ -81,9 +82,8 @@ class CandidTypeOptInt64;
 class CandidTypeOptText;
 class CandidTypeOptPrincipal;
 // class CandidTypeOptVec;
-// class CandidTypeOptRecord;
+class CandidTypeOptRecord;
 // These types are not used for opts
-// class CandidTypeOptNull;
 // class CandidTypeOptEmpty;
 // class CandidTypeOptReserved;
 
@@ -111,9 +111,10 @@ using CandidType = std::variant<
     CandidTypeVecNat, CandidTypeVecNat8, CandidTypeVecNat16, CandidTypeVecNat32,
     CandidTypeVecNat64, CandidTypeVecInt8, CandidTypeVecInt16,
     CandidTypeVecInt32, CandidTypeVecInt64, CandidTypeVecText,
-    CandidTypeVecPrincipal, CandidTypeVecRecord, CandidTypeOptBool,
-    CandidTypeOptFloat32, CandidTypeOptFloat64, CandidTypeOptInt,
-    CandidTypeOptNat, CandidTypeOptNat8, CandidTypeOptNat16, CandidTypeOptNat32,
-    CandidTypeOptNat64, CandidTypeOptInt8, CandidTypeOptInt16,
-    CandidTypeOptInt32, CandidTypeOptInt64, CandidTypeOptText,
-    CandidTypeOptPrincipal, CandidTypeRecord, CandidTypeVariant>;
+    CandidTypeVecPrincipal, CandidTypeVecRecord, CandidTypeOptNull,
+    CandidTypeOptBool, CandidTypeOptFloat32, CandidTypeOptFloat64,
+    CandidTypeOptInt, CandidTypeOptNat, CandidTypeOptNat8, CandidTypeOptNat16,
+    CandidTypeOptNat32, CandidTypeOptNat64, CandidTypeOptInt8,
+    CandidTypeOptInt16, CandidTypeOptInt32, CandidTypeOptInt64,
+    CandidTypeOptText, CandidTypeOptPrincipal, CandidTypeOptRecord,
+    CandidTypeRecord, CandidTypeVariant>;

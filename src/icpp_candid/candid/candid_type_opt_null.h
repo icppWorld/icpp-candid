@@ -4,21 +4,20 @@
 
 #include <cstring>
 
-#include "candid_type_principal.h"
+#include "candid_type_null.h"
 #include "vec_bytes.h"
 
-class CandidTypeOptPrincipal : public CandidTypeBase<CandidTypeOptPrincipal> {
+class CandidTypeOptNull : public CandidTypeBase<CandidTypeOptNull> {
 public:
   // Constructors
-  CandidTypeOptPrincipal();
+  // CandidTypeOptNull();
   // clang-format off
   // docs start: demo_candid_type_opt
-  CandidTypeOptPrincipal(std::optional<std::string> *p_v);
-  CandidTypeOptPrincipal(const std::optional<std::string> v); // docs end: demo_candid_type_opt
+  CandidTypeOptNull(); // docs end: demo_candid_type_opt
   // clang-format on
 
   // Destructor
-  ~CandidTypeOptPrincipal();
+  ~CandidTypeOptNull();
 
   bool decode_M(CandidDeserialize &de, VecBytes B, __uint128_t &offset,
                 std::string &parse_error);

@@ -3,6 +3,7 @@
 #include "candid_type_visitors.h"
 
 #include "candid_serialize_type_table_registry.h"
+#include "candid_deserialize.h"
 
 #include "candid_debug_config.h"
 #include "candid_assert.h"
@@ -40,12 +41,20 @@ CandidTypeVecRecord::CandidTypeVecRecord(const CandidTypeRecord v)
 CandidTypeVecRecord::~CandidTypeVecRecord() {}
 
 void CandidTypeVecRecord::set_content_type() {
-  m_content_type_opcode = CandidOpcode().Record;   // we do NOT use this
-  m_content_type_hex = OpcodeHex().Record;         // we do NOT use this
-  m_content_type_textual = OpcodeTextual().Record; // we do NOT use this
+  m_content_opcode = CandidOpcode().Record;   // we do NOT use this
+  m_content_hex = OpcodeHex().Record;         // we do NOT use this
+  m_content_textual = OpcodeTextual().Record; // we do NOT use this
 }
 
-CandidTypeRecord CandidTypeVecRecord::create_dummy_record() {
+void CandidTypeVecRecord::create_dummy_record() {
+  if (m_pr) {
+    ICPP_HOOKS::trap("ERROR: This method should be called only once - " +
+                     std::string(__func__));
+  }
+  // Use make_shared to create the dummy CandidTypeRecord and initialize the shared_ptr
+  m_pr = std::make_shared<CandidTypeRecord>();
+
+  // These fields are of type CandidTypeVecXXX
   auto field_ptrs = m_v.get_field_ptrs();
   auto field_names = m_v.get_field_names();
   auto field_ids = m_v.get_field_ids();
@@ -53,16 +62,14 @@ CandidTypeRecord CandidTypeVecRecord::create_dummy_record() {
   // Transpose the input of Record-of-Vecs to Vec-of-Records
   // Just use the first entry in the vectors
   size_t i = 0;
-  CandidTypeRecord c_record;
   // Loop over all the vectors at index i=0 and encode a record
   for (size_t j = 0; j < field_ptrs.size(); ++j) {
     auto field_ptr = field_ptrs[j];
     auto field_name = field_names[j];
     auto field_id = field_ids[j];
 
-    // using the encoder of a dummy CandidTypeVecXXX
+    // Check that we indeed have a CandidTypeVecXXX
     auto field_opcode = field_ptr->get_datatype_opcode();
-
     if (field_opcode != candidOpcode.Vec) {
       std::string msg;
       msg.append(
@@ -73,27 +80,30 @@ CandidTypeRecord CandidTypeVecRecord::create_dummy_record() {
       ICPP_HOOKS::trap(msg);
     }
 
-    auto content_opcode = field_ptr->get_content_type_opcode();
+    auto content_opcode = field_ptr->get_content_opcode(); // debug only
     CandidType c_field = field_ptr->toCandidType();
 
     CandidType c_fields_vector_value_at_index_i =
         std::visit(GetCandidTypeVecIndexVisitor(i), c_field);
 
-    c_record.append(field_id, c_fields_vector_value_at_index_i);
+    if (field_name != "") {
+      m_pr->append(field_name, c_fields_vector_value_at_index_i);
+    } else {
+      m_pr->append(field_id, c_fields_vector_value_at_index_i);
+    }
   }
-  return c_record;
 }
 
 // build the type table encoding
 void CandidTypeVecRecord::encode_T() {
   m_T.append_byte((std::byte)m_datatype_hex);
 
-  // Build a dummy Record to get a type-table of the record in the registry
-  CandidTypeRecord c_record = create_dummy_record();
+  // Build a dummy Record which will also create a type-table of a dummy record in the registry
+  create_dummy_record();
 
   // Ok, so now we have a type-table in the registry for the Record
   //     that we can reference from our Vec-of-Records type table
-  int c_record_type_table_index = c_record.get_type_table_index();
+  int c_record_type_table_index = m_pr->get_type_table_index();
   m_T.append_sleb128(__int128_t(c_record_type_table_index));
 
   // Update the type table registry,
@@ -143,7 +153,7 @@ void CandidTypeVecRecord::encode_M() {
         ICPP_HOOKS::trap(msg);
       }
 
-      // auto content_opcode = field_ptr->get_content_type_opcode();
+      // auto content_opcode = field_ptr->get_content_opcode();
       CandidType c_field = field_ptr->toCandidType();
       CandidType c_fields_vector_value_at_index_i =
           std::visit(GetCandidTypeVecIndexVisitor(i), c_field);
@@ -156,8 +166,16 @@ void CandidTypeVecRecord::encode_M() {
 }
 
 // Decode the values, starting at & updating offset
-bool CandidTypeVecRecord::decode_M(VecBytes B, __uint128_t &offset,
+bool CandidTypeVecRecord::decode_M(CandidDeserialize &de, VecBytes B,
+                                   __uint128_t &offset,
                                    std::string &parse_error) {
+  std::string debug_hex_string;
+  if (CANDID_DESERIALIZE_DEBUG_PRINT) {
+    ICPP_HOOKS::debug_print("+++++");
+    ICPP_HOOKS::debug_print("Entered CandidTypeVecRecord::decode_M");
+    debug_hex_string = B.as_hex_string();
+  }
+
   // Ensure from_wire was called by reference !
   if (!m_pv) {
     ICPP_HOOKS::trap(
@@ -168,8 +186,8 @@ bool CandidTypeVecRecord::decode_M(VecBytes B, __uint128_t &offset,
   __uint128_t offset_start = offset;
   __uint128_t numbytes;
   parse_error = "";
-  __uint128_t size_vec;
-  if (B.parse_uleb128(offset, size_vec, numbytes, parse_error)) {
+  __uint128_t size_vec_wire;
+  if (B.parse_uleb128(offset, size_vec_wire, numbytes, parse_error)) {
     std::string to_be_parsed = "Size of vec- leb128(N)";
     CandidAssert::trap_with_parse_error(offset_start, offset, to_be_parsed,
                                         parse_error);
@@ -177,23 +195,77 @@ bool CandidTypeVecRecord::decode_M(VecBytes B, __uint128_t &offset,
 
   // Read a Vec-of-Records from the wire, but we store it as a Record-of-vecs
 
-  // Build a dummy Record so we can use its' decode_M
-  CandidTypeRecord c_record = create_dummy_record();
+  // --------------------
+  // TODO: DELETE ALL OF THIS... brainstorming notes that did not work out...
+  // TODO: do NOT build a dummy record, but instead
+  //       use the decoder of wire created during reading of the type-tables
+  // SEE candid_type_records's build_decoder_wire_for_additional_opt_field
+  // It calls candid_from_vec_opcode .. UPDATE THAT AS from_opt_opcode !!!
 
-  offset_start = offset;
-  parse_error = "";
-  // Loop over the vector size
-  for (size_t i = 0; i < size_vec; ++i) {
-    if (c_record.decode_M(B, offset, parse_error)) {
+  // --------------------
+
+  // --------------------
+  // TODO: DELETE ALL OF THIS...
+  // OLD APPROACH, WHICH DOES NOT WORK IF THERE ARE ADDITIONAL OPT FIELDS IN THE RECORD
+  // ALSO, IT DOES NOT WORK ANYMORE BECAUSE RECORD DECODE_M NOW EXPECTS m_fields_xxx_wire TO BE FILLED
+  // Build a dummy Record so we can use its' decode_M
+  // CandidTypeRecord c_record = create_dummy_record();
+
+  // offset_start = offset;
+  // parse_error = "";
+  // // Loop over the vector size just read from the wire
+  // for (size_t i = 0; i < size_vec_wire; ++i) {
+  //   if (CANDID_DESERIALIZE_DEBUG_PRINT) {
+  //     std::string msg;
+  //     msg.append(
+  //         "Start reading data by calling record's decode_M for vec index " +
+  //         std::to_string(i));
+  //     ICPP_HOOKS::debug_print(msg);
+  //   }
+  //   if (c_record.decode_M(de, B, offset, parse_error)) {
+  //     std::string to_be_parsed = "VecRecord: Value for CandidTypeRecord";
+  //     CandidAssert::trap_with_parse_error(offset_start, offset, to_be_parsed,
+  //                                         parse_error);
+  //   }
+
+  //   // Now map the Record fields read from the wire onto the passed in vectors
+  //   for (size_t j = 0; j < c_record.get_field_ptrs().size(); ++j) {
+
+  //     // The CandidTypeXXX just decoded from the wire
+  //     auto &c_field_wire = *c_record.get_field_ptrs()[j];
+
+  //     // The user-provided CandidTypeVecXXX to fill with that value
+  //     auto &c_field_vec = *m_pv->get_field_ptrs()[j];
+
+  //     // Use the push_back_value directly
+  //     c_field_vec.push_back_value(c_field_wire);
+  //   }
+  // }
+  // --------------------
+
+  // Loop over the vector size just read from the wire
+  for (size_t i = 0; i < size_vec_wire; ++i) {
+    if (CANDID_DESERIALIZE_DEBUG_PRINT) {
+      std::string msg;
+      msg.append(
+          "Start reading data by calling record's decode_M for vec index " +
+          std::to_string(i));
+      ICPP_HOOKS::debug_print(msg);
+    }
+    offset_start = offset;
+    parse_error = "";
+    if (m_pr->decode_M(de, B, offset, parse_error)) {
       std::string to_be_parsed = "VecRecord: Value for CandidTypeRecord";
       CandidAssert::trap_with_parse_error(offset_start, offset, to_be_parsed,
                                           parse_error);
     }
 
-    for (size_t j = 0; j < c_record.get_field_ptrs().size(); ++j) {
+    // Now map the Record fields read from the wire onto the passed in vectors
+    // Note: We only support a VecRecord that can be transposed into a Record of Vecs
+    for (size_t j = 0; j < m_pr->get_field_ptrs().size(); ++j) {
 
       // The CandidTypeXXX just decoded from the wire
-      auto &c_field_wire = *c_record.get_field_ptrs()[j];
+      auto &c_field_wire = *m_pr->get_field_ptrs()[j];
 
       // The user-provided CandidTypeVecXXX to fill with that value
       auto &c_field_vec = *m_pv->get_field_ptrs()[j];
@@ -249,7 +321,7 @@ bool CandidTypeVecRecord::decode_T(VecBytes B, __uint128_t &offset,
                                         parse_error);
   }
 
-  m_content_type_opcode = int(content_type);
+  m_content_opcode = int(content_type);
   return false;
 }
 

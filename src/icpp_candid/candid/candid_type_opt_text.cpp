@@ -39,9 +39,9 @@ CandidTypeOptText::CandidTypeOptText(const std::optional<std::string> v)
 CandidTypeOptText::~CandidTypeOptText() {}
 
 void CandidTypeOptText::set_content_type() {
-  m_content_type_opcode = CandidOpcode().Text;
-  m_content_type_hex = OpcodeHex().Text;
-  m_content_type_textual = OpcodeTextual().Text;
+  m_content_opcode = CandidOpcode().Text;
+  m_content_hex = OpcodeHex().Text;
+  m_content_textual = OpcodeTextual().Text;
 }
 
 void CandidTypeOptText::encode_M() {
@@ -66,7 +66,8 @@ void CandidTypeOptText::encode_M() {
 }
 
 // Decode the values, starting at & updating offset
-bool CandidTypeOptText::decode_M(VecBytes B, __uint128_t &offset,
+bool CandidTypeOptText::decode_M(CandidDeserialize &de, VecBytes B,
+                                 __uint128_t &offset,
                                  std::string &parse_error) {
   // https://github.com/dfinity/candid/blob/master/spec/Candid.md#memory
   // M(null : opt <datatype>) = i8(0)
@@ -86,7 +87,7 @@ bool CandidTypeOptText::decode_M(VecBytes B, __uint128_t &offset,
     offset_start = offset;
     parse_error = "";
     CandidTypeText c{}; // dummy so we can use it's decode_M
-    if (c.decode_M(B, offset, parse_error)) {
+    if (c.decode_M(de, B, offset, parse_error)) {
       std::string to_be_parsed = "Opt: Value for CandidTypeText";
       CandidAssert::trap_with_parse_error(offset_start, offset, to_be_parsed,
                                           parse_error);
@@ -122,7 +123,7 @@ void CandidTypeOptText::set_datatype() {
 // build the type table encoding
 void CandidTypeOptText::encode_T() {
   m_T.append_byte((std::byte)m_datatype_hex);
-  m_T.append_byte((std::byte)m_content_type_hex);
+  m_T.append_byte((std::byte)m_content_hex);
 
   // Update the type table registry,
   m_type_table_index = CandidSerializeTypeTableRegistry::get_instance()
@@ -145,7 +146,7 @@ bool CandidTypeOptText::decode_T(VecBytes B, __uint128_t &offset,
                                         parse_error);
   }
 
-  m_content_type_opcode = int(content_type);
+  m_content_opcode = int(content_type);
   return false;
 }
 

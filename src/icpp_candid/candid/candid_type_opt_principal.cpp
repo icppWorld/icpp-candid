@@ -41,9 +41,9 @@ CandidTypeOptPrincipal::CandidTypeOptPrincipal(
 CandidTypeOptPrincipal::~CandidTypeOptPrincipal() {}
 
 void CandidTypeOptPrincipal::set_content_type() {
-  m_content_type_opcode = CandidOpcode().Principal;
-  m_content_type_hex = OpcodeHex().Principal;
-  m_content_type_textual = OpcodeTextual().Principal;
+  m_content_opcode = CandidOpcode().Principal;
+  m_content_hex = OpcodeHex().Principal;
+  m_content_textual = OpcodeTextual().Principal;
 }
 
 void CandidTypeOptPrincipal::encode_M() {
@@ -64,7 +64,8 @@ void CandidTypeOptPrincipal::encode_M() {
 }
 
 // Decode the values, starting at & updating offset
-bool CandidTypeOptPrincipal::decode_M(VecBytes B, __uint128_t &offset,
+bool CandidTypeOptPrincipal::decode_M(CandidDeserialize &de, VecBytes B,
+                                      __uint128_t &offset,
                                       std::string &parse_error) {
   // https://github.com/dfinity/candid/blob/master/spec/Candid.md#memory
   // M(null : opt <datatype>) = i8(0)
@@ -84,7 +85,7 @@ bool CandidTypeOptPrincipal::decode_M(VecBytes B, __uint128_t &offset,
     offset_start = offset;
     parse_error = "";
     CandidTypePrincipal c{}; // dummy so we can use it's decode_M
-    if (c.decode_M(B, offset, parse_error)) {
+    if (c.decode_M(de, B, offset, parse_error)) {
       std::string to_be_parsed = "Opt: Value for CandidTypePrincipal";
       CandidAssert::trap_with_parse_error(offset_start, offset, to_be_parsed,
                                           parse_error);
@@ -121,7 +122,7 @@ void CandidTypeOptPrincipal::set_datatype() {
 // build the type table encoding
 void CandidTypeOptPrincipal::encode_T() {
   m_T.append_byte((std::byte)m_datatype_hex);
-  m_T.append_byte((std::byte)m_content_type_hex);
+  m_T.append_byte((std::byte)m_content_hex);
 
   // Update the type table registry,
   m_type_table_index = CandidSerializeTypeTableRegistry::get_instance()
@@ -144,7 +145,7 @@ bool CandidTypeOptPrincipal::decode_T(VecBytes B, __uint128_t &offset,
                                         parse_error);
   }
 
-  m_content_type_opcode = int(content_type);
+  m_content_opcode = int(content_type);
   return false;
 }
 

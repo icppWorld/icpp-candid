@@ -52,8 +52,8 @@ void CandidTypeBool::encode_M() {
 }
 
 // Decode the values, starting at & updating offset
-bool CandidTypeBool::decode_M(VecBytes B, __uint128_t &offset,
-                              std::string &parse_error) {
+bool CandidTypeBool::decode_M(CandidDeserialize &de, VecBytes B,
+                              __uint128_t &offset, std::string &parse_error) {
   __uint128_t offset_start = offset;
   __uint128_t numbytes;
   parse_error = "";
