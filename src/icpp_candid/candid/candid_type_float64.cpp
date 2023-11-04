@@ -63,7 +63,8 @@ void CandidTypeFloat64::encode_M() {
 }
 
 // Decode the values, starting at & updating offset
-bool CandidTypeFloat64::decode_M(VecBytes B, __uint128_t &offset,
+bool CandidTypeFloat64::decode_M(CandidDeserialize &de, VecBytes B,
+                                 __uint128_t &offset,
                                  std::string &parse_error) {
   __uint128_t offset_start = offset;
   parse_error = "";

@@ -35,9 +35,9 @@ CandidTypeVecInt::CandidTypeVecInt(const std::vector<__int128_t> v)
 CandidTypeVecInt::~CandidTypeVecInt() {}
 
 void CandidTypeVecInt::set_content_type() {
-  m_content_type_opcode = CandidOpcode().Int;
-  m_content_type_hex = OpcodeHex().Int;
-  m_content_type_textual = OpcodeTextual().Int;
+  m_content_opcode = CandidOpcode().Int;
+  m_content_hex = OpcodeHex().Int;
+  m_content_textual = OpcodeTextual().Int;
 }
 
 void CandidTypeVecInt::push_back_value(CandidTypeRoot &value) {
@@ -66,8 +66,8 @@ void CandidTypeVecInt::encode_M() {
 }
 
 // Decode the values, starting at & updating offset
-bool CandidTypeVecInt::decode_M(VecBytes B, __uint128_t &offset,
-                                std::string &parse_error) {
+bool CandidTypeVecInt::decode_M(CandidDeserialize &de, VecBytes B,
+                                __uint128_t &offset, std::string &parse_error) {
   // get size of vec - leb128(N)
   __uint128_t offset_start = offset;
   __uint128_t numbytes;
@@ -117,7 +117,7 @@ void CandidTypeVecInt::set_datatype() {
 // build the type table encoding
 void CandidTypeVecInt::encode_T() {
   m_T.append_byte((std::byte)m_datatype_hex);
-  m_T.append_byte((std::byte)m_content_type_hex);
+  m_T.append_byte((std::byte)m_content_hex);
 
   // Update the type table registry,
   m_type_table_index = CandidSerializeTypeTableRegistry::get_instance()
@@ -140,7 +140,7 @@ bool CandidTypeVecInt::decode_T(VecBytes B, __uint128_t &offset,
                                         parse_error);
   }
 
-  m_content_type_opcode = int(content_type);
+  m_content_opcode = int(content_type);
   return false;
 }
 

@@ -35,9 +35,9 @@ CandidTypeVecNat8::CandidTypeVecNat8(const std::vector<uint8_t> v)
 CandidTypeVecNat8::~CandidTypeVecNat8() {}
 
 void CandidTypeVecNat8::set_content_type() {
-  m_content_type_opcode = CandidOpcode().Nat8;
-  m_content_type_hex = OpcodeHex().Nat8;
-  m_content_type_textual = OpcodeTextual().Nat8;
+  m_content_opcode = CandidOpcode().Nat8;
+  m_content_hex = OpcodeHex().Nat8;
+  m_content_textual = OpcodeTextual().Nat8;
 }
 
 void CandidTypeVecNat8::push_back_value(CandidTypeRoot &value) {
@@ -66,7 +66,8 @@ void CandidTypeVecNat8::encode_M() {
 }
 
 // Decode the values, starting at & updating offset
-bool CandidTypeVecNat8::decode_M(VecBytes B, __uint128_t &offset,
+bool CandidTypeVecNat8::decode_M(CandidDeserialize &de, VecBytes B,
+                                 __uint128_t &offset,
                                  std::string &parse_error) {
   // get size of vec - leb128(N)
   __uint128_t offset_start = offset;
@@ -117,7 +118,7 @@ void CandidTypeVecNat8::set_datatype() {
 // build the type table encoding
 void CandidTypeVecNat8::encode_T() {
   m_T.append_byte((std::byte)m_datatype_hex);
-  m_T.append_byte((std::byte)m_content_type_hex);
+  m_T.append_byte((std::byte)m_content_hex);
 
   // Update the type table registry,
   m_type_table_index = CandidSerializeTypeTableRegistry::get_instance()
@@ -140,7 +141,7 @@ bool CandidTypeVecNat8::decode_T(VecBytes B, __uint128_t &offset,
                                         parse_error);
   }
 
-  m_content_type_opcode = int(content_type);
+  m_content_opcode = int(content_type);
   return false;
 }
 

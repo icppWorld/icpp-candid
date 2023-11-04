@@ -38,9 +38,9 @@ CandidTypeOptNat::CandidTypeOptNat(const std::optional<__uint128_t> v)
 CandidTypeOptNat::~CandidTypeOptNat() {}
 
 void CandidTypeOptNat::set_content_type() {
-  m_content_type_opcode = CandidOpcode().Nat;
-  m_content_type_hex = OpcodeHex().Nat;
-  m_content_type_textual = OpcodeTextual().Nat;
+  m_content_opcode = CandidOpcode().Nat;
+  m_content_hex = OpcodeHex().Nat;
+  m_content_textual = OpcodeTextual().Nat;
 }
 
 void CandidTypeOptNat::encode_M() {
@@ -57,8 +57,8 @@ void CandidTypeOptNat::encode_M() {
 }
 
 // Decode the values, starting at & updating offset
-bool CandidTypeOptNat::decode_M(VecBytes B, __uint128_t &offset,
-                                std::string &parse_error) {
+bool CandidTypeOptNat::decode_M(CandidDeserialize &de, VecBytes B,
+                                __uint128_t &offset, std::string &parse_error) {
   // https://github.com/dfinity/candid/blob/master/spec/Candid.md#memory
   // M(null : opt <datatype>) = i8(0)
   // M(?v   : opt <datatype>) = i8(1) M(v : <datatype>)
@@ -114,7 +114,7 @@ void CandidTypeOptNat::set_datatype() {
 // build the type table encoding
 void CandidTypeOptNat::encode_T() {
   m_T.append_byte((std::byte)m_datatype_hex);
-  m_T.append_byte((std::byte)m_content_type_hex);
+  m_T.append_byte((std::byte)m_content_hex);
 
   // Update the type table registry,
   m_type_table_index = CandidSerializeTypeTableRegistry::get_instance()
@@ -137,7 +137,7 @@ bool CandidTypeOptNat::decode_T(VecBytes B, __uint128_t &offset,
                                         parse_error);
   }
 
-  m_content_type_opcode = int(content_type);
+  m_content_opcode = int(content_type);
   return false;
 }
 

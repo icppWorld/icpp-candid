@@ -71,6 +71,7 @@ public:
 
   void append_byte(const std::byte b);
   void append_bytes(const uint8_t *bytes, const uint32_t num_bytes);
+  void append(const VecBytes &other);
 
   void append_sleb128(const __int128_t &v);
   template <class T> void append_sleb128(T) = delete;
@@ -124,6 +125,11 @@ public:
 
   // helper methods
   std::string as_hex_string();
+  void debug_print_as_hex_string(__uint128_t B_offset_start,
+                                 __uint128_t B_offset_end);
+  void debug_print_as_hex_string(std::string hex_string,
+                                 __uint128_t B_offset_start,
+                                 __uint128_t B_offset_end);
   void debug_print();
   const std::vector<std::byte> &vec() const { return m_vec; };
   const std::vector<uint8_t> &vec_uint8_t() const { return m_vec_uint8_t; };

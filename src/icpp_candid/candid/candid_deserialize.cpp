@@ -2,6 +2,7 @@
 // https://github.com/dfinity/candid/blob/master/spec/Candid.md#parameters-and-results
 
 #include "candid_debug_config.h"
+#include "candid_constants.h"
 #include "candid_deserialize.h"
 #include "candid_assert.h"
 #include "candid_opcode.h"
@@ -14,13 +15,15 @@ CandidDeserialize::CandidDeserialize() { deserialize(); }
 CandidDeserialize::CandidDeserialize(const VecBytes &B, CandidArgs A) {
   m_A = A;
   m_B = B;
-  m_hex_string = ""; // TOdo
+  if (CANDID_DESERIALIZE_DEBUG_PRINT) {
+    m_hex_string_wire = m_B.as_hex_string();
+  }
   deserialize();
 }
 CandidDeserialize::CandidDeserialize(const std::string hex_string,
                                      CandidArgs A) {
   m_A = A;
-  m_hex_string = hex_string;
+  m_hex_string_wire = hex_string;
   m_B.store_hex_string(hex_string);
   deserialize();
 }
@@ -45,13 +48,12 @@ void CandidDeserialize::deserialize() {
   // M(kv* : <datatype>*)                 values of argument list
 
   CandidOpcode candidOpcode;
+  __uint128_t B_offset_start = 0;
   __uint128_t B_offset = 0;
 
   if (CANDID_DESERIALIZE_DEBUG_PRINT) {
     ICPP_HOOKS::debug_print("---------------------------");
     ICPP_HOOKS::debug_print("Entered CandidDeserialize::deserialize");
-    ICPP_HOOKS::debug_print("B_offset = " +
-                            ICPP_HOOKS::to_string_128(B_offset));
   }
 
   // -------------------------------------------------------------------------------------
@@ -60,9 +62,8 @@ void CandidDeserialize::deserialize() {
   B_offset = 4;
 
   if (CANDID_DESERIALIZE_DEBUG_PRINT) {
+    m_B.debug_print_as_hex_string(m_hex_string_wire, B_offset_start, B_offset);
     ICPP_HOOKS::debug_print("Found DIDL");
-    ICPP_HOOKS::debug_print("B_offset = " +
-                            ICPP_HOOKS::to_string_128(B_offset));
   }
 
   // -------------------------------------------------------------------------------------
@@ -73,18 +74,24 @@ void CandidDeserialize::deserialize() {
   // (-) Constructed Types (opt, vec, record, variant)
   // (-) Reference Types (func, service)
 
+  // Notes:
+  // (-) Section T can contain additional, unused type tables
+  // (-) The order is totally random, unrelated to the order of the args on the wire
+  // (-) What is actually on the wire and in what order is defined in section I
+
   if (CANDID_DESERIALIZE_DEBUG_PRINT) {
     ICPP_HOOKS::debug_print(
         "********************** T ************************");
   }
   // Parse the number of unique type tables
-  __uint128_t num_typetables;
+  __uint128_t num_typetables_wire;
 
   {
-    __uint128_t B_offset_start = B_offset;
+    B_offset_start = B_offset;
     std::string parse_error;
     __uint128_t numbytes;
-    if (m_B.parse_uleb128(B_offset, num_typetables, numbytes, parse_error)) {
+    if (m_B.parse_uleb128(B_offset, num_typetables_wire, numbytes,
+                          parse_error)) {
       std::string to_be_parsed =
           "Number of unique type tables, T*(<comptype>*)";
       CandidAssert::trap_with_parse_error(B_offset_start, B_offset,
@@ -92,55 +99,66 @@ void CandidDeserialize::deserialize() {
     }
   }
   if (CANDID_DESERIALIZE_DEBUG_PRINT) {
-    ICPP_HOOKS::debug_print("num_typetables = " +
-                            ICPP_HOOKS::to_string_128(num_typetables));
-    ICPP_HOOKS::debug_print("B_offset = " +
-                            ICPP_HOOKS::to_string_128(B_offset));
+    m_B.debug_print_as_hex_string(m_hex_string_wire, B_offset_start, B_offset);
+    ICPP_HOOKS::debug_print("num_typetables_wire = " +
+                            ICPP_HOOKS::to_string_128(num_typetables_wire));
   }
 
   // Parse all the type tables
-  for (size_t i = 0; i < num_typetables; ++i) {
+  for (size_t i = 0; i < num_typetables_wire; ++i) {
     if (CANDID_DESERIALIZE_DEBUG_PRINT) {
-      ICPP_HOOKS::debug_print("--");
-      ICPP_HOOKS::debug_print("Parsing type table index " + std::to_string(i));
-      ICPP_HOOKS::debug_print("B_offset = " +
-                              ICPP_HOOKS::to_string_128(B_offset));
+      ICPP_HOOKS::debug_print("Start parsing of type table index " +
+                              std::to_string(i));
     }
+    B_offset_start = B_offset;
     CandidTypeTable type_table = CandidTypeTable(m_B, B_offset);
-    m_typetables.push_back(type_table);
+    if (CANDID_DESERIALIZE_DEBUG_PRINT) {
+      m_B.debug_print_as_hex_string(m_hex_string_wire, B_offset_start,
+                                    B_offset);
+      ICPP_HOOKS::debug_print("Parsed type table index " + std::to_string(i));
+    }
+    m_typetables_wire.push_back(type_table);
   }
 
-  // Finish type-table settings for Opt & Vec
-  for (size_t i = 0; i < num_typetables; ++i) {
-    if (m_typetables[i].get_opcode() == candidOpcode.Vec ||
-        m_typetables[i].get_opcode() == candidOpcode.Opt) {
+  // Set the opcode for type-tables that refer to a type-table
+  for (size_t i = 0; i < num_typetables_wire; ++i) {
+    int datatype_wire = m_typetables_wire[i].get_datatype();
+    if (datatype_wire >= 0) {
+      int opcode_wire = get_opcode_from_datatype_on_wire(datatype_wire);
+      m_typetables_wire[i].set_opcode(opcode_wire);
+    }
+  }
 
-      int content_opcode = m_typetables[i].get_content_opcode();
+  // set the content_opcode_wire for the type-tables of type Opt & Vec
+  for (size_t i = 0; i < num_typetables_wire; ++i) {
+    if (m_typetables_wire[i].get_opcode() == candidOpcode.Vec ||
+        m_typetables_wire[i].get_opcode() == candidOpcode.Opt) {
 
-      // Try at most num_typetables times to get a negative content_opcode
-      int tries = 0;
-      while (content_opcode >= 0) {
-        // This is an index into the type tables, so get the opcode of that type-table
-        if (content_opcode < m_typetables.size()) {
-          content_opcode = m_typetables[content_opcode].get_opcode();
+      int content_opcode_wire;
+
+      int content_datatype = m_typetables_wire[i].get_content_datatype();
+      CandidTypeTable *p_content_type_table = nullptr;
+      if (content_datatype >= 0) {
+        // This is a type table
+        content_opcode_wire =
+            get_opcode_from_datatype_on_wire(content_datatype);
+
+        if (content_datatype >= 0) {
+          p_content_type_table = &m_typetables_wire[content_datatype];
         }
-        tries++;
-        if (tries >= num_typetables) {
-          break; // break out of the loop after num_typetables tries
-        }
+      } else {
+        content_opcode_wire = content_datatype;
       }
+      m_typetables_wire[i].set_vec_and_opt(content_opcode_wire,
+                                           p_content_type_table);
+    }
+  }
 
-      if (content_opcode >= 0) {
-        ICPP_HOOKS::trap(
-            std::string(__func__) +
-            ": Cannot find the actual content type in the type tables for a Vec or Opt.");
-      }
-
-      if (CANDID_DESERIALIZE_DEBUG_PRINT) {
-        ICPP_HOOKS::debug_print("calling m_c_for_vec_and_opt for type_table " +
-                                std::to_string(i));
-      }
-      m_typetables[i].set_vec_and_opt(content_opcode);
+  // Finish processing the type-table info for Record & Variant type tables
+  for (size_t i = 0; i < num_typetables_wire; ++i) {
+    if ((m_typetables_wire[i].get_opcode() == candidOpcode.Record) ||
+        (m_typetables_wire[i].get_opcode() == candidOpcode.Variant)) {
+      m_typetables_wire[i].get_p_wire()->finish_decode_T(*this);
     }
   }
 
@@ -150,125 +168,218 @@ void CandidDeserialize::deserialize() {
   //                                      or
   //                                      - TypeTable index for <comptype>
 
+  // Notes:
+  // (-) Section I contains what is actually on the wire in section M and in what order
+
   if (CANDID_DESERIALIZE_DEBUG_PRINT) {
     ICPP_HOOKS::debug_print(
         "\n********************** I ************************");
   }
-  m_args_datatypes.clear();
-  m_args_datatypes_offset_start.clear();
-  m_args_datatypes_offset_end.clear();
+  m_args_datatypes_wire.clear();
+  m_args_opcodes_wire.clear();
+  m_args_content_datatypes_wire.clear();
+  m_args_content_opcodes_wire.clear();
+  m_args_datatypes_offset_start_wire.clear();
+  m_args_datatypes_offset_end_wire.clear();
 
   // Parse the number of arguments in the byte stream
-  __uint128_t num_args;
+  __uint128_t num_args_wire;
 
   {
-    __uint128_t B_offset_start = B_offset;
+    B_offset_start = B_offset;
     std::string parse_error;
     __uint128_t numbytes;
-    if (m_B.parse_uleb128(B_offset, num_args, numbytes, parse_error)) {
-      std::string to_be_parsed = "Number of arguments, I*(<datatype>*)";
+    if (m_B.parse_uleb128(B_offset, num_args_wire, numbytes, parse_error)) {
+      std::string to_be_parsed = "Number of arguments on wire, I*(<datatype>*)";
       CandidAssert::trap_with_parse_error(B_offset_start, B_offset,
                                           to_be_parsed, parse_error);
     }
   }
   if (CANDID_DESERIALIZE_DEBUG_PRINT) {
-    ICPP_HOOKS::debug_print("num_args = " +
-                            ICPP_HOOKS::to_string_128(num_args));
-    ICPP_HOOKS::debug_print("B_offset = " +
-                            ICPP_HOOKS::to_string_128(B_offset));
+    m_B.debug_print_as_hex_string(m_hex_string_wire, B_offset_start, B_offset);
+    ICPP_HOOKS::debug_print("num_args_wire = " +
+                            ICPP_HOOKS::to_string_128(num_args_wire));
   }
 
-  if (num_args != m_A.m_args_ptrs.size()) {
-    std::string msg;
-    msg.append("ERROR: wrong number of arguments on wire.\n");
-    msg.append("       Expected number of arguments:" +
-               std::to_string(m_A.m_args_ptrs.size()) + "\n");
-    msg.append("       Number of arguments on wire :" +
-               ICPP_HOOKS::to_string_128(num_args));
-    ICPP_HOOKS::trap(msg);
-  }
-
-  for (size_t i = 0; i < num_args; ++i) {
-    if (CANDID_DESERIALIZE_DEBUG_PRINT) {
-      ICPP_HOOKS::debug_print("--\narg = " + std::to_string(i));
-    }
-    __uint128_t B_offset_start = B_offset;
+  // Parse the data_type
+  for (size_t i = 0; i < num_args_wire; ++i) {
+    B_offset_start = B_offset;
     std::string parse_error;
     __uint128_t numbytes;
-    __int128_t datatype;
-    if (m_B.parse_sleb128(B_offset, datatype, numbytes, parse_error)) {
+    __int128_t datatype_wire;
+    if (m_B.parse_sleb128(B_offset, datatype_wire, numbytes, parse_error)) {
       std::string to_be_parsed = "datatype, I*(<datatype>*)";
       CandidAssert::trap_with_parse_error(B_offset_start, B_offset,
                                           to_be_parsed, parse_error);
     }
-    if (CANDID_DESERIALIZE_DEBUG_PRINT) {
-      ICPP_HOOKS::debug_print(
-          "datatype = " + ICPP_HOOKS::to_string_128(datatype) + "(" +
-          candidOpcode.name_from_opcode(datatype) + ")");
-      ICPP_HOOKS::debug_print("B_offset = " +
-                              ICPP_HOOKS::to_string_128(B_offset));
+
+    // Fill the references
+    int opcode_wire = int(datatype_wire);
+    int content_datatype_wire{CANDID_UNDEF};
+    int content_opcode_wire{CANDID_UNDEF};
+    if (opcode_wire >= 0) {
+      int idx = opcode_wire;
+      opcode_wire = m_typetables_wire[idx].get_opcode();
+      content_datatype_wire = m_typetables_wire[idx].get_content_datatype();
+      content_opcode_wire = m_typetables_wire[idx].get_content_opcode();
     }
-    m_args_datatypes.push_back(int(datatype));
-    m_args_datatypes_offset_start.push_back(B_offset_start);
-    m_args_datatypes_offset_end.push_back(B_offset);
+
+    if (CANDID_DESERIALIZE_DEBUG_PRINT) {
+      m_B.debug_print_as_hex_string(m_hex_string_wire, B_offset_start,
+                                    B_offset);
+      std::string msg;
+      msg.append("arg = " + std::to_string(i));
+      msg.append("\n - datatype_wire = " +
+                 ICPP_HOOKS::to_string_128(datatype_wire));
+      msg.append("\n - opcode_wire   = " + std::to_string(opcode_wire) + " (" +
+                 candidOpcode.name_from_opcode(opcode_wire) + ")");
+      if (content_datatype_wire != CANDID_UNDEF) {
+        msg.append("\n - content_datatype_wire = " +
+                   std::to_string(content_datatype_wire));
+      }
+      if (content_opcode_wire != CANDID_UNDEF) {
+        msg.append("\n - content_opcode_wire = " +
+                   std::to_string(content_opcode_wire) + " (" +
+                   candidOpcode.name_from_opcode(content_opcode_wire) + ")");
+      }
+      ICPP_HOOKS::debug_print(msg);
+    }
+    m_args_datatypes_wire.push_back(int(datatype_wire));
+    m_args_opcodes_wire.push_back(opcode_wire);
+    m_args_content_datatypes_wire.push_back(content_datatype_wire);
+    m_args_content_opcodes_wire.push_back(content_opcode_wire);
+    m_args_datatypes_offset_start_wire.push_back(B_offset_start);
+    m_args_datatypes_offset_end_wire.push_back(B_offset);
   }
 
   // -------------------------------------------------------------------------------------
   // (3) check that (<t>,*) <: (<t'>,*), else fail
   //
-  //  (<t>,*)  = found type definitions
+  //  (<t>,*)  = found type definitions in section I, stored in m_args_datatypes_wire
   //  (<t'>,*) = expected type definitions, provided via m_pA
   //  <:       = the found type definitions (<t>,*) are structural subtypes of the expected type sequence (<t'>,*)
   //
   //             https://github.com/dfinity/candid/blob/master/spec/Candid.md#upgrading-and-subtyping
   //
-  check_types();
 
   // (4) using the inverse of the M function, indexed by (<t>,*), to decode the values (<v>,*)
   //
   // (5) use the coercion function C[(<t>,*) <: (<t'>,*)]((<v>,*)) to understand the decoded values at the expected type.
   // M(kv* : <datatype>*)                 values of argument list
+  //
+  // Notes:
+  // (-) A Candid explainer: Opt is special
+  //     https://www.joachim-breitner.de/blog/784-A_Candid_explainer__Opt_is_special
+  //     -> additional Opt in the args on wire must be parsed & discarded
+  //     -> missing Opt on the wire is Ok, it is an Opt after all
 
   if (CANDID_DESERIALIZE_DEBUG_PRINT) {
     ICPP_HOOKS::debug_print(
         "\n********************** M ************************");
   }
-  for (size_t i = 0; i < num_args; ++i) {
-    if (m_args_datatypes[i] == candidOpcode.Null) {
-      if (CANDID_DESERIALIZE_DEBUG_PRINT) {
-        ICPP_HOOKS::debug_print(
-            "The opcode was Null, so nothing to read & decode for arg " +
-            std::to_string(i));
+
+  if (m_A.m_args_ptrs.size() > 0) {
+    // We have something to decode...
+
+    // index into found args on wire
+    size_t j_now = 0;
+
+    bool handled_arg_expected{false};
+    //                   <= to check that additional args on wire are Opts, else trap
+    for (size_t i = 0; i <= m_A.m_args_ptrs.size(); ++i) {
+      if (i < m_A.m_args_ptrs.size()) {
+        handled_arg_expected = false;
+      } else {
+        // We're already done with all expected args.
+        // Just checking for additional Opt args, which is allowed
+        // It will trap if additional non Opt args are found
+        handled_arg_expected = true;
       }
-      // There is no value to decode
-      continue;
-    }
 
-    if (CANDID_DESERIALIZE_DEBUG_PRINT) {
-      std::string msg;
-      msg.append("Start reading data by calling decode_M for arg " +
-                 std::to_string(i));
-      msg.append(
-          "\n- Using decode_M of expected datatype : m_A.m_args_ptrs[i]  = " +
-          std::to_string(m_A.m_args_ptrs[i]->get_datatype_opcode()) + " (" +
-          m_A.m_args_ptrs[i]->get_datatype_textual() + ")");
-      ICPP_HOOKS::debug_print(msg);
-    }
-    __uint128_t B_offset_start = B_offset;
-    std::string parse_error = "";
-    __uint128_t numbytes;
+      if (j_now == m_args_datatypes_wire.size()) {
+        if (i < m_A.m_args_ptrs.size()) {
+          int opcode_expected = m_A.m_args_ptrs[i]->get_datatype_opcode();
+          if (opcode_expected == candidOpcode.Opt) {
+            // OK! We have an Opt as next argument and nothing left on the wire
+            handled_arg_expected = true;
+          }
+        }
+      } else {
+        for (size_t j = j_now; j < m_args_datatypes_wire.size(); ++j) {
 
-    if (m_A.m_args_ptrs[i]->decode_M(m_B, B_offset, parse_error)) {
-      std::string to_be_parsed =
-          "Values (decoding M) for argument at index " + std::to_string(i);
-      CandidAssert::trap_with_parse_error(B_offset_start, B_offset,
-                                          to_be_parsed, parse_error);
-    }
-    if (CANDID_DESERIALIZE_DEBUG_PRINT) {
-      ICPP_HOOKS::debug_print("Done reading data by calling decode_M for arg " +
-                              std::to_string(i));
-      ICPP_HOOKS::debug_print("B_offset = " +
-                              ICPP_HOOKS::to_string_128(B_offset));
+          // Check if all is OK and if there is anything to decode, with either expected or wire decoder
+          std::shared_ptr<CandidTypeRoot> decoder = nullptr;
+          std::string decoder_name;
+
+          select_decoder_or_trap(i, j, decoder, decoder_name);
+
+          if (decoder) {
+            if (CANDID_DESERIALIZE_DEBUG_PRINT) {
+              std::string msg;
+              msg.append("Start reading data by calling decode_M for arg " +
+                         std::to_string(i));
+              msg.append("\n- Using decode_M of " + decoder_name +
+                         " for Opcode " +
+                         std::to_string(decoder->get_datatype_opcode()) + " (" +
+                         decoder->get_datatype_textual() + ")");
+              ICPP_HOOKS::debug_print(msg);
+            }
+            B_offset_start = B_offset;
+            std::string parse_error = "";
+            __uint128_t numbytes;
+
+            if (decoder->decode_M(*this, m_B, B_offset, parse_error)) {
+              std::string to_be_parsed =
+                  "Values (decoding M) for argument at index " +
+                  std::to_string(i);
+              CandidAssert::trap_with_parse_error(B_offset_start, B_offset,
+                                                  to_be_parsed, parse_error);
+            }
+
+            if (CANDID_DESERIALIZE_DEBUG_PRINT) {
+              m_B.debug_print_as_hex_string(m_hex_string_wire, B_offset_start,
+                                            B_offset);
+              ICPP_HOOKS::debug_print(
+                  "Done reading data by calling decode_M for arg " +
+                  std::to_string(i));
+            }
+          }
+
+          if (decoder_name == "expected" ||
+              decoder_name == "expected-opt-as-null" ||
+              decoder_name == "expected-opt-as-opt-null") {
+            // Found Expected on the wire
+            ++j_now;
+            handled_arg_expected = true;
+            break;
+          } else if (decoder_name == "skip-expected-opt-not-found-on-wire") {
+            // Expected Opt not found on the wire, but that is OK
+            // -> keep j where it is, to check if next expected arg matches
+            handled_arg_expected = true;
+            break;
+          } else if (decoder_name == "read-and-discard-additional-wire-opt") {
+            // Additional Opt on the wire, is also OK, just check next on wire
+            ++j_now;
+          } else {
+            std::string msg;
+            msg.append("ERROR: invalid decoder_name.");
+            ICPP_HOOKS::trap(msg);
+          }
+        }
+      }
+
+      if (!handled_arg_expected) {
+        std::string msg;
+        msg.append("\nERROR: Did not receive expected arg at index " +
+                   std::to_string(i));
+        if (i < m_A.m_args_ptrs.size()) {
+          int opcode_expected = m_A.m_args_ptrs[i]->get_datatype_opcode();
+          msg.append("\n- Opcode   = " + std::to_string(opcode_expected) +
+                     " (" + candidOpcode.name_from_opcode(opcode_expected) +
+                     ")");
+        }
+        ICPP_HOOKS::trap(msg);
+      }
     }
   }
 
@@ -277,192 +388,285 @@ void CandidDeserialize::deserialize() {
   // https://www.joachim-breitner.de/blog/786-A_Candid_explainer__Quirks
 }
 
-void CandidDeserialize::check_types() {
-  if (CANDID_DESERIALIZE_DEBUG_PRINT) {
-    ICPP_HOOKS::debug_print("--------------------------------");
-    ICPP_HOOKS::debug_print(
-        "Check all the found datatypes against expected (JUST A CHECK, NO READING FROM WIRE...)");
-  }
+void CandidDeserialize::select_decoder_or_trap(
+    size_t i, size_t j, std::shared_ptr<CandidTypeRoot> &decoder,
+    std::string &decoder_name) {
+
   CandidOpcode candidOpcode;
-  for (size_t i = 0; i < m_args_datatypes.size(); ++i) {
-    if (CANDID_DESERIALIZE_DEBUG_PRINT) {
-      ICPP_HOOKS::debug_print("--\narg = " + std::to_string(i));
+
+  // The arg on the wire (j)
+  int datatype_wire = m_args_datatypes_wire[j];
+  int opcode_wire = m_args_opcodes_wire[j];
+  int content_opcode_wire{CANDID_UNDEF};
+  std::string content_name_wire;
+  if (opcode_wire == candidOpcode.Opt || opcode_wire == candidOpcode.Vec) {
+    // datatype_wire is an index into the type-tables
+    int idx = datatype_wire;
+    if (idx >= 0 && idx < m_typetables_wire.size()) {
+      content_opcode_wire = m_typetables_wire[idx].get_content_opcode();
+      content_name_wire = candidOpcode.name_from_opcode(content_opcode_wire);
+    } else {
+      ICPP_HOOKS::trap("ERROR: Logic error with retrieval of Opt. or Vec");
+    }
+  }
+
+  if (i >= m_A.m_args_ptrs.size()) {
+    // We're done with the expected args, but we need to trap on possible additional non Opts on wire at end
+    if (opcode_wire != candidOpcode.Opt) {
+      std::string msg;
+      msg.append(
+          "\nERROR: Done with all the expected args, but there is an additional non Opt arg on the wire.");
+      msg.append("\nnext arg on wire at index " + std::to_string(j));
+      msg.append("\n- datatype     = " + std::to_string(datatype_wire));
+      msg.append("\n- Opcode       = " + std::to_string(opcode_wire) + " (" +
+                 candidOpcode.name_from_opcode(opcode_wire) + ")");
+      if (datatype_wire >= 0) {
+        msg.append("\n  (walked the type-tables to find that Opcode!)");
+      }
+      if (opcode_wire == candidOpcode.Opt) {
+        msg.append("\n- opt_content_opcode_wire = " +
+                   std::to_string(content_opcode_wire) + " (" +
+                   content_name_wire + ")");
+      }
+      ICPP_HOOKS::trap(msg);
     }
 
-    if (m_args_datatypes[i] < 0) {
-      // <primtype>, because we found an Opcode, not a type table
-      int opcode_found = m_args_datatypes[i];
-      int opcode_expected = m_A.m_args_ptrs[i]->get_datatype_opcode();
+    // OK, the next field on the wire is an additional Opt at the end
+    // Additional Opt on wire must be decoded and discarded
+    decoder = build_decoder_wire_for_additional_opt_arg(j);
+    decoder_name = "read-and-discard-additional-wire-opt";
 
-      if (opcode_found != opcode_expected) {
-        if (opcode_found == candidOpcode.Null &&
-            opcode_expected == candidOpcode.Opt) {
-          // This is ok. A null is passed for an Opt
-        } else {
-          // TODO:  IMPLEMENT CHECK ON COVARIANCE/CONTRAVARIANCE
-          std::string msg;
-          msg.append("ERROR: wrong opcode found on wire.\n");
-          msg.append("       Argument index: " + std::to_string(i) + "\n");
-          msg.append(
-              "       Bytes offset start: " +
-              ICPP_HOOKS::to_string_128(m_args_datatypes_offset_start[i]) +
-              "\n");
-          msg.append("       Bytes offset end  : " +
-                     ICPP_HOOKS::to_string_128(m_args_datatypes_offset_end[i]) +
-                     "\n");
-          msg.append(
-              "       Expecting opcode:" + std::to_string(opcode_expected) +
-              " (" + candidOpcode.name_from_opcode(opcode_expected) + ")" +
-              "\n");
-          msg.append("       Found opcode    :" + std::to_string(opcode_found) +
-                     " (" + candidOpcode.name_from_opcode(opcode_found) + ")");
-          ICPP_HOOKS::trap(msg);
-        }
+    if (CANDID_DESERIALIZE_DEBUG_PRINT) {
+      std::string msg = "--";
+      msg.append(
+          "\nDone with all the expected args, but there is an additional Opt arg on the wire...");
+
+      msg.append("\nnext field on wire at index " + std::to_string(j));
+      msg.append("\n- datatype     = " + std::to_string(datatype_wire));
+      msg.append("\n- Opcode       = " + std::to_string(opcode_wire) + " (" +
+                 candidOpcode.name_from_opcode(opcode_wire) + ")");
+      if (datatype_wire >= 0) {
+        msg.append("\n  (walked the type-tables to find that Opcode!)");
       }
-    } else {
-      // <comptype>, because we found a type-table
+      if (opcode_wire == candidOpcode.Opt) {
+        msg.append("\n- opt_content_opcode_wire = " +
+                   std::to_string(content_opcode_wire) + " (" +
+                   content_name_wire + ")");
+      }
+      msg.append("\n--> We will decode M & discard the data.");
+      ICPP_HOOKS::debug_print(msg);
+    }
+    return;
+  }
 
-      // the datatype is an index into the typetable of the byte stream
-      size_t type_table_index = m_args_datatypes[i];
-      CandidTypeTable type_table = m_typetables[type_table_index];
+  // We are still looking for expected args
+  // The expected arg (i)
+  int opcode_expected = m_A.m_args_ptrs[i]->get_datatype_opcode();
+  int content_opcode_expected{CANDID_UNDEF};
+  std::string content_name_expected;
+  if (opcode_expected == candidOpcode.Opt ||
+      opcode_expected == candidOpcode.Vec) {
+    content_opcode_expected = m_A.m_args_ptrs[i]->get_content_opcode();
+    content_name_expected =
+        candidOpcode.name_from_opcode(content_opcode_expected);
+  }
+  // Sanity check: The encoded arg datatype during serialization is always the negative Opcode of the expected arg
+  assert(opcode_expected < 0);
 
-      // Verify that the datatype or type-table-content found on the wire is the same as the expected
-      // Note: the type-table-index itself can be completely different...
-      int opcode_found = type_table.get_opcode();
-      int opcode_expected = m_A.m_args_ptrs[i]->get_datatype_opcode();
+  if (CANDID_DESERIALIZE_DEBUG_PRINT) {
+    std::string msg = "--";
+    msg.append("\nexpected arg at index " + std::to_string(i));
+    msg.append("\n- Opcode   = " + std::to_string(opcode_expected) + " (" +
+               candidOpcode.name_from_opcode(opcode_expected) + ")");
+    if (opcode_expected == candidOpcode.Opt) {
+      msg.append("\n- content_opcode_expected = " +
+                 std::to_string(content_opcode_expected) + " (" +
+                 content_name_expected + ")");
+    }
 
-      if (opcode_expected < 0) {
-        if (opcode_found < 0) {
-          // Both are actual candid types, and not type-tables
-          if (opcode_found == opcode_expected) {
-            // Ok, found two of the same constype
-            // Verify if their type-tables are the same
-            if (opcode_found == candidOpcode.Record) {
-              CandidTypeRecord *p_wire =
-                  get_if<CandidTypeRecord>(type_table.get_candidType_ptr());
-              std::shared_ptr<CandidTypeRecord> p_expected =
-                  std::dynamic_pointer_cast<CandidTypeRecord>(
-                      m_A.m_args_ptrs[i]);
-              if (!p_expected) {
-                ICPP_HOOKS::trap(
-                    "ERROR: Expecting a CandidTypeRecord during deserialization.");
-              } else if (p_wire) {
-                // Traps if type table of Record does not match the wire
-                p_expected->check_type_table(p_wire);
-              } else {
-                ICPP_HOOKS::trap(
-                    "ERROR: Logic error during deserialization of a CandidTypeRecord.");
-              }
-            } else if (opcode_found == candidOpcode.Variant) {
-              CandidTypeVariant *p_wire =
-                  get_if<CandidTypeVariant>(type_table.get_candidType_ptr());
-              std::shared_ptr<CandidTypeVariant> p_expected =
-                  std::dynamic_pointer_cast<CandidTypeVariant>(
-                      m_A.m_args_ptrs[i]);
-              if (!p_expected) {
-                ICPP_HOOKS::trap(
-                    "ERROR: Expecting a CandidTypeVariant during deserialization.");
-              } else if (p_wire) {
-                // Traps if type table of Variant does not match the wire
-                p_expected->check_type_table(p_wire);
-              } else {
-                ICPP_HOOKS::trap(
-                    "ERROR: Logic error during deserialization of a CandidTypeVariant.");
-              }
-            } else if (opcode_found == candidOpcode.Vec ||
-                       opcode_found == candidOpcode.Opt) {
+    msg.append("\nnext arg on wire at index " + std::to_string(j));
+    msg.append("\n- datatype = " + std::to_string(datatype_wire));
+    msg.append("\n- Opcode   = " + std::to_string(opcode_wire) + " (" +
+               candidOpcode.name_from_opcode(opcode_wire) + ")");
+    if (datatype_wire >= 0) {
+      msg.append("\n  (walked the type-tables to find that Opcode!)");
+    }
+    if (opcode_wire == candidOpcode.Opt || opcode_wire == candidOpcode.Vec) {
+      msg.append(
+          "\n- content_opcode_wire = " + std::to_string(content_opcode_wire) +
+          " (" + content_name_wire + ")");
+    }
+    ICPP_HOOKS::debug_print(msg);
+  }
 
-              int content_opcode_found = type_table.get_content_opcode();
-              int content_opcode_expected =
-                  m_A.m_args_ptrs[i]->get_content_type_opcode();
-
-              if (content_opcode_found != content_opcode_expected) {
-                std::string msg;
-                if (opcode_found == candidOpcode.Vec) {
-                  msg.append(
-                      "ERROR: Vector with wrong content opcode found on wire.\n");
-                } else if (opcode_found == candidOpcode.Opt) {
-                  msg.append(
-                      "ERROR: Opt with wrong content opcode found on wire.\n");
-                } else {
-                  msg.append(
-                      "ERROR: const of unknown type with wrong content opcode found on wire.\n");
-                }
-
-                msg.append("       Argument index: " + std::to_string(i) +
-                           "\n");
-                msg.append("       Bytes offset start: " +
-                           ICPP_HOOKS::to_string_128(
-                               m_args_datatypes_offset_start[i]) +
-                           "\n");
-                msg.append(
-                    "       Bytes offset end  : " +
-                    ICPP_HOOKS::to_string_128(m_args_datatypes_offset_end[i]) +
-                    "\n");
-                msg.append(
-                    "       Expecting content opcode:" +
-                    std::to_string(content_opcode_expected) + " (" +
-                    candidOpcode.name_from_opcode(content_opcode_expected) +
-                    ")" + "\n");
-                msg.append("       Found content opcode    :" +
-                           std::to_string(content_opcode_found) + " (" +
-                           candidOpcode.name_from_opcode(content_opcode_found) +
-                           ")" + "\n");
-                ICPP_HOOKS::trap(msg);
-              }
+  decoder = nullptr;
+  bool error{false};
+  std::string error_msg;
+  if ((opcode_wire != candidOpcode.Opt && opcode_wire == opcode_expected) ||
+      (opcode_wire == candidOpcode.Opt && opcode_expected == candidOpcode.Opt &&
+       content_opcode_wire == content_opcode_expected) ||
+      (opcode_wire == candidOpcode.Vec && opcode_expected == candidOpcode.Vec &&
+       content_opcode_wire == content_opcode_expected)) {
+    // All good, decode it with expected args
+    if (CANDID_DESERIALIZE_DEBUG_PRINT) {
+      ICPP_HOOKS::debug_print(
+          "--> This arg is expected and found on wire.\n    We will decode M & store the data.");
+    }
+    decoder = m_A.m_args_ptrs[i];
+    decoder_name = "expected";
+    // Fill the field _wire info used by decode_M
+    if ((opcode_expected == candidOpcode.Record) ||
+        (opcode_expected == candidOpcode.Variant)) {
+      // Record, Variant
+      int datatype_wire = m_args_datatypes_wire[j];
+      auto p_wire = m_typetables_wire[datatype_wire].get_p_wire();
+      decoder->set_fields_wire(p_wire);
+    } else if (content_opcode_wire == candidOpcode.Record) {
+      if (opcode_expected == candidOpcode.Opt ||
+          opcode_expected == candidOpcode.Vec) {
+        // OptRecord, VecRecord
+        int content_datatype_wire = m_args_content_datatypes_wire[j];
+        auto p_content_wire =
+            m_typetables_wire[content_datatype_wire].get_p_wire();
+        if (p_content_wire) {
+          CandidType c_decoder = decoder->toCandidType();
+          if (opcode_expected == candidOpcode.Opt) {
+            CandidTypeOptRecord *p_opt_record =
+                std::get_if<CandidTypeOptRecord>(&c_decoder);
+            if (p_opt_record) {
+              p_opt_record->get_pv()->set_fields_wire(p_content_wire);
             } else {
-              ICPP_HOOKS::trap(
-                  "ERROR: Deserialization not yet implemented for this constype");
+              error = true;
+              error_msg = "p_opt_record is a nullptr, likely a bug.";
             }
-
-            continue; // All good
+          } else if (opcode_expected == candidOpcode.Vec) {
+            // A VecRecord uses a dummy record during decoding
+            CandidTypeVecRecord *p_vec_record =
+                std::get_if<CandidTypeVecRecord>(&c_decoder);
+            if (p_vec_record) {
+              p_vec_record->get_pr()->set_fields_wire(p_content_wire);
+              // not used
+              p_vec_record->get_pv()->set_fields_wire(p_content_wire);
+            } else {
+              error = true;
+              error_msg = "p_vec_record is a nullptr, likely a bug.";
+            }
           } else {
-            // TODO:  IMPLEMENT CHECK ON COVARIANCE/CONTRAVARIANCE
-            std::string msg;
-            msg.append("ERROR: Wrong opcode found on wire.\n");
-            msg.append("       Argument index: " + std::to_string(i) + "\n");
-            msg.append(
-                "       Bytes offset start: " +
-                ICPP_HOOKS::to_string_128(m_args_datatypes_offset_start[i]) +
-                "\n");
-            msg.append(
-                "       Bytes offset end  : " +
-                ICPP_HOOKS::to_string_128(m_args_datatypes_offset_end[i]) +
-                "\n");
-            msg.append(
-                "       Expecting opcode:" + std::to_string(opcode_expected) +
-                " (" + candidOpcode.name_from_opcode(opcode_expected) + ")" +
-                "\n");
-            msg.append(
-                "       Found opcode    :" + std::to_string(opcode_found) +
-                " (" + candidOpcode.name_from_opcode(opcode_found) + ")");
-            ICPP_HOOKS::trap(msg);
+            error = true;
+            error_msg = "ERROR: ... ";
           }
         } else {
-          // opcode_expected is a candid type, but found a type-table that references a type-table
-          // TODO: this could be ok...?
-          std::string msg;
-          msg.append(
-              "ERROR: expecting a type-table with an Opcode, but a type table with a type table reference was found on wire instead.\n");
-          msg.append("       Argument index    : " + std::to_string(i) + "\n");
-          msg.append(
-              "       Bytes offset start: " +
-              ICPP_HOOKS::to_string_128(m_args_datatypes_offset_start[i]) +
-              "\n");
-          msg.append("       Bytes offset end  : " +
-                     ICPP_HOOKS::to_string_128(m_args_datatypes_offset_end[i]) +
-                     "\n");
-          msg.append(
-              "       Expecting opcode  :" + std::to_string(opcode_expected) +
-              " (" + candidOpcode.name_from_opcode(opcode_expected) + ")" +
-              "\n");
-          msg.append("       Found type table    :" +
-                     std::to_string(opcode_found));
-          ICPP_HOOKS::trap(msg);
+          error = true;
+          error_msg = "p_content_wire is a nullptr, likely a bug.";
         }
+      } else if (content_opcode_wire == candidOpcode.Variant) {
+        //  OptVariant VecVariant
+        error = true;
+        error_msg =
+            "OptVariant or VecVariant not yet supported by this method. It must call set_field_wire !!";
+      } else {
+        error = true;
+        error_msg = "We do NOT yet handle this content type.";
       }
     }
+  } else if (opcode_wire == candidOpcode.Null &&
+             opcode_expected == candidOpcode.Opt) {
+    // Special case, Expected opt found as '(null)'
+    if (CANDID_DESERIALIZE_DEBUG_PRINT) {
+      ICPP_HOOKS::debug_print(
+          "--> This arg is an expected Opt and found as 'null' on wire.\n    There is nothing to decode.");
+    }
+    decoder = nullptr; // Nothing to decode
+    decoder_name = "expected-opt-as-null";
+  } else if (opcode_wire == candidOpcode.Opt &&
+             opcode_expected == candidOpcode.Opt &&
+             content_opcode_wire == candidOpcode.Null) {
+    // Special case, Expected opt found as '(opt (null : null))'
+    if (CANDID_DESERIALIZE_DEBUG_PRINT) {
+      ICPP_HOOKS::debug_print(
+          "--> This arg is an expected Opt and found as '(opt (null : null))' on wire.\n    We will decode M & discard the data.");
+    }
+    decoder = build_decoder_wire_for_additional_opt_arg(j);
+    decoder_name = "expected-opt-as-opt-null";
+  } else if (opcode_wire == candidOpcode.Opt) {
+    // Additional Opt on wire must be decoded and discarded
+    if (CANDID_DESERIALIZE_DEBUG_PRINT) {
+      ICPP_HOOKS::debug_print(
+          "--> This arg is an unexpected additional Opt found on wire.\n    We will decode M & discard the data.");
+    }
+    decoder = build_decoder_wire_for_additional_opt_arg(j);
+    decoder_name = "read-and-discard-additional-wire-opt";
+  } else if (opcode_expected == candidOpcode.Opt) {
+    // Expected Opt not found on wire. Skip it and continue
+    if (CANDID_DESERIALIZE_DEBUG_PRINT) {
+      ICPP_HOOKS::debug_print(
+          "--> This arg is an expected Opt that we cannot find on the wire.\n    We will skip the expected arg.");
+    }
+    decoder = nullptr;
+    decoder_name = "skip-expected-opt-not-found-on-wire";
+  } else {
+    error = true;
+    error_msg = "Wrong opcode found on wire.";
   }
+
+  if (error) {
+    // Wrong type on wire
+    // TODO:  IMPLEMENT CHECK ON COVARIANCE/CONTRAVARIANCE
+    std::string msg;
+    msg.append("ERROR: " + error_msg + "\n");
+    msg.append("\nexpected arg at index " + std::to_string(i));
+    msg.append("\n- Opcode   = " + std::to_string(opcode_expected) + " (" +
+               candidOpcode.name_from_opcode(opcode_expected) + ")");
+
+    msg.append("\nnext arg on wire at index " + std::to_string(j));
+    msg.append("\n- datatype = " + std::to_string(datatype_wire));
+    msg.append("\n- Opcode   = " + std::to_string(opcode_wire) + " (" +
+               candidOpcode.name_from_opcode(opcode_wire) + ")");
+    if (datatype_wire >= 0) {
+      msg.append("\n- (walked the type-tables to find that Opcode!)");
+    }
+    ICPP_HOOKS::trap(msg);
+  }
+}
+
+std::shared_ptr<CandidTypeRoot>
+CandidDeserialize::build_decoder_wire_for_additional_opt_arg(int j) {
+  // Build the decoder for an additional opt arg on the wire
+  CandidOpcode candidOpcode;
+  int datatype_wire = m_args_datatypes_wire[j];
+  int opcode_wire = m_args_opcodes_wire[j];
+  int content_datatype_wire = m_args_content_datatypes_wire[j];
+  int content_opcode_wire = m_args_content_opcodes_wire[j];
+
+  if (opcode_wire != candidOpcode.Opt) {
+    ICPP_HOOKS::trap(
+        "ERROR: this method should only be called for an additional Opt arg on the wire.");
+  }
+
+  std::shared_ptr<CandidTypeRoot> p_wire{nullptr};
+  if (content_opcode_wire == CANDID_UNDEF) {
+    ICPP_HOOKS::trap(
+        "ERROR: cannot build the decoder_wire because content_opcode_wire is not set.");
+    // } else if (content_opcode_wire == candidOpcode.Record) {
+    //   p_wire = m_typetables_wire[datatype_wire].get_p_wire();
+    // } else if (content_opcode_wire == candidOpcode.Variant) {
+    //   ICPP_HOOKS::trap(
+    //       "ERROR: found an additional Opt arg on the wire of type Variant. We do not yet handle that.");
+  } else {
+    auto c_arg = std::make_shared<CandidType>();
+    CandidTypeTable *p_content_type_table = nullptr;
+    if (content_datatype_wire >= 0) {
+      p_content_type_table = &m_typetables_wire[content_datatype_wire];
+    }
+    candidOpcode.candid_type_opt_from_opcode(
+        *c_arg, content_opcode_wire, content_opcode_wire, p_content_type_table);
+    p_wire = std::visit(
+        [](auto &&arg_) -> std::shared_ptr<CandidTypeRoot> {
+          return std::make_shared<std::decay_t<decltype(arg_)>>(arg_);
+        },
+        *c_arg);
+  }
+  return p_wire;
 }
 
 // Assert candid VecBytes against a string in "hex" format (didc encode)
@@ -471,5 +675,26 @@ int CandidDeserialize::assert_candid(const std::string &candid_expected,
   return CandidAssert::assert_candid(m_B, candid_expected, assert_value);
 }
 
-CandidArgs CandidDeserialize::get_A() { return m_A; }
-VecBytes CandidDeserialize::get_B() { return m_B; }
+int CandidDeserialize::get_opcode_from_datatype_on_wire(int datatype) {
+  int opcode = datatype;
+
+  if (opcode >= 0) {
+    // A non-negative opcode is an index in the type tables
+    // -> try at most num_typetables_wire times to get a negative opcode
+    int tries = 0;
+    while (opcode >= 0 && tries < m_typetables_wire.size()) {
+      if (opcode < m_typetables_wire.size()) {
+        opcode = m_typetables_wire[opcode].get_opcode();
+      }
+      tries++;
+    }
+
+    if (opcode >= 0) {
+      ICPP_HOOKS::trap(
+          "ERROR: Cannot find a negative Opcode by walking the type tables for type table index " +
+          std::to_string(datatype));
+    }
+  }
+
+  return opcode;
+}

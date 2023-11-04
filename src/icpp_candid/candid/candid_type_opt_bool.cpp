@@ -37,9 +37,9 @@ CandidTypeOptBool::CandidTypeOptBool(const std::optional<bool> v)
 CandidTypeOptBool::~CandidTypeOptBool() {}
 
 void CandidTypeOptBool::set_content_type() {
-  m_content_type_opcode = CandidOpcode().Bool;
-  m_content_type_hex = OpcodeHex().Bool;
-  m_content_type_textual = OpcodeTextual().Bool;
+  m_content_opcode = CandidOpcode().Bool;
+  m_content_hex = OpcodeHex().Bool;
+  m_content_textual = OpcodeTextual().Bool;
 }
 
 void CandidTypeOptBool::encode_M() {
@@ -56,7 +56,8 @@ void CandidTypeOptBool::encode_M() {
 }
 
 // Decode the values, starting at & updating offset
-bool CandidTypeOptBool::decode_M(VecBytes B, __uint128_t &offset,
+bool CandidTypeOptBool::decode_M(CandidDeserialize &de, VecBytes B,
+                                 __uint128_t &offset,
                                  std::string &parse_error) {
   // https://github.com/dfinity/candid/blob/master/spec/Candid.md#memory
   // M(null : opt <datatype>) = i8(0)
@@ -76,7 +77,7 @@ bool CandidTypeOptBool::decode_M(VecBytes B, __uint128_t &offset,
     offset_start = offset;
     parse_error = "";
     CandidTypeBool c{}; // dummy so we can use it's decode_M
-    if (c.decode_M(B, offset, parse_error)) {
+    if (c.decode_M(de, B, offset, parse_error)) {
       std::string to_be_parsed = "Opt: Value for CandidTypeBool";
       CandidAssert::trap_with_parse_error(offset_start, offset, to_be_parsed,
                                           parse_error);
@@ -112,7 +113,7 @@ void CandidTypeOptBool::set_datatype() {
 // build the type table encoding
 void CandidTypeOptBool::encode_T() {
   m_T.append_byte((std::byte)m_datatype_hex);
-  m_T.append_byte((std::byte)m_content_type_hex);
+  m_T.append_byte((std::byte)m_content_hex);
 
   // Update the type table registry,
   m_type_table_index = CandidSerializeTypeTableRegistry::get_instance()
@@ -135,7 +136,7 @@ bool CandidTypeOptBool::decode_T(VecBytes B, __uint128_t &offset,
                                         parse_error);
   }
 
-  m_content_type_opcode = int(content_type);
+  m_content_opcode = int(content_type);
   return false;
 }
 

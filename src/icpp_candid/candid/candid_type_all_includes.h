@@ -24,6 +24,9 @@
 #include "candid_type_reserved.h"
 #include "candid_type_text.h"
 
+#include "candid_type_record.h"
+#include "candid_type_variant.h"
+
 // <constype>
 #include "candid_type_vec_bool.h"
 #include "candid_type_vec_float32.h"
@@ -41,11 +44,14 @@
 #include "candid_type_vec_principal.h"
 #include "candid_type_vec_record.h"
 #include "candid_type_vec_text.h"
+// #include "candid_type_vec_variant.h"
+// #include "candid_type_vec_vec.h"
 // These types are not used for vectors
 // #include "candid_type_vec_empty.h"
 // #include "candid_type_vec_null.h"
 // #include "candid_type_vec_reserved.h"
 
+#include "candid_type_opt_null.h"
 #include "candid_type_opt_bool.h"
 #include "candid_type_opt_float32.h"
 #include "candid_type_opt_float64.h"
@@ -61,13 +67,12 @@
 #include "candid_type_opt_nat8.h"
 #include "candid_type_opt_principal.h"
 #include "candid_type_opt_text.h"
+// Opt of <constype>
+#include "candid_type_opt_record.h"
+// #include "candid_type_opt_variant.h"
 // #include "candid_type_opt_vec.h"
-// #include "candid_type_opt_record.h"
 // These types are not used for opts
 // #include "candid_type_opt_empty.h"
-// #include "candid_type_opt_null.h"
 // #include "candid_type_opt_reserved.h"
-#include "candid_type_record.h"
-#include "candid_type_variant.h"
 
 #include "candid_args.h"

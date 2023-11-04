@@ -2,10 +2,12 @@
 
 #include <string>
 #include <unordered_map>
+#include <variant>
 
 #include "candid_opcode.h"
 #include "candid_type.h"
 #include "candid_type_all_includes.h"
+#include "candid_type_table.h"
 #include "icpp_hooks.h"
 
 CandidOpcode::CandidOpcode() {}
@@ -50,7 +52,7 @@ std::string CandidOpcode::name_from_opcode(int opcode) {
   if (names.count(opcode)) {
     return names[opcode];
   } else if (opcode >= 0) {
-    return ">= 0, type table reference";
+    return "type table index";
   } else {
     return "Unknown";
   }
@@ -97,14 +99,16 @@ void CandidOpcode::candid_type_from_opcode(CandidType &c, int opcode) {
     std::string msg;
     msg.append(
         "ERROR: NOT SUPPORTED FOR VEC. (use candid_vec_type_from_opcode)");
-    msg.append("       datatype = " + std::to_string(opcode));
+    msg.append("       opcode = " + std::to_string(opcode) + " (" +
+               name_from_opcode(opcode) + ")");
     msg.append("      " + std::string(__func__));
     ICPP_HOOKS::trap(msg);
   } else if (opcode == Opt) {
     std::string msg;
     msg.append(
         "ERROR: NOT SUPPORTED FOR OPT. (use candid_opt_type_from_opcode)");
-    msg.append("       datatype = " + std::to_string(opcode));
+    msg.append("       opcode = " + std::to_string(opcode) + " (" +
+               name_from_opcode(opcode) + ")");
     msg.append("      " + std::string(__func__));
     ICPP_HOOKS::trap(msg);
   } else if (opcode == Record) {
@@ -114,7 +118,8 @@ void CandidOpcode::candid_type_from_opcode(CandidType &c, int opcode) {
   } else {
     std::string msg;
     msg.append("ERROR: NOT YET IMPLEMENTED FOR THIS OPCODE.");
-    msg.append("       datatype = " + std::to_string(opcode));
+    msg.append("       opcode = " + std::to_string(opcode) + " (" +
+               name_from_opcode(opcode) + ")");
     msg.append("      " + std::string(__func__));
     ICPP_HOOKS::trap(msg);
   }
@@ -167,23 +172,23 @@ void CandidOpcode::candid_type_vec_from_opcode(CandidType &c,
     c = CandidTypeVecBool(); // We have to assign something, but then we trap
     std::string msg;
     msg.append("ERROR: NOT YET IMPLEMENTED CandidTypeVecXXX.");
-    msg.append("       for content type = " + std::to_string(content_opcode));
+    msg.append("       for content_opcode = " + std::to_string(content_opcode) +
+               " (" + name_from_opcode(content_opcode) + ")");
     msg.append("      " + std::string(__func__));
     ICPP_HOOKS::trap(msg);
   }
 }
 
-void CandidOpcode::candid_type_opt_from_opcode(CandidType &c,
-                                               int content_opcode) {
-  // if (content_opcode == Null) {
-  //   c = CandidTypeOptNull();
-  // } else if (content_opcode == Empty) {
-  //   c = CandidTypeOptEmpty();
-  // } else if (content_opcode == Reserved) {
-  //   c = CandidTypeOptReserved();
-  // } else
-  //
-  if (content_opcode == Bool) {
+void CandidOpcode::candid_type_opt_from_opcode(
+    CandidType &c, int content_opcode, int content_datatype,
+    CandidTypeTable *p_content_type_table) {
+  if (content_opcode == Null) {
+    c = CandidTypeOptNull();
+    // } else if (content_opcode == Empty) {
+    //   c = CandidTypeOptEmpty();
+    // } else if (content_opcode == Reserved) {
+    //   c = CandidTypeOptReserved();
+  } else if (content_opcode == Bool) {
     c = CandidTypeOptBool();
   } else if (content_opcode == Float32) {
     c = CandidTypeOptFloat32();
@@ -215,13 +220,35 @@ void CandidOpcode::candid_type_opt_from_opcode(CandidType &c,
     c = CandidTypeOptPrincipal();
     // } else if (content_opcode == Vec) {
     //   c = CandidTypeOptVec();
-    // } else if (content_opcode == Record) {
-    //   c = CandidTypeOptRecord();
+  } else if (content_opcode == Record) {
+    if (p_content_type_table) {
+      // CandidType c_content_wire =
+      //     p_content_type_table->get_p_wire()->toCandidType();
+      // CandidTypeRecord *p_record_wire =
+      //     std::get_if<CandidTypeRecord>(&c_content_wire);
+
+      // std::shared_ptr<CandidType> p_c_content_wire =
+      //     p_content_type_table->get_p_c_wire();
+      // CandidTypeRecord *p_record_wire =
+      //     std::get_if<CandidTypeRecord>(p_c_content_wire.get());
+
+      CandidTypeRecord *p_record_wire = std::get_if<CandidTypeRecord>(
+          p_content_type_table->get_p_c_wire().get());
+
+      bool has_value{false};
+      c = CandidTypeOptRecord(p_record_wire, &has_value);
+    } else {
+      c = CandidTypeOptRecord();
+    }
   } else {
     std::string msg;
     msg.append("ERROR: NOT YET IMPLEMENTED CandidTypeOptXXX.");
-    msg.append("       for content type = " + std::to_string(content_opcode));
+    msg.append("       for content_opcode = " + std::to_string(content_opcode) +
+               " (" + name_from_opcode(content_opcode) + ")");
     msg.append("      " + std::string(__func__));
     ICPP_HOOKS::trap(msg);
   }
+  std::visit([&content_datatype](
+                 auto &&c_) { c_.set_content_datatype(content_datatype); },
+             c);
 }

@@ -108,7 +108,7 @@ struct GetCandidTypeVecIndexVisitor {
     std::string msg;
     msg.append(
         "ERROR: GetCandidTypeVecIndexVisitor not implemented for CandidType = ");
-    msg.append("'" + c.get_content_type_textual() + "'");
+    msg.append("'" + c.get_content_textual() + "'");
     ICPP_HOOKS::trap(msg);
     return CandidTypeNull{}; // Have to return something to compile
   }

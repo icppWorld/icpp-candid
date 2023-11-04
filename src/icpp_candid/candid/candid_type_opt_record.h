@@ -1,30 +1,30 @@
-// The class for the Candid Type: text
+// The class for the Candid Type: opt
 
 #pragma once
 
 #include <cstring>
 
-#include "candid_args.h"
 #include "candid_type_record.h"
 #include "vec_bytes.h"
 
-class CandidTypeVecRecord : public CandidTypeBase<CandidTypeVecRecord> {
+class CandidTypeOptRecord : public CandidTypeBase<CandidTypeOptRecord> {
 public:
   // Constructors
-  CandidTypeVecRecord();
-  CandidTypeVecRecord(const CandidTypeRecord v);
-
-  CandidTypeVecRecord(CandidTypeRecord *p_v);
+  CandidTypeOptRecord();
+  // clang-format off
+  // docs start: demo_candid_type_opt
+  CandidTypeOptRecord(CandidTypeRecord *v, bool *has_value);
+  CandidTypeOptRecord(const CandidTypeRecord v); // docs end: demo_candid_type_opt
+  // clang-format on
 
   // Destructor
-  ~CandidTypeVecRecord();
+  ~CandidTypeOptRecord();
 
   bool decode_M(CandidDeserialize &de, VecBytes B, __uint128_t &offset,
                 std::string &parse_error);
-
   CandidTypeRecord get_v() { return m_v; }
   CandidTypeRecord *get_pv() { return m_pv; }
-  std::shared_ptr<CandidTypeRecord> get_pr() { return m_pr; }
+  bool has_value() { return m_p_has_value; };
 
   bool decode_T(VecBytes B, __uint128_t &offset, std::string &parse_error);
 
@@ -37,12 +37,12 @@ protected:
   CandidTypeRecord m_v;
   CandidTypeRecord *m_pv{nullptr};
 
-  void create_dummy_record();
-  // a shared pointer to the dummy record
-  std::shared_ptr<CandidTypeRecord> m_pr{nullptr};
-
   void initialize();
   void set_datatype();
   void encode_T();
   void encode_I();
+
+  // During   serialization: set to true during construction
+  // During deserialization: set to false, and then flipped to true once found on the wire
+  bool *m_p_has_value{nullptr};
 };

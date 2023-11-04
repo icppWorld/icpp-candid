@@ -15,7 +15,7 @@ public:
   bool decode_T(VecBytes B, __uint128_t &offset, std::string &parse_error) {
     return false; // type table for Primitives is empty
   }
-  bool decode_M(const VecBytes B, __uint128_t &offset,
+  bool decode_M(CandidDeserialize &de, VecBytes B, __uint128_t &offset,
                 std::string &parse_error) {
     return false; // Nothing to decode for Null
   }

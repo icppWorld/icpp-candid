@@ -300,6 +300,12 @@ void VecBytes::append_bytes(const uint8_t *bytes, const uint32_t num_bytes) {
   }
 }
 
+void VecBytes::append(const VecBytes &other) {
+  for (const auto &b : other.m_vec) {
+    append_byte(b);
+  }
+}
+
 void VecBytes::trap_if_vec_does_not_start_with_DIDL() {
   std::string s;
   s.append(byte_to_char(m_vec[0]));
@@ -318,6 +324,33 @@ std::string VecBytes::as_hex_string() {
     s_hex.append(byte_to_hex(b, ""));
   }
   return s_hex;
+}
+/*
+* prints the VecBytes like this:
+4449444c026c02b79cb a8 40801b89cba8408016e7f027b00020101
+                    ^
+*/
+void VecBytes::debug_print_as_hex_string(__uint128_t B_offset_start,
+                                         __uint128_t B_offset_end) {
+  std::string hex_string = as_hex_string();
+  debug_print_as_hex_string(hex_string, B_offset_start, B_offset_end);
+}
+
+void VecBytes::debug_print_as_hex_string(std::string hex_string,
+                                         __uint128_t B_offset_start,
+                                         __uint128_t B_offset_end) {
+
+  // Insert spaces for visual separation of the chunk that was decoded
+  hex_string.insert(2 * B_offset_end, " ");
+  hex_string.insert(2 * B_offset_start, " ");
+
+  // Place markers underneath the string to further highlight it
+  std::string visual(hex_string.length(), ' ');
+  visual[2 * B_offset_start + 1] = '^';
+
+  // print both lines
+  ICPP_HOOKS::debug_print("--\n" + hex_string);
+  ICPP_HOOKS::debug_print(visual);
 }
 
 // Prints the bytes of the vec in hex, dec & bits

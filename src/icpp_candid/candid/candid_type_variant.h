@@ -26,9 +26,11 @@ public:
   void append(CandidType field);
 
   bool decode_T(VecBytes B, __uint128_t &offset, std::string &parse_error);
-  bool decode_M(VecBytes B, __uint128_t &offset, std::string &parse_error);
+  bool decode_M(CandidDeserialize &de, VecBytes B, __uint128_t &offset,
+                std::string &parse_error);
 
-  void check_type_table(const CandidTypeVariant *p_from_wire);
+  void set_fields_wire(std::shared_ptr<CandidTypeRoot> p_from_wire);
+  void finish_decode_T(CandidDeserialize &de);
 
   std::string get_label() { return m_label; }
 
@@ -42,11 +44,6 @@ protected:
   void encode_I();
   void encode_M();
 
-  std::vector<uint32_t> m_field_ids; // id | hash
-  std::vector<std::string> m_field_names;
-  std::vector<int> m_field_datatypes;
-  std::vector<std::shared_ptr<CandidTypeRoot>> m_fields_ptrs;
-
   // Label & id (hash) of the field that contains the Variant's data
   std::string m_label{""};
   __uint128_t m_variant_index{0};
@@ -56,7 +53,5 @@ protected:
   std::string *m_p_label{nullptr};
 
   // To help with decoding checks
-  std::vector<uint32_t> m_field_ids_wire; // id | hash
-  std::vector<int> m_field_datatypes_wire;
   __uint128_t m_variant_index_wire{0};
 };

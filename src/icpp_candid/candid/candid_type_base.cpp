@@ -53,10 +53,22 @@ void CandidTypeRoot::push_back_value(CandidTypeRoot &value) {
 }
 
 // Virtual method to be implemented by all CandidTypes to support deserialization
-bool CandidTypeRoot::decode_M(const VecBytes B, __uint128_t &offset,
-                              std::string &parse_error) {
+bool CandidTypeRoot::decode_M(CandidDeserialize &de, VecBytes B,
+                              __uint128_t &offset, std::string &parse_error) {
   ICPP_HOOKS::trap("ERROR: decode_M not implemented for " + m_datatype_textual);
   return true;
+}
+
+// Virtual method to be implemented by Record (and perhaps other constypes)  to support deserialization
+void CandidTypeRoot::set_fields_wire(
+    std::shared_ptr<CandidTypeRoot> p_from_wire) {
+  ICPP_HOOKS::trap("ERROR: set_fields_wire not implemented for " +
+                   m_datatype_textual);
+}
+
+void CandidTypeRoot::finish_decode_T(CandidDeserialize &de) {
+  ICPP_HOOKS::trap("ERROR: finish_decode_T not implemented for " +
+                   m_datatype_textual);
 }
 
 void CandidTypeRoot::encode_M() {
@@ -102,6 +114,7 @@ template class CandidTypeBase<CandidTypeNat16>;
 template class CandidTypeBase<CandidTypeNat32>;
 template class CandidTypeBase<CandidTypeNat64>;
 template class CandidTypeBase<CandidTypeNull>;
+template class CandidTypeBase<CandidTypeOptNull>;
 template class CandidTypeBase<CandidTypeOptBool>;
 template class CandidTypeBase<CandidTypeOptFloat32>;
 template class CandidTypeBase<CandidTypeOptFloat64>;
@@ -117,6 +130,7 @@ template class CandidTypeBase<CandidTypeOptNat32>;
 template class CandidTypeBase<CandidTypeOptNat64>;
 template class CandidTypeBase<CandidTypeOptPrincipal>;
 template class CandidTypeBase<CandidTypeOptText>;
+template class CandidTypeBase<CandidTypeOptRecord>;
 template class CandidTypeBase<CandidTypePrincipal>;
 template class CandidTypeBase<CandidTypeRecord>;
 template class CandidTypeBase<CandidTypeReserved>;

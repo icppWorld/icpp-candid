@@ -36,9 +36,9 @@ CandidTypeVecBool::CandidTypeVecBool(const std::vector<bool> v)
 CandidTypeVecBool::~CandidTypeVecBool() {}
 
 void CandidTypeVecBool::set_content_type() {
-  m_content_type_opcode = CandidOpcode().Bool;
-  m_content_type_hex = OpcodeHex().Bool;
-  m_content_type_textual = OpcodeTextual().Bool;
+  m_content_opcode = CandidOpcode().Bool;
+  m_content_hex = OpcodeHex().Bool;
+  m_content_textual = OpcodeTextual().Bool;
 }
 
 void CandidTypeVecBool::push_back_value(CandidTypeRoot &value) {
@@ -67,7 +67,8 @@ void CandidTypeVecBool::encode_M() {
 }
 
 // Decode the values, starting at & updating offset
-bool CandidTypeVecBool::decode_M(VecBytes B, __uint128_t &offset,
+bool CandidTypeVecBool::decode_M(CandidDeserialize &de, VecBytes B,
+                                 __uint128_t &offset,
                                  std::string &parse_error) {
   // get size of vec - leb128(N)
   __uint128_t offset_start = offset;
@@ -85,7 +86,7 @@ bool CandidTypeVecBool::decode_M(VecBytes B, __uint128_t &offset,
   parse_error = "";
   CandidTypeBool c{}; // dummy so we can use it's decode_M
   for (size_t i = 0; i < size_vec; ++i) {
-    if (c.decode_M(B, offset, parse_error)) {
+    if (c.decode_M(de, B, offset, parse_error)) {
       std::string to_be_parsed = "Vec: Value for CandidTypeBool";
       CandidAssert::trap_with_parse_error(offset_start, offset, to_be_parsed,
                                           parse_error);
@@ -118,7 +119,7 @@ void CandidTypeVecBool::set_datatype() {
 // build the type table encoding
 void CandidTypeVecBool::encode_T() {
   m_T.append_byte((std::byte)m_datatype_hex);
-  m_T.append_byte((std::byte)m_content_type_hex);
+  m_T.append_byte((std::byte)m_content_hex);
 
   // Update the type table registry,
   m_type_table_index = CandidSerializeTypeTableRegistry::get_instance()
@@ -141,7 +142,7 @@ bool CandidTypeVecBool::decode_T(VecBytes B, __uint128_t &offset,
                                         parse_error);
   }
 
-  m_content_type_opcode = int(content_type);
+  m_content_opcode = int(content_type);
   return false;
 }
 

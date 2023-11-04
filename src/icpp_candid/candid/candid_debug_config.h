@@ -2,4 +2,4 @@
 
 #pragma once
 
-extern bool CANDID_DESERIALIZE_DEBUG_PRINT;
+constexpr bool CANDID_DESERIALIZE_DEBUG_PRINT = false;
