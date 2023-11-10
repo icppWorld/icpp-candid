@@ -86,10 +86,6 @@ void CandidTypeTable::deserialize(__uint128_t &B_offset) {
         ICPP_HOOKS::debug_print(
             "Parsed the type table with decode_T of dummy CandidType instance");
       }
-
-      // Store a shared pointer to a CandidType variant
-      m_p_c_wire = std::make_shared<CandidType>(m_p_wire->toCandidType());
-
     } else {
       // for a Vec & Opt, we do not yet know what kind of vec or opt it is
       // and can not yet create the dummy m_p_wire.
@@ -123,8 +119,8 @@ void CandidTypeTable::deserialize(__uint128_t &B_offset) {
 }
 
 // Once a proper content_opcode found, set m_content_opcode and create a dummy m_p_wire
-void CandidTypeTable::set_vec_and_opt(int content_opcode,
-                                      CandidTypeTable *p_content_type_table) {
+void CandidTypeTable::finish_vec_and_opt(
+    int content_opcode, CandidTypeTable *p_content_type_table) {
   CandidOpcode candidOpcode;
   if (m_opcode != candidOpcode.Vec && m_opcode != candidOpcode.Opt) {
     ICPP_HOOKS::trap(std::string(__func__) +
@@ -147,13 +143,10 @@ void CandidTypeTable::set_vec_and_opt(int content_opcode,
     ICPP_HOOKS::trap(msg);
   }
 
-  // Store a shared pointer to a CandidTypeRoot class
+  // Store a shared pointer to a CandidTypeRoot
   m_p_wire = std::visit(
       [](auto &&arg_) -> std::shared_ptr<CandidTypeRoot> {
         return std::make_shared<std::decay_t<decltype(arg_)>>(arg_);
       },
       *c);
-
-  // Store a shared pointer to a CandidType variant
-  m_p_c_wire = std::make_shared<CandidType>(m_p_wire->toCandidType());
 }

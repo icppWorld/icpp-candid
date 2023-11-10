@@ -222,23 +222,21 @@ void CandidOpcode::candid_type_opt_from_opcode(
     //   c = CandidTypeOptVec();
   } else if (content_opcode == Record) {
     if (p_content_type_table) {
-      // CandidType c_content_wire =
-      //     p_content_type_table->get_p_wire()->toCandidType();
-      // CandidTypeRecord *p_record_wire =
-      //     std::get_if<CandidTypeRecord>(&c_content_wire);
-
-      // std::shared_ptr<CandidType> p_c_content_wire =
-      //     p_content_type_table->get_p_c_wire();
-      // CandidTypeRecord *p_record_wire =
-      //     std::get_if<CandidTypeRecord>(p_c_content_wire.get());
-
-      CandidTypeRecord *p_record_wire = std::get_if<CandidTypeRecord>(
-          p_content_type_table->get_p_c_wire().get());
-
+      std::shared_ptr<CandidTypeRoot> p_wire =
+          p_content_type_table->get_p_wire();
       bool has_value{false};
-      c = CandidTypeOptRecord(p_record_wire, &has_value);
+      c = CandidTypeOptRecord(p_wire.get(), &has_value);
     } else {
       c = CandidTypeOptRecord();
+    }
+  } else if (content_opcode == Variant) {
+    if (p_content_type_table) {
+      std::shared_ptr<CandidTypeRoot> p_wire =
+          p_content_type_table->get_p_wire();
+      bool has_value{false};
+      c = CandidTypeOptVariant(p_wire.get(), &has_value);
+    } else {
+      c = CandidTypeOptVariant();
     }
   } else {
     std::string msg;

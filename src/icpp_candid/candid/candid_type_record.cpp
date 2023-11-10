@@ -413,8 +413,18 @@ bool CandidTypeRecord::decode_M(CandidDeserialize &de, VecBytes B,
         std::string decoder_name;
 
         select_decoder_or_trap(de, i, j, decoder, decoder_name);
-
-        if (decoder) {
+        if (!decoder) {
+          if (decoder_name == "skip-expected-opt-not-found-on-wire") {
+            // Expected Opt not found on the wire, but that is OK
+            // -> keep j where it is, to check if next expected arg matches
+            handled_field_expected = true;
+            break;
+          } else {
+            ICPP_HOOKS::trap(
+                "ERROR: decoder for a record field is a nullptr - " +
+                std::string(__func__));
+          }
+        } else {
           if (CANDID_DESERIALIZE_DEBUG_PRINT) {
             std::string msg;
             msg.append("Start reading data by calling decode_M for arg " +
@@ -441,27 +451,27 @@ bool CandidTypeRecord::decode_M(CandidDeserialize &de, VecBytes B,
             B.debug_print_as_hex_string(de.get_hex_string_wire(),
                                         B_offset_start, B_offset);
           }
-        }
 
-        if (decoder_name == "expected" ||
-            decoder_name == "expected-opt-as-null" ||
-            decoder_name == "expected-opt-as-opt-null") {
-          // Found Expected on the wire
-          ++j_now;
-          handled_field_expected = true;
-          break;
-        } else if (decoder_name == "skip-expected-opt-not-found-on-wire") {
-          // Expected Opt not found on the wire, but that is OK
-          // -> keep j where it is, to check if next expected arg matches
-          handled_field_expected = true;
-          break;
-        } else if (decoder_name == "read-and-discard-additional-wire-opt") {
-          // Additional Opt on the wire, is also OK, just check next on wire
-          ++j_now;
-        } else {
-          std::string msg;
-          msg.append("ERROR: invalid decoder_name.");
-          ICPP_HOOKS::trap(msg);
+          if (decoder_name == "expected" ||
+              decoder_name == "expected-opt-as-null" ||
+              decoder_name == "expected-opt-as-opt-null") {
+            // Found Expected on the wire
+            ++j_now;
+            handled_field_expected = true;
+            break;
+          } else if (decoder_name == "skip-expected-opt-not-found-on-wire") {
+            // Expected Opt not found on the wire, but that is OK
+            // -> keep j where it is, to check if next expected arg matches
+            handled_field_expected = true;
+            break;
+          } else if (decoder_name == "read-and-discard-additional-wire-opt") {
+            // Additional Opt on the wire, is also OK, just check next on wire
+            ++j_now;
+          } else {
+            std::string msg;
+            msg.append("ERROR: invalid decoder_name.");
+            ICPP_HOOKS::trap(msg);
+          }
         }
       }
     }
@@ -568,8 +578,6 @@ void CandidTypeRecord::select_decoder_or_trap(
     field_content_name_expected =
         candidOpcode.name_from_opcode(field_content_opcode_expected);
   }
-  // Sanity check: The encoded arg datatype during serialization is always the negative Opcode of the expected arg
-  assert(field_datatype_expected < 0);
 
   if (CANDID_DESERIALIZE_DEBUG_PRINT) {
     std::string msg = "--";
@@ -585,7 +593,7 @@ void CandidTypeRecord::select_decoder_or_trap(
                  field_content_name_expected + ")");
     }
 
-    msg.append("\next field on wire at index " + std::to_string(j));
+    msg.append("\nnext field on wire at index " + std::to_string(j));
     msg.append("\n- id   (hash)  = " + std::to_string(field_id_wire));
     msg.append("\n- datatype     = " + std::to_string(field_datatype_wire));
     msg.append("\n- Opcode       = " + std::to_string(field_opcode_wire) +
@@ -650,28 +658,25 @@ void CandidTypeRecord::select_decoder_or_trap(
         }
       } else if (field_opcode_expected == candidOpcode.Opt &&
                  field_content_opcode_wire == candidOpcode.Variant) {
-        ICPP_HOOKS::trap(
-            "ERROR: record { opt variant } Not yet implemented here..." +
-            std::string(__func__));
+        int field_content_datatype_wire = m_field_content_datatypes_wire[j];
+        auto p_content_wire =
+            de.get_typetables_wire()[field_content_datatype_wire].get_p_wire();
+        CandidType c_content_wire = p_content_wire->toCandidType();
+        CandidTypeVariant *p_content_variant =
+            std::get_if<CandidTypeVariant>(&c_content_wire);
 
-        // int field_content_datatype_wire = m_field_content_datatypes_wire[j];
-        // auto p_content_wire =
-        //     de.get_typetables_wire()[field_content_datatype_wire].get_p_wire();
-        // CandidType c_content_wire = p_content_wire->toCandidType();
-        // CandidTypeVariant *p_content_variant =
-        //     std::get_if<CandidTypeVariant>(&c_content_wire);
-
-        // CandidType c_decoder = decoder->toCandidType();
-        // CandidTypeOptVariant *p_opt_variant =
-        //     std::get_if<CandidTypeOptVariant>(&c_decoder);
-        // if (p_opt_variant && p_content_variant) {
-        //   p_opt_variant->get_pv()->set_fields_wire(p_content_wire);
-        // } else {
-        //   ICPP_HOOKS::trap(
-        //       "ERROR: Unexpected type-table for CandidTypeOptVariant - " +
-        //       std::string(__func__));
-        // }
-      } else if (field_content_opcode_wire == candidOpcode.Record) {
+        CandidType c_decoder = decoder->toCandidType();
+        CandidTypeOptVariant *p_opt_variant =
+            std::get_if<CandidTypeOptVariant>(&c_decoder);
+        if (p_opt_variant && p_content_variant) {
+          p_opt_variant->get_pv()->set_fields_wire(p_content_wire);
+        } else {
+          ICPP_HOOKS::trap(
+              "ERROR: Unexpected type-table for CandidTypeOptVariant - " +
+              std::string(__func__));
+        }
+      } else if ((field_content_opcode_wire == candidOpcode.Record) ||
+                 (field_content_opcode_wire == candidOpcode.Variant)) {
         ICPP_HOOKS::trap(
             "ERROR: We do NOT yet handle this field type: \n " +
             std::to_string(field_opcode_wire) + " (" +
@@ -803,14 +808,13 @@ CandidTypeRecord::build_decoder_wire_for_additional_opt_field(
   }
 
   std::shared_ptr<CandidTypeRoot> p_wire{nullptr};
-  if (field_content_opcode_wire == CANDID_UNDEF) {
+  if (field_datatype_wire >= 0) {
+    // For types with a type-table, like Record & Variant,
+    // the decoder was created during deserialization of the type table section
+    p_wire = de.get_typetables_wire()[field_datatype_wire].get_p_wire();
+  } else if (field_content_opcode_wire == CANDID_UNDEF) {
     ICPP_HOOKS::trap(
         "ERROR: cannot build the decoder_wire because field_content_opcode_wire is not set.");
-  } else if (field_content_opcode_wire == candidOpcode.Record) {
-    p_wire = de.get_typetables_wire()[field_datatype_wire].get_p_wire();
-  } else if (field_content_opcode_wire == candidOpcode.Variant) {
-    ICPP_HOOKS::trap(
-        "ERROR: found an additional Opt field on the wire of type Variant. We do not yet handle that.");
   } else {
     auto c_field = std::make_shared<CandidType>();
     CandidTypeTable *p_field_content_type_table = nullptr;

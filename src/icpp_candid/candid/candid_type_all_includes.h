@@ -69,7 +69,7 @@
 #include "candid_type_opt_text.h"
 // Opt of <constype>
 #include "candid_type_opt_record.h"
-// #include "candid_type_opt_variant.h"
+#include "candid_type_opt_variant.h"
 // #include "candid_type_opt_vec.h"
 // These types are not used for opts
 // #include "candid_type_opt_empty.h"
