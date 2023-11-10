@@ -104,6 +104,9 @@ void CandidTypeVariant::_append(uint32_t field_id, std::string field_name,
     m_field_ids.erase(m_field_ids.begin() + i);
     m_field_names.erase(m_field_names.begin() + i);
     m_field_datatypes.erase(m_field_datatypes.begin() + i);
+    m_field_opcodes.erase(m_field_opcodes.begin() + i);
+    m_field_content_datatypes.erase(m_field_content_datatypes.begin() + i);
+    m_field_content_opcodes.erase(m_field_content_opcodes.begin() + i);
     m_field_ptrs.erase(m_field_ptrs.begin() + i);
 
     // Check again
@@ -131,7 +134,7 @@ void CandidTypeVariant::_append(uint32_t field_id, std::string field_name,
   m_field_datatypes.push_back(datatype);
   m_field_opcodes.push_back(datatype);
 
-  // Store the shared pointer to a CandidTypeBase class
+  // Store the shared pointer to a CandidTypeRoot class
   m_field_ptrs.push_back(std::visit(
       [](auto &&arg) -> std::shared_ptr<CandidTypeRoot> {
         return std::make_shared<std::decay_t<decltype(arg)>>(arg);
@@ -146,6 +149,8 @@ void CandidTypeVariant::_append(uint32_t field_id, std::string field_name,
   if (field_name == m_label) {
     m_label_value_set = true;
   }
+
+  // Note: Unlike for a Record, the variant's fields are not sorted
 
   encode_T();
   encode_M();
@@ -248,6 +253,7 @@ bool CandidTypeVariant::decode_T(VecBytes B, __uint128_t &offset,
     m_field_content_datatypes.push_back(CANDID_UNDEF);
     m_field_content_opcodes.push_back(CANDID_UNDEF);
     m_field_ptrs.push_back(nullptr);
+
     if (CANDID_DESERIALIZE_DEBUG_PRINT) {
       B.debug_print_as_hex_string(debug_hex_string, offset_start, offset);
       ICPP_HOOKS::debug_print(
@@ -374,30 +380,65 @@ void CandidTypeVariant::encode_M() {
 
 // Decode the values, starting at & updating offset
 bool CandidTypeVariant::decode_M(CandidDeserialize &de, VecBytes B,
-                                 __uint128_t &offset,
+                                 __uint128_t &B_offset,
                                  std::string &parse_error) {
-  // get index of variant options - leb128(i)
-  // Note: It is allowed that Candid contains ONLY the variant label-hash/type/value itself.
-  //       In that case, the index will always be 0
-  //       We have to check on the variant label-hash, not on the full variant index.
-  __uint128_t offset_start = offset;
+  std::string debug_hex_string;
+  if (CANDID_DESERIALIZE_DEBUG_PRINT) {
+    ICPP_HOOKS::debug_print("+++++");
+    ICPP_HOOKS::debug_print("Entered CandidTypeVariant::decode_M");
+    debug_hex_string = B.as_hex_string();
+  }
+
+  if (m_field_ids.size() == 0) {
+    ICPP_HOOKS::trap(
+        "ERROR: m_field_ids has size 0 in CandidTypeRecord::decode_M");
+  }
+
+  // For a variant, there is only one field in the decode_M.
+  // Notes:
+  //   (-) The wire contains the index into the type-table on the wire, which is NOT
+  //       necessarily the same as the expected type table. The type-table of
+  //       fields on the wire can contain:
+  //       (-) just the one of the stored variant itself (most likely) -> j=0
+  //       (-) all the expected variant fields (only one is selected)
+  //       (-) additional Opt fields (unlikely, but allowed)
+  //
+  //       So, we must do a check against the variant fields' label-hash.
+  //
+  //   (-) It is possible that decode_M is called for an additional Opt Variant.
+  //       In that case, it is even more important to use the type table of the
+  //       wire to decode
+  //
+  //   (-) Forward compatibility considerations also can result in very weird, but valid cases, like:
+  //         '(opt (variant { Err = opt (variant { Err = "Error" : text}) }))'
+
+  // Read index into the Variant's type-table on the wire - leb128(i)
+  CandidOpcode candidOpcode;
+  __uint128_t B_offset_start = B_offset;
   __uint128_t numbytes;
   parse_error = "";
-  __uint128_t j;
-  if (B.parse_uleb128(offset, j, numbytes, parse_error)) {
-    std::string to_be_parsed = "Size of vec- leb128(N)";
-    CandidAssert::trap_with_parse_error(offset_start, offset, to_be_parsed,
+  __uint128_t j128;
+  if (B.parse_uleb128(B_offset, j128, numbytes, parse_error)) {
+    std::string to_be_parsed = "index in variant options - leb128(i)";
+    CandidAssert::trap_with_parse_error(B_offset_start, B_offset, to_be_parsed,
                                         parse_error);
   }
+  if (CANDID_DESERIALIZE_DEBUG_PRINT) {
+    B.debug_print_as_hex_string(debug_hex_string, B_offset_start, B_offset);
+    ICPP_HOOKS::debug_print("Field index into type table on wire = " +
+                            ICPP_HOOKS::to_string_128(j128));
+  }
+  size_t j = static_cast<size_t>(j128);
 
   // match the variant's id (hash) of wire with passed in variant fields
   bool found_match{false};
-  for (size_t i = 0; i < m_field_ptrs.size(); ++i) {
+  size_t i{0};
+  for (i = 0; i < m_field_ptrs.size(); ++i) {
     if (m_field_ids_wire[j] == m_field_ids[i]) {
       found_match = true;
       m_label = m_field_names[i];
-      m_variant_index = i;
-      m_variant_index_wire = j;
+      // Fill the user's data placeholder, if a pointer was provided
+      if (m_p_label) *m_p_label = m_label;
       break;
     }
   }
@@ -414,60 +455,337 @@ bool CandidTypeVariant::decode_M(CandidDeserialize &de, VecBytes B,
     }
     ICPP_HOOKS::trap(msg);
   }
-  // verify that the types match
-  int datatype = m_field_datatypes[m_variant_index];
-  int datatype_wire = m_field_datatypes_wire[m_variant_index_wire];
-  if (datatype != datatype_wire) {
-    std::string msg;
-    msg.append(
-        "ERROR: the datatype of the Variant's value on the wire does not match the expected Variant datatype.\n");
-    msg.append("       The id (hash) on wire: " +
-               std::to_string(m_field_ids_wire[m_variant_index_wire]) + " (" +
-               m_label + ")" + "\n");
-    msg.append("       expected datatype for this id (hash): " +
-               std::to_string(datatype) + " (" +
-               CandidOpcode().name_from_opcode(datatype) + ")" + "\n");
-    msg.append("       datatype on wire                    : " +
-               std::to_string(datatype_wire) + " (" +
-               CandidOpcode().name_from_opcode(datatype_wire) + ")" + "\n");
-    ICPP_HOOKS::trap(msg);
-  }
 
-  // decode the value
-  // TODO: what was this for?
-  // if (datatype_wire == CandidOpcode().Null) {
-  //   // There is no value to decode
-  // } else {
-  // We can just call the decode_M method on the base class, use runtime polymorphism
-  // (-) The method decode_M is declared as a virtual function the base class
-  // (-) It is implemented for ALL derived classes
-  parse_error = "";
-  offset_start = offset;
+  // Check if all is OK and if there is anything to decode, with either expected or wire decoder
+  std::shared_ptr<CandidTypeRoot> decoder = nullptr;
+  std::string decoder_name;
 
-  if (m_field_ptrs[m_variant_index]) {
-    if (m_field_ptrs[m_variant_index]->decode_M(de, B, offset, parse_error)) {
-      std::string to_be_parsed = "Value for a Variant";
-      CandidAssert::trap_with_parse_error(offset_start, offset, to_be_parsed,
-                                          parse_error);
+  select_decoder_or_trap(de, i, j, decoder, decoder_name);
+
+  if (!decoder) {
+    if (decoder_name == "skip-expected-opt-not-found-on-wire") {
+      // Expected Opt not found on the wire, but that is OK
+    } else {
+      ICPP_HOOKS::trap("ERROR: decoder for a variant field is a nullptr - " +
+                       std::string(__func__));
+    }
+  } else {
+    if (CANDID_DESERIALIZE_DEBUG_PRINT) {
+      std::string msg;
+      msg.append("Start reading data by calling decode_M for (i,j) = ()" +
+                 std::to_string(i) + "," + std::to_string(j) + ")");
+      msg.append("\n- Using decode_M of " + decoder_name + " for Opcode " +
+                 std::to_string(decoder->get_datatype_opcode()) + " (" +
+                 decoder->get_datatype_textual() + ")");
+      ICPP_HOOKS::debug_print(msg);
+    }
+    B_offset_start = B_offset;
+    parse_error = "";
+    if (decoder->decode_M(de, B, B_offset, parse_error)) {
+      std::string to_be_parsed =
+          "Values (decoding M) for argument at wire index " + std::to_string(j);
+      CandidAssert::trap_with_parse_error(B_offset_start, B_offset,
+                                          to_be_parsed, parse_error);
     }
   }
-  // }
-  // else {
-  //   ICPP_HOOKS::trap(
-  //       "TODO: Implement decode for non primitive type as a variant field, using recursion " +
-  //       std::to_string(datatype) + std::string(__func__));
-  // }
-
-  // Fill the user's data placeholder, if a pointer was provided
-  if (m_p_label) *m_p_label = m_label;
-
   return false;
+}
+
+void CandidTypeVariant::select_decoder_or_trap(
+    CandidDeserialize &de, size_t i, size_t j,
+    std::shared_ptr<CandidTypeRoot> &decoder, std::string &decoder_name) {
+
+  CandidOpcode candidOpcode;
+
+  // The field on the wire (j)
+  uint32_t field_id_wire = m_field_ids_wire[j];
+  int field_datatype_wire = m_field_datatypes_wire[j];
+  int field_opcode_wire = m_field_opcodes_wire[j];
+  std::shared_ptr<CandidTypeRoot> field_ptr_wire = m_field_ptrs_wire[j];
+  int field_content_opcode_wire{CANDID_UNDEF};
+  std::string field_content_name_wire;
+  if (field_opcode_wire == candidOpcode.Opt ||
+      field_opcode_wire == candidOpcode.Vec) {
+    field_content_opcode_wire = field_ptr_wire->get_content_opcode();
+    field_content_name_wire =
+        candidOpcode.name_from_opcode(field_content_opcode_wire);
+  }
+
+  // The expected field (i)
+  uint32_t field_id_expected = m_field_ids[i];
+  std::string field_name_expected = m_field_names[i];
+  int field_datatype_expected = m_field_datatypes[i];
+  int field_opcode_expected = m_field_opcodes[i];
+  std::shared_ptr<CandidTypeRoot> field_ptr_expected = m_field_ptrs[i];
+  int field_content_opcode_expected{CANDID_UNDEF};
+  std::string field_content_name_expected;
+  if (field_opcode_expected == candidOpcode.Opt ||
+      field_opcode_expected == candidOpcode.Vec) {
+    field_content_opcode_expected = field_ptr_expected->get_content_opcode();
+    field_content_name_expected =
+        candidOpcode.name_from_opcode(field_content_opcode_expected);
+  }
+
+  if (CANDID_DESERIALIZE_DEBUG_PRINT) {
+    std::string msg = "--";
+    msg.append("\nexpected field has index " + std::to_string(i));
+    msg.append("\n- Name (label) = " + field_name_expected);
+    msg.append("\n- id   (hash)  = " + std::to_string(field_id_expected));
+    msg.append("\n- Opcode       = " + std::to_string(field_opcode_expected) +
+               " (" + candidOpcode.name_from_opcode(field_opcode_expected) +
+               ")");
+    if (field_opcode_expected == candidOpcode.Opt) {
+      msg.append("\n- field_content_opcode_expected = " +
+                 std::to_string(field_content_opcode_expected) + " (" +
+                 field_content_name_expected + ")");
+    }
+
+    msg.append("\nfield on wire has index " + std::to_string(j));
+    msg.append("\n- id   (hash)  = " + std::to_string(field_id_wire));
+    msg.append("\n- datatype     = " + std::to_string(field_datatype_wire));
+    msg.append("\n- Opcode       = " + std::to_string(field_opcode_wire) +
+               " (" + candidOpcode.name_from_opcode(field_opcode_wire) + ")");
+    if (field_datatype_wire >= 0) {
+      msg.append("\n  (walked the type-tables to find that Opcode!)");
+    }
+    if (field_opcode_wire == candidOpcode.Opt) {
+      msg.append("\n- opt_content_opcode_wire = " +
+                 std::to_string(field_content_opcode_wire) + " (" +
+                 field_content_name_wire + ")");
+    }
+    ICPP_HOOKS::debug_print(msg);
+  }
+
+  decoder = nullptr;
+  bool field_error{false};
+  if (field_id_wire == field_id_expected) {
+    // field Ids (the hash) of expected & wire match
+    // ==> Follow exact same logic as for args in candid_type_deserialize
+    if (((field_opcode_wire != candidOpcode.Opt &&
+          field_opcode_wire == field_opcode_expected) ||
+         (field_opcode_wire == candidOpcode.Opt &&
+          field_opcode_expected == candidOpcode.Opt &&
+          field_content_opcode_wire == field_content_opcode_expected) ||
+         (field_opcode_wire == candidOpcode.Vec &&
+          field_opcode_expected == candidOpcode.Vec &&
+          field_content_opcode_wire == field_content_opcode_expected))) {
+      // Found an exact match => decode it with expected field and caller will forward wire index j
+      if (CANDID_DESERIALIZE_DEBUG_PRINT) {
+        ICPP_HOOKS::debug_print(
+            "--> This field is expected and found on wire.\n    We will decode M & store the data.");
+      }
+      decoder = field_ptr_expected;
+      decoder_name = "expected";
+      // Fill the field _wire info used by decode_M
+      if ((field_opcode_expected == candidOpcode.Record) ||
+          (field_opcode_expected == candidOpcode.Variant)) {
+        // record { record } or record {variant}
+        int field_datatype_wire = m_field_datatypes_wire[j];
+        auto p_wire =
+            de.get_typetables_wire()[field_datatype_wire].get_p_wire();
+        decoder->set_fields_wire(p_wire);
+      } else if (field_opcode_expected == candidOpcode.Opt &&
+                 field_content_opcode_wire == candidOpcode.Record) {
+        int field_content_datatype_wire = m_field_content_datatypes_wire[j];
+        auto p_content_wire =
+            de.get_typetables_wire()[field_content_datatype_wire].get_p_wire();
+        CandidType c_content_wire = p_content_wire->toCandidType();
+        CandidTypeRecord *p_content_record =
+            std::get_if<CandidTypeRecord>(&c_content_wire);
+
+        CandidType c_decoder = decoder->toCandidType();
+        CandidTypeOptRecord *p_opt_record =
+            std::get_if<CandidTypeOptRecord>(&c_decoder);
+        if (p_opt_record && p_content_record) {
+          p_opt_record->get_pv()->set_fields_wire(p_content_wire);
+        } else {
+          ICPP_HOOKS::trap(
+              "ERROR: Unexpected type-table for CandidTypeOptRecord - " +
+              std::string(__func__));
+        }
+      } else if (field_opcode_expected == candidOpcode.Opt &&
+                 field_content_opcode_wire == candidOpcode.Variant) {
+        int field_content_datatype_wire = m_field_content_datatypes_wire[j];
+        auto p_content_wire =
+            de.get_typetables_wire()[field_content_datatype_wire].get_p_wire();
+        CandidType c_content_wire = p_content_wire->toCandidType();
+        CandidTypeVariant *p_content_variant =
+            std::get_if<CandidTypeVariant>(&c_content_wire);
+
+        CandidType c_decoder = decoder->toCandidType();
+        CandidTypeOptVariant *p_opt_variant =
+            std::get_if<CandidTypeOptVariant>(&c_decoder);
+        if (p_opt_variant && p_content_variant) {
+          p_opt_variant->get_pv()->set_fields_wire(p_content_wire);
+        } else {
+          ICPP_HOOKS::trap(
+              "ERROR: Unexpected type-table for CandidTypeOptVariant - " +
+              std::string(__func__));
+        }
+      } else if ((field_content_opcode_wire == candidOpcode.Record) ||
+                 (field_content_opcode_wire == candidOpcode.Variant)) {
+        ICPP_HOOKS::trap(
+            "ERROR: We do NOT yet handle this field type: \n " +
+            std::to_string(field_opcode_wire) + " (" +
+            candidOpcode.name_from_opcode(field_opcode_wire) +
+            std::to_string(field_content_opcode_wire) + " (" +
+            candidOpcode.name_from_opcode(field_content_opcode_wire) + " - " +
+            std::string(__func__));
+      }
+    } else if (field_opcode_wire == candidOpcode.Null &&
+               field_opcode_expected == candidOpcode.Opt) {
+      // Special case, Expected opt found as '(null)'
+      if (CANDID_DESERIALIZE_DEBUG_PRINT) {
+        ICPP_HOOKS::debug_print(
+            "--> This field is an expected Opt and found as 'null' on wire.\n    There is nothing to decode.");
+      }
+      decoder = nullptr; // Nothing to decode
+      decoder_name = "expected-opt-as-null";
+    } else if (field_opcode_wire == candidOpcode.Opt &&
+               field_opcode_expected == candidOpcode.Opt &&
+               field_content_opcode_wire == candidOpcode.Null) {
+      // Special case, Expected opt found as '(opt (null : null))'
+      if (CANDID_DESERIALIZE_DEBUG_PRINT) {
+        ICPP_HOOKS::debug_print(
+            "--> This field is an expected Opt and found as '(opt (null : null))' on wire.\n    We will decode M & discard the data.");
+      }
+      decoder = build_decoder_wire_for_additional_opt_field(de, j);
+      decoder_name = "expected-opt-as-opt-null";
+    } else if (field_opcode_wire == candidOpcode.Opt) {
+      // Additional Opt on wire must be decoded and discarded
+      if (CANDID_DESERIALIZE_DEBUG_PRINT) {
+        ICPP_HOOKS::debug_print(
+            "--> This field is an unexpected additional Opt found on wire.\n    We will decode M & discard the data.");
+      }
+      decoder = build_decoder_wire_for_additional_opt_field(de, j);
+      decoder_name = "read-and-discard-additional-wire-opt";
+    } else if (field_opcode_expected == candidOpcode.Opt) {
+      // Expected Opt not found on wire. Skip it and continue
+      if (CANDID_DESERIALIZE_DEBUG_PRINT) {
+        ICPP_HOOKS::debug_print(
+            "--> This field is an expected Opt that we cannot find on the wire.\n    We will skip the expected arg.");
+      }
+      decoder = nullptr;
+      decoder_name = "skip-expected-opt-not-found-on-wire";
+    } else {
+      // Wrong type on wire
+      // TODO:  IMPLEMENT CHECK ON COVARIANCE/CONTRAVARIANCE
+      field_error = true;
+    }
+  } else {
+    // field Ids (the hash) of expected & wire do not match
+    // -> Only allowed if one or both are Opt fields
+
+    // Is the field_id on the wire one of the next expected fields?
+    // - yes: only allowed if expected is an Opt, which has been omitted
+    // - no : only allowed if wire is an addional Opt, which must be read & discarded
+
+    bool found{false};
+    for (auto k = i + 1; k < m_field_ids.size(); ++k) {
+      if (field_id_wire == m_field_ids[k]) {
+        found = true;
+        break;
+      }
+    }
+    if (found && field_opcode_expected == candidOpcode.Opt) {
+      // Expected Opt not found on wire. Skip it and continue
+      if (CANDID_DESERIALIZE_DEBUG_PRINT) {
+        ICPP_HOOKS::debug_print(
+            "--> This field is an expected Opt that we cannot find on the wire.\n    We will skip the expected arg.");
+      }
+      decoder = nullptr;
+      decoder_name = "skip-expected-opt-not-found-on-wire";
+    } else if (!found && field_opcode_wire == candidOpcode.Opt) {
+      // Additional Opt on wire must be decoded and discarded
+      if (CANDID_DESERIALIZE_DEBUG_PRINT) {
+        ICPP_HOOKS::debug_print(
+            "--> This field is an unexpected additional Opt found on wire.\n    We will decode M & discard the data.");
+      }
+      decoder = build_decoder_wire_for_additional_opt_field(de, j);
+      decoder_name = "read-and-discard-additional-wire-opt";
+    } else {
+      // Wrong type on wire
+      // TODO:  IMPLEMENT CHECK ON COVARIANCE/CONTRAVARIANCE
+      field_error = true;
+    }
+  }
+
+  if (field_error) {
+    std::string msg;
+    msg.append("ERROR: Wrong Variant field on wire:\n");
+    msg.append("\nexpected field has index " + std::to_string(i));
+    msg.append("\n- Opcode   = " + std::to_string(field_opcode_expected) +
+               " (" + candidOpcode.name_from_opcode(field_opcode_expected) +
+               ")");
+    if (field_opcode_expected == candidOpcode.Opt) {
+      msg.append("\n- field_content_opcode_expected = " +
+                 std::to_string(field_content_opcode_expected) + " (" +
+                 field_content_name_expected + ")");
+    }
+
+    msg.append("\nfield on wire has index " + std::to_string(j));
+    msg.append("\n- datatype = " + std::to_string(field_datatype_wire));
+    msg.append("\n- Opcode   = " + std::to_string(field_opcode_wire) + " (" +
+               candidOpcode.name_from_opcode(field_opcode_wire) + ")");
+    if (field_datatype_wire >= 0) {
+      msg.append("\n  (walked the type-tables to find that Opcode!)");
+    }
+    if (field_opcode_wire == candidOpcode.Opt) {
+      msg.append("\n- opt_content_opcode_wire = " +
+                 std::to_string(field_content_opcode_wire) + " (" +
+                 field_content_name_wire + ")");
+    }
+    ICPP_HOOKS::trap(msg);
+  }
+}
+
+std::shared_ptr<CandidTypeRoot>
+CandidTypeVariant::build_decoder_wire_for_additional_opt_field(
+    CandidDeserialize &de, int j) {
+  // Build the decoder for an additional opt field on the wire
+  CandidOpcode candidOpcode;
+  int field_datatype_wire = m_field_datatypes_wire[j];
+  int field_opcode_wire = m_field_opcodes_wire[j];
+  int field_content_datatype_wire = m_field_content_datatypes_wire[j];
+  int field_content_opcode_wire = m_field_content_opcodes_wire[j];
+
+  if (field_opcode_wire != candidOpcode.Opt) {
+    ICPP_HOOKS::trap(
+        "ERROR: this method should only be called for an additional Opt field on the wire.");
+  }
+
+  std::shared_ptr<CandidTypeRoot> p_wire{nullptr};
+  if (field_datatype_wire >= 0) {
+    // For types with a type-table, like Record & Variant,
+    // the decoder was created during deserialization of the type table section
+    p_wire = de.get_typetables_wire()[field_datatype_wire].get_p_wire();
+  } else if (field_content_opcode_wire == CANDID_UNDEF) {
+    ICPP_HOOKS::trap(
+        "ERROR: cannot build the decoder_wire because field_content_opcode_wire is not set.");
+  } else {
+    auto c_field = std::make_shared<CandidType>();
+    CandidTypeTable *p_field_content_type_table = nullptr;
+    if (field_datatype_wire >= 0) {
+      p_field_content_type_table =
+          &de.get_typetables_wire()[field_datatype_wire];
+    }
+    candidOpcode.candid_type_opt_from_opcode(
+        *c_field, field_content_opcode_wire, field_content_opcode_wire,
+        p_field_content_type_table);
+    p_wire = std::visit(
+        [](auto &&c_) -> std::shared_ptr<CandidTypeRoot> {
+          return std::make_shared<std::decay_t<decltype(c_)>>(c_);
+        },
+        *c_field);
+  }
+
+  return p_wire;
 }
 
 void CandidTypeVariant::set_fields_wire(
     std::shared_ptr<CandidTypeRoot> p_from_wire) {
-  // Move the type table data of the Record that we found on the wire
-  // into vectors with the corresponding Record we are expecting
+  // Move the type table data of the Variant that we found on the wire
+  // into vectors with the corresponding Variant we are expecting
   // We do all the checking on correctness in decode_M
   m_field_ids_wire.clear();
   m_field_datatypes_wire.clear();

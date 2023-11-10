@@ -4,28 +4,28 @@
 
 #include <cstring>
 
-#include "candid_type_record.h"
+#include "candid_type_variant.h"
 #include "vec_bytes.h"
 
-class CandidTypeOptRecord : public CandidTypeBase<CandidTypeOptRecord> {
+class CandidTypeOptVariant : public CandidTypeBase<CandidTypeOptVariant> {
 public:
   // Constructors
-  CandidTypeOptRecord();
+  CandidTypeOptVariant();
   // clang-format off
   // docs start: demo_candid_type_opt
-  CandidTypeOptRecord(CandidTypeRecord *v, bool *has_value);
-  CandidTypeOptRecord(const CandidTypeRecord v); // docs end: demo_candid_type_opt
+  CandidTypeOptVariant(CandidTypeVariant *v, bool *has_value);
+  CandidTypeOptVariant(const CandidTypeVariant v); // docs end: demo_candid_type_opt
   // clang-format on
 
   // For internal use, to build decoders for additional OptRecord on the wire
-  CandidTypeOptRecord(CandidTypeRoot *v, bool *has_value);
+  CandidTypeOptVariant(CandidTypeRoot *v, bool *has_value);
 
   // Destructor
-  ~CandidTypeOptRecord();
+  ~CandidTypeOptVariant();
 
   bool decode_M(CandidDeserialize &de, VecBytes B, __uint128_t &offset,
                 std::string &parse_error);
-  CandidTypeRecord get_v() { return m_v; }
+  CandidTypeVariant get_v() { return m_v; }
   CandidTypeRoot *get_pv() { return m_pv; }
   bool has_value() { return m_p_has_value; };
 
@@ -33,11 +33,11 @@ public:
 
 protected:
   void set_pv(CandidTypeRoot *p_v) { m_pv = p_v; }
-  void set_v(const CandidTypeRecord &v) { m_v = v; }
+  void set_v(const CandidTypeVariant &v) { m_v = v; }
   void set_content_type();
   void encode_M();
 
-  CandidTypeRecord m_v;
+  CandidTypeVariant m_v;
   CandidTypeRoot *m_pv{nullptr};
 
   void initialize();

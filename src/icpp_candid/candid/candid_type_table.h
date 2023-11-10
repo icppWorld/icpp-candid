@@ -19,11 +19,10 @@ public:
   int get_content_opcode() { return m_content_opcode; }
 
   std::shared_ptr<CandidTypeRoot> get_p_wire() { return m_p_wire; }
-  std::shared_ptr<CandidType> get_p_c_wire() { return m_p_c_wire; }
 
   void set_opcode(int opcode) { m_opcode = opcode; }
-  void set_vec_and_opt(int content_opcode,
-                       CandidTypeTable *p_content_type_table);
+  void finish_vec_and_opt(int content_opcode,
+                          CandidTypeTable *p_content_type_table);
 
 private:
   void deserialize(__uint128_t &B_offset);
@@ -37,7 +36,6 @@ private:
 
   // A dummy CandidType, to use it's encode & decode methods
   std::shared_ptr<CandidTypeRoot> m_p_wire{nullptr};
-  std::shared_ptr<CandidType> m_p_c_wire{nullptr};
 
   // The byte stream to be deserialized
   __uint128_t m_B_offset;

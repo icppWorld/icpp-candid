@@ -129,7 +129,7 @@ void CandidDeserialize::deserialize() {
     }
   }
 
-  // set the content_opcode_wire for the type-tables of type Opt & Vec
+  // Finish creation of decoders for the type-tables of type Opt & Vec
   for (size_t i = 0; i < num_typetables_wire; ++i) {
     if (m_typetables_wire[i].get_opcode() == candidOpcode.Vec ||
         m_typetables_wire[i].get_opcode() == candidOpcode.Opt) {
@@ -139,18 +139,21 @@ void CandidDeserialize::deserialize() {
       int content_datatype = m_typetables_wire[i].get_content_datatype();
       CandidTypeTable *p_content_type_table = nullptr;
       if (content_datatype >= 0) {
-        // This is a type table
-        content_opcode_wire =
-            get_opcode_from_datatype_on_wire(content_datatype);
-
-        if (content_datatype >= 0) {
+        if (m_typetables_wire[content_datatype].get_p_wire()) {
           p_content_type_table = &m_typetables_wire[content_datatype];
+          content_opcode_wire =
+              p_content_type_table->get_p_wire()->get_datatype_opcode();
+          assert(content_opcode_wire ==
+                 get_opcode_from_datatype_on_wire(content_datatype));
+        } else {
+          ICPP_HOOKS::trap(
+              "ERROR: do not understand the Type Table section on the wire.");
         }
       } else {
         content_opcode_wire = content_datatype;
       }
-      m_typetables_wire[i].set_vec_and_opt(content_opcode_wire,
-                                           p_content_type_table);
+      m_typetables_wire[i].finish_vec_and_opt(content_opcode_wire,
+                                              p_content_type_table);
     }
   }
 
@@ -559,14 +562,52 @@ void CandidDeserialize::select_decoder_or_trap(
           error = true;
           error_msg = "p_content_wire is a nullptr, likely a bug.";
         }
-      } else if (content_opcode_wire == candidOpcode.Variant) {
-        //  OptVariant VecVariant
-        error = true;
-        error_msg =
-            "OptVariant or VecVariant not yet supported by this method. It must call set_field_wire !!";
       } else {
         error = true;
-        error_msg = "We do NOT yet handle this content type.";
+        error_msg = "We do NOT yet handle this.";
+      }
+    } else if (content_opcode_wire == candidOpcode.Variant) {
+      if (opcode_expected == candidOpcode.Opt ||
+          opcode_expected == candidOpcode.Vec) {
+        // OptVariant, VecVariant
+        int content_datatype_wire = m_args_content_datatypes_wire[j];
+        auto p_content_wire =
+            m_typetables_wire[content_datatype_wire].get_p_wire();
+        if (p_content_wire) {
+          CandidType c_decoder = decoder->toCandidType();
+          if (opcode_expected == candidOpcode.Opt) {
+            CandidTypeOptVariant *p_opt_variant =
+                std::get_if<CandidTypeOptVariant>(&c_decoder);
+            if (p_opt_variant) {
+              p_opt_variant->get_pv()->set_fields_wire(p_content_wire);
+            } else {
+              error = true;
+              error_msg = "p_opt_variant is a nullptr, likely a bug.";
+            }
+          } else if (opcode_expected == candidOpcode.Vec) {
+            ICPP_HOOKS::trap("TODO: Implement for CandidTypeVecVariant.");
+            // // A VecVariant uses a dummy record during decoding
+            // CandidTypeVecVariant *p_vec_variant =
+            //     std::get_if<CandidTypeVecVariant>(&c_decoder);
+            // if (p_vec_variant) {
+            //   p_vec_variant->get_pr()->set_fields_wire(p_content_wire);
+            //   // not used
+            //   p_vec_variant->get_pv()->set_fields_wire(p_content_wire);
+            // } else {
+            //   error = true;
+            //   error_msg = "p_vec_variant is a nullptr, likely a bug.";
+            // }
+          } else {
+            error = true;
+            error_msg = "ERROR: ... ";
+          }
+        } else {
+          error = true;
+          error_msg = "p_content_wire is a nullptr, likely a bug.";
+        }
+      } else {
+        error = true;
+        error_msg = "We do NOT yet handle this.";
       }
     }
   } else if (opcode_wire == candidOpcode.Null &&
@@ -644,15 +685,15 @@ CandidDeserialize::build_decoder_wire_for_additional_opt_arg(int j) {
   }
 
   std::shared_ptr<CandidTypeRoot> p_wire{nullptr};
-  if (content_opcode_wire == CANDID_UNDEF) {
+  if (datatype_wire >= 0) {
+    // For types with a type-table, like Record & Variant,
+    // the decoder was created during deserialization of the type table section
+    p_wire = m_typetables_wire[datatype_wire].get_p_wire();
+  } else if (content_opcode_wire == CANDID_UNDEF) {
     ICPP_HOOKS::trap(
         "ERROR: cannot build the decoder_wire because content_opcode_wire is not set.");
-    // } else if (content_opcode_wire == candidOpcode.Record) {
-    //   p_wire = m_typetables_wire[datatype_wire].get_p_wire();
-    // } else if (content_opcode_wire == candidOpcode.Variant) {
-    //   ICPP_HOOKS::trap(
-    //       "ERROR: found an additional Opt arg on the wire of type Variant. We do not yet handle that.");
   } else {
+    // Primitives with simple decoder (i.e. no fields)
     auto c_arg = std::make_shared<CandidType>();
     CandidTypeTable *p_content_type_table = nullptr;
     if (content_datatype_wire >= 0) {

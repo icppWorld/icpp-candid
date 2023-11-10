@@ -46,12 +46,15 @@ protected:
 
   // Label & id (hash) of the field that contains the Variant's data
   std::string m_label{""};
-  __uint128_t m_variant_index{0};
   bool m_label_value_set{false};
 
   // Pointer to the label passed in by caller during deserialization
   std::string *m_p_label{nullptr};
 
-  // To help with decoding checks
-  __uint128_t m_variant_index_wire{0};
+  void select_decoder_or_trap(CandidDeserialize &de, size_t i, size_t j,
+                              std::shared_ptr<CandidTypeRoot> &decoder,
+                              std::string &decoder_name);
+
+  std::shared_ptr<CandidTypeRoot>
+  build_decoder_wire_for_additional_opt_field(CandidDeserialize &de, int j);
 };

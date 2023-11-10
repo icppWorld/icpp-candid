@@ -131,6 +131,7 @@ template class CandidTypeBase<CandidTypeOptNat64>;
 template class CandidTypeBase<CandidTypeOptPrincipal>;
 template class CandidTypeBase<CandidTypeOptText>;
 template class CandidTypeBase<CandidTypeOptRecord>;
+template class CandidTypeBase<CandidTypeOptVariant>;
 template class CandidTypeBase<CandidTypePrincipal>;
 template class CandidTypeBase<CandidTypeRecord>;
 template class CandidTypeBase<CandidTypeReserved>;
