@@ -17,8 +17,11 @@ public:
   CandidTypeOptRecord(const CandidTypeRecord v); // docs end: demo_candid_type_opt
   // clang-format on
 
-  // For internal use, to build decoders for additional OptRecord on the wire
+  // Internal: During deserialization for an expected argument
   CandidTypeOptRecord(CandidTypeRoot *v, bool *has_value);
+
+  // Internal: During deserialization for an additional wire argument (dummy !)
+  CandidTypeOptRecord(std::shared_ptr<CandidTypeRoot> v);
 
   // Destructor
   ~CandidTypeOptRecord();
@@ -27,6 +30,7 @@ public:
                 std::string &parse_error);
   CandidTypeRecord get_v() { return m_v; }
   CandidTypeRoot *get_pv() { return m_pv; }
+  std::shared_ptr<CandidTypeRoot> get_pvs() { return m_pvs; }
   bool has_value() { return m_p_has_value; };
 
   bool decode_T(VecBytes B, __uint128_t &offset, std::string &parse_error);
@@ -34,11 +38,13 @@ public:
 protected:
   void set_pv(CandidTypeRoot *p_v) { m_pv = p_v; }
   void set_v(const CandidTypeRecord &v) { m_v = v; }
+  void set_pvs(std::shared_ptr<CandidTypeRoot> p_vs) { m_pvs = p_vs; }
   void set_content_type();
   void encode_M();
 
   CandidTypeRecord m_v;
   CandidTypeRoot *m_pv{nullptr};
+  std::shared_ptr<CandidTypeRoot> m_pvs{nullptr};
 
   void initialize();
   void set_datatype();

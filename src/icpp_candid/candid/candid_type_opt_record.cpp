@@ -27,7 +27,6 @@ CandidTypeOptRecord::CandidTypeOptRecord(CandidTypeRecord *p_v, bool *has_value)
   *has_value = false;
   m_p_has_value = has_value; // Set to true when found on wire
 
-  CandidTypeRoot *p_v_root = static_cast<CandidTypeRoot *>(p_v);
   set_pv(static_cast<CandidTypeRoot *>(p_v));
 
   const CandidTypeRecord v = const_cast<CandidTypeRecord &>(*p_v);
@@ -62,6 +61,27 @@ CandidTypeOptRecord::CandidTypeOptRecord(const CandidTypeRecord v)
     : CandidTypeBase() {
   set_v(v);
   initialize();
+}
+
+// Internal: During deserialization for an additional wire argument (dummy !)
+CandidTypeOptRecord::CandidTypeOptRecord(
+    std::shared_ptr<CandidTypeRoot> p_v_root)
+    : CandidTypeBase() {
+  m_pvs = p_v_root;
+  set_pv(p_v_root.get());
+  CandidTypeRecord *p_v_record =
+      dynamic_cast<CandidTypeRecord *>(p_v_root.get());
+  if (p_v_record) {
+    // The cast was successful, it is indeed a Record
+    const CandidTypeRecord v = const_cast<CandidTypeRecord &>(*p_v_record);
+    set_v(v);
+    initialize();
+  } else {
+    // The cast failed, and p_v_record is nullptr
+    ICPP_HOOKS::trap(
+        "ERROR: p_v_root is not pointing to a CandidTypeRecord object - " +
+        std::string(__func__));
+  }
 }
 
 CandidTypeOptRecord::~CandidTypeOptRecord() {}
@@ -113,7 +133,9 @@ bool CandidTypeOptRecord::decode_M(CandidDeserialize &de, VecBytes B,
   if (tag == 1) {
     // Found it on the wire.
     // Call the CandidTypeRecord's decoder
-    *m_p_has_value = true;
+    if (m_p_has_value) {
+      *m_p_has_value = true;
+    }
     offset_start = offset;
     parse_error = "";
 

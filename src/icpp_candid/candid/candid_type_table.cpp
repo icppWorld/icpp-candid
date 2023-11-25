@@ -62,15 +62,8 @@ void CandidTypeTable::deserialize(__uint128_t &B_offset) {
     m_opcode = m_datatype;
     if (m_opcode != candidOpcode.Vec && m_opcode != candidOpcode.Opt) {
       // If not a Vec & Opt, we can simply create the dummy CandidType c
-      auto c = std::make_shared<CandidType>();
-      candidOpcode.candid_type_from_opcode(*c, m_opcode);
-
-      // Store a shared pointer to a CandidTypeRoot class (copy)
-      m_p_wire = std::visit(
-          [](auto &&arg_) -> std::shared_ptr<CandidTypeRoot> {
-            return std::make_shared<std::decay_t<decltype(arg_)>>(arg_);
-          },
-          *c);
+      m_p_wire = candidOpcode.candid_type_from_opcode(m_opcode);
+      m_p_wire->set_is_internal(true);
 
       // We now have a dummy CandidType, and we can use decode_T
       B_offset_start = B_offset;
@@ -127,14 +120,16 @@ void CandidTypeTable::finish_vec_and_opt(
                      ": ERROR - this is not a Vec or Opt !");
   }
 
-  auto c = std::make_shared<CandidType>();
   m_content_opcode = content_opcode;
 
   if (m_opcode == candidOpcode.Vec) {
-    candidOpcode.candid_type_vec_from_opcode(*c, content_opcode);
+    m_p_wire = candidOpcode.candid_type_vec_from_opcode(content_opcode,
+                                                        p_content_type_table);
+    m_p_wire->set_content_datatype(m_content_datatype);
   } else if (m_opcode == candidOpcode.Opt) {
-    candidOpcode.candid_type_opt_from_opcode(
-        *c, content_opcode, m_content_datatype, p_content_type_table);
+    m_p_wire = candidOpcode.candid_type_opt_from_opcode(content_opcode,
+                                                        p_content_type_table);
+    m_p_wire->set_content_datatype(m_content_datatype);
   } else {
     std::string msg;
     msg.append(std::string(__func__) + ": ERROR: internal code error");
@@ -142,11 +137,5 @@ void CandidTypeTable::finish_vec_and_opt(
     msg.append("\n- content_opcode = " + std::to_string(content_opcode));
     ICPP_HOOKS::trap(msg);
   }
-
-  // Store a shared pointer to a CandidTypeRoot
-  m_p_wire = std::visit(
-      [](auto &&arg_) -> std::shared_ptr<CandidTypeRoot> {
-        return std::make_shared<std::decay_t<decltype(arg_)>>(arg_);
-      },
-      *c);
+  if (m_p_wire) m_p_wire->set_is_internal(true);
 }

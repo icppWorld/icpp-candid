@@ -23,10 +23,16 @@ public:
   // Non <comptype> should not call this method.
   virtual void set_content_type();
 
+  // Virtual methods to be implemented by VecRecord
+  virtual void create_dummy_record_encode();
+
   // Virtual methods to be implemented by all CandidTypes
   virtual bool decode_M(CandidDeserialize &de, VecBytes B, __uint128_t &offset,
                         std::string &parse_error);
   virtual void encode_M();
+
+  std::optional<bool> get_is_internal() { return m_is_internal; }
+  void set_is_internal(bool is_internal) { m_is_internal = is_internal; }
 
   int get_datatype_opcode() { return m_datatype_opcode; }
   uint8_t get_datatype_hex() { return m_datatype_hex; }
@@ -137,6 +143,9 @@ protected:
 
   // The encoded byte vector for the value
   VecBytes m_M;
+
+  // flag set when the instance is created internally, to decode wire
+  std::optional<bool> m_is_internal;
 };
 
 // Templated base class

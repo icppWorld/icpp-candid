@@ -46,6 +46,12 @@ void CandidTypeRoot::set_content_type() {
                    m_datatype_textual);
 }
 
+// Virtual methods to be implemented by VecRecord
+void CandidTypeRoot::create_dummy_record_encode() {
+  ICPP_HOOKS::trap("ERROR: create_dummy_record_encode not implemented for " +
+                   m_datatype_textual);
+}
+
 // Virtual method to be implemented by all CandidTypeVecXXX to push_back a value into the internal std::vector<T>
 void CandidTypeRoot::push_back_value(CandidTypeRoot &value) {
   ICPP_HOOKS::trap("ERROR: set_content_type not implemented for " +
@@ -132,6 +138,7 @@ template class CandidTypeBase<CandidTypeOptPrincipal>;
 template class CandidTypeBase<CandidTypeOptText>;
 template class CandidTypeBase<CandidTypeOptRecord>;
 template class CandidTypeBase<CandidTypeOptVariant>;
+template class CandidTypeBase<CandidTypeOptVec>;
 template class CandidTypeBase<CandidTypePrincipal>;
 template class CandidTypeBase<CandidTypeRecord>;
 template class CandidTypeBase<CandidTypeReserved>;

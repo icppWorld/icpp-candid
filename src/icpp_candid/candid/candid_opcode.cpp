@@ -3,6 +3,7 @@
 #include <string>
 #include <unordered_map>
 #include <variant>
+#include <memory>
 
 #include "candid_opcode.h"
 #include "candid_type.h"
@@ -58,43 +59,44 @@ std::string CandidOpcode::name_from_opcode(int opcode) {
   }
 }
 
-void CandidOpcode::candid_type_from_opcode(CandidType &c, int opcode) {
+std::shared_ptr<CandidTypeRoot>
+CandidOpcode::candid_type_from_opcode(int opcode) {
   if (opcode == Null) {
-    c = CandidTypeNull();
+    return std::make_shared<CandidTypeNull>();
   } else if (opcode == Empty) {
-    c = CandidTypeEmpty();
+    return std::make_shared<CandidTypeEmpty>();
   } else if (opcode == Reserved) {
-    c = CandidTypeReserved();
+    return std::make_shared<CandidTypeReserved>();
   } else if (opcode == Bool) {
-    c = CandidTypeBool();
+    return std::make_shared<CandidTypeBool>();
   } else if (opcode == Float32) {
-    c = CandidTypeFloat32();
+    return std::make_shared<CandidTypeFloat32>();
   } else if (opcode == Float64) {
-    c = CandidTypeFloat64();
+    return std::make_shared<CandidTypeFloat64>();
   } else if (opcode == Int) {
-    c = CandidTypeInt();
+    return std::make_shared<CandidTypeInt>();
   } else if (opcode == Nat) {
-    c = CandidTypeNat();
+    return std::make_shared<CandidTypeNat>();
   } else if (opcode == Nat8) {
-    c = CandidTypeNat8();
+    return std::make_shared<CandidTypeNat8>();
   } else if (opcode == Nat16) {
-    c = CandidTypeNat16();
+    return std::make_shared<CandidTypeNat16>();
   } else if (opcode == Nat32) {
-    c = CandidTypeNat32();
+    return std::make_shared<CandidTypeNat32>();
   } else if (opcode == Nat64) {
-    c = CandidTypeNat64();
+    return std::make_shared<CandidTypeNat64>();
   } else if (opcode == Int8) {
-    c = CandidTypeInt8();
+    return std::make_shared<CandidTypeInt8>();
   } else if (opcode == Int16) {
-    c = CandidTypeInt16();
+    return std::make_shared<CandidTypeInt16>();
   } else if (opcode == Int32) {
-    c = CandidTypeInt32();
+    return std::make_shared<CandidTypeInt32>();
   } else if (opcode == Int64) {
-    c = CandidTypeInt64();
+    return std::make_shared<CandidTypeInt64>();
   } else if (opcode == Text) {
-    c = CandidTypeText();
+    return std::make_shared<CandidTypeText>();
   } else if (opcode == Principal) {
-    c = CandidTypePrincipal();
+    return std::make_shared<CandidTypePrincipal>();
   } else if (opcode == Vec) {
     std::string msg;
     msg.append(
@@ -103,6 +105,7 @@ void CandidOpcode::candid_type_from_opcode(CandidType &c, int opcode) {
                name_from_opcode(opcode) + ")");
     msg.append("      " + std::string(__func__));
     ICPP_HOOKS::trap(msg);
+    return std::make_shared<CandidTypeNull>(); // unreachable
   } else if (opcode == Opt) {
     std::string msg;
     msg.append(
@@ -111,10 +114,11 @@ void CandidOpcode::candid_type_from_opcode(CandidType &c, int opcode) {
                name_from_opcode(opcode) + ")");
     msg.append("      " + std::string(__func__));
     ICPP_HOOKS::trap(msg);
+    return std::make_shared<CandidTypeNull>(); // unreachable
   } else if (opcode == Record) {
-    c = CandidTypeRecord();
+    return std::make_shared<CandidTypeRecord>();
   } else if (opcode == Variant) {
-    c = CandidTypeVariant();
+    return std::make_shared<CandidTypeVariant>();
   } else {
     std::string msg;
     msg.append("ERROR: NOT YET IMPLEMENTED FOR THIS OPCODE.");
@@ -122,121 +126,145 @@ void CandidOpcode::candid_type_from_opcode(CandidType &c, int opcode) {
                name_from_opcode(opcode) + ")");
     msg.append("      " + std::string(__func__));
     ICPP_HOOKS::trap(msg);
+    return std::make_shared<CandidTypeNull>(); // unreachable
   }
 }
 
-void CandidOpcode::candid_type_vec_from_opcode(CandidType &c,
-                                               int content_opcode) {
+std::shared_ptr<CandidTypeRoot> CandidOpcode::candid_type_vec_from_opcode(
+    int content_opcode, CandidTypeTable *p_content_type_table) {
   // if (content_opcode == Null) {
-  //   c = CandidTypeVecNull();
+  // return std::make_shared<CandidTypeVecNull>();
   // } else if (content_opcode == Empty) {
-  //   c = CandidTypeVecEmpty();
+  // return std::make_shared<CandidTypeVecEmpty>();
   // } else if (content_opcode == Reserved) {
-  //   c = CandidTypeVecReserved();
+  // return std::make_shared<CandidTypeVecReserved>();
   // } else
   if (content_opcode == Bool) {
-    c = CandidTypeVecBool();
+    return std::make_shared<CandidTypeVecBool>();
   } else if (content_opcode == Float32) {
-    c = CandidTypeVecFloat32();
+    return std::make_shared<CandidTypeVecFloat32>();
   } else if (content_opcode == Float64) {
-    c = CandidTypeVecFloat64();
+    return std::make_shared<CandidTypeVecFloat64>();
   } else if (content_opcode == Int) {
-    c = CandidTypeVecInt();
+    return std::make_shared<CandidTypeVecInt>();
   } else if (content_opcode == Nat) {
-    c = CandidTypeVecNat();
+    return std::make_shared<CandidTypeVecNat>();
   } else if (content_opcode == Nat8) {
-    c = CandidTypeVecNat8();
+    return std::make_shared<CandidTypeVecNat8>();
   } else if (content_opcode == Nat16) {
-    c = CandidTypeVecNat16();
+    return std::make_shared<CandidTypeVecNat16>();
   } else if (content_opcode == Nat32) {
-    c = CandidTypeVecNat32();
+    return std::make_shared<CandidTypeVecNat32>();
   } else if (content_opcode == Nat64) {
-    c = CandidTypeVecNat64();
+    return std::make_shared<CandidTypeVecNat64>();
   } else if (content_opcode == Int8) {
-    c = CandidTypeVecInt8();
+    return std::make_shared<CandidTypeVecInt8>();
   } else if (content_opcode == Int16) {
-    c = CandidTypeVecInt16();
+    return std::make_shared<CandidTypeVecInt16>();
   } else if (content_opcode == Int32) {
-    c = CandidTypeVecInt32();
+    return std::make_shared<CandidTypeVecInt32>();
   } else if (content_opcode == Int64) {
-    c = CandidTypeVecInt64();
+    return std::make_shared<CandidTypeVecInt64>();
   } else if (content_opcode == Text) {
-    c = CandidTypeVecText();
+    return std::make_shared<CandidTypeVecText>();
   } else if (content_opcode == Principal) {
-    c = CandidTypeVecPrincipal();
-    // } else if (content_opcode == Vec) {
-    //   c = CandidTypeVecVec();
+    return std::make_shared<CandidTypeVecPrincipal>();
   } else if (content_opcode == Record) {
-    c = CandidTypeVecRecord();
+    if (p_content_type_table) {
+      std::shared_ptr<CandidTypeRoot> p_wire_record =
+          p_content_type_table->get_p_wire();
+      return std::make_shared<CandidTypeVecRecord>(p_wire_record);
+    } else {
+      return std::make_shared<CandidTypeVecRecord>();
+    }
+    // } else if (content_opcode == Variant) {
+    //   if (p_content_type_table) {
+    //     std::shared_ptr<CandidTypeRoot> p_wire =
+    //         p_content_type_table->get_p_wire();
+    //     return std::make_shared<CandidTypeVecVariant>(p_wire);
+    //   } else {
+    //     return std::make_shared<CandidTypeVecVariant>();
+    //   }
+    // } else if (content_opcode == Vec) {
+    //   if (p_content_type_table) {
+    //     std::shared_ptr<CandidTypeRoot> p_wire =
+    //         p_content_type_table->get_p_wire();
+    //     return std::make_shared<CandidTypeVecVec>(p_wire);
+    //   } else {
+    //     return std::make_shared<CandidTypeVecVec>();
+    //   }
   } else {
-    c = CandidTypeVecBool(); // We have to assign something, but then we trap
     std::string msg;
     msg.append("ERROR: NOT YET IMPLEMENTED CandidTypeVecXXX.");
     msg.append("       for content_opcode = " + std::to_string(content_opcode) +
                " (" + name_from_opcode(content_opcode) + ")");
     msg.append("      " + std::string(__func__));
     ICPP_HOOKS::trap(msg);
+    return std::make_shared<CandidTypeVecBool>(); // avoid compiler warning
   }
 }
 
-void CandidOpcode::candid_type_opt_from_opcode(
-    CandidType &c, int content_opcode, int content_datatype,
-    CandidTypeTable *p_content_type_table) {
+std::shared_ptr<CandidTypeRoot> CandidOpcode::candid_type_opt_from_opcode(
+    int content_opcode, CandidTypeTable *p_content_type_table) {
   if (content_opcode == Null) {
-    c = CandidTypeOptNull();
+    return std::make_shared<CandidTypeOptNull>();
     // } else if (content_opcode == Empty) {
-    //   c = CandidTypeOptEmpty();
+    // return std::make_shared<CandidTypeOptEmpty>();
     // } else if (content_opcode == Reserved) {
-    //   c = CandidTypeOptReserved();
+    // return std::make_shared<CandidTypeOptReserved>();
   } else if (content_opcode == Bool) {
-    c = CandidTypeOptBool();
+    return std::make_shared<CandidTypeOptBool>();
   } else if (content_opcode == Float32) {
-    c = CandidTypeOptFloat32();
+    return std::make_shared<CandidTypeOptFloat32>();
   } else if (content_opcode == Float64) {
-    c = CandidTypeOptFloat64();
+    return std::make_shared<CandidTypeOptFloat64>();
   } else if (content_opcode == Int) {
-    c = CandidTypeOptInt();
+    return std::make_shared<CandidTypeOptInt>();
   } else if (content_opcode == Nat) {
-    c = CandidTypeOptNat();
+    return std::make_shared<CandidTypeOptNat>();
   } else if (content_opcode == Nat8) {
-    c = CandidTypeOptNat8();
+    return std::make_shared<CandidTypeOptNat8>();
   } else if (content_opcode == Nat16) {
-    c = CandidTypeOptNat16();
+    return std::make_shared<CandidTypeOptNat16>();
   } else if (content_opcode == Nat32) {
-    c = CandidTypeOptNat32();
+    return std::make_shared<CandidTypeOptNat32>();
   } else if (content_opcode == Nat64) {
-    c = CandidTypeOptNat64();
+    return std::make_shared<CandidTypeOptNat64>();
   } else if (content_opcode == Int8) {
-    c = CandidTypeOptInt8();
+    return std::make_shared<CandidTypeOptInt8>();
   } else if (content_opcode == Int16) {
-    c = CandidTypeOptInt16();
+    return std::make_shared<CandidTypeOptInt16>();
   } else if (content_opcode == Int32) {
-    c = CandidTypeOptInt32();
+    return std::make_shared<CandidTypeOptInt32>();
   } else if (content_opcode == Int64) {
-    c = CandidTypeOptInt64();
+    return std::make_shared<CandidTypeOptInt64>();
   } else if (content_opcode == Text) {
-    c = CandidTypeOptText();
+    return std::make_shared<CandidTypeOptText>();
   } else if (content_opcode == Principal) {
-    c = CandidTypeOptPrincipal();
-    // } else if (content_opcode == Vec) {
-    //   c = CandidTypeOptVec();
+    return std::make_shared<CandidTypeOptPrincipal>();
   } else if (content_opcode == Record) {
     if (p_content_type_table) {
       std::shared_ptr<CandidTypeRoot> p_wire =
           p_content_type_table->get_p_wire();
-      bool has_value{false};
-      c = CandidTypeOptRecord(p_wire.get(), &has_value);
+      return std::make_shared<CandidTypeOptRecord>(p_wire);
     } else {
-      c = CandidTypeOptRecord();
+      return std::make_shared<CandidTypeOptRecord>();
     }
   } else if (content_opcode == Variant) {
     if (p_content_type_table) {
       std::shared_ptr<CandidTypeRoot> p_wire =
           p_content_type_table->get_p_wire();
-      bool has_value{false};
-      c = CandidTypeOptVariant(p_wire.get(), &has_value);
+      return std::make_shared<CandidTypeOptVariant>(p_wire);
     } else {
-      c = CandidTypeOptVariant();
+      return std::make_shared<CandidTypeOptVariant>();
+    }
+  } else if (content_opcode == Vec) {
+    if (p_content_type_table) {
+      std::shared_ptr<CandidTypeRoot> p_wire =
+          p_content_type_table->get_p_wire();
+      return std::make_shared<CandidTypeOptVec>(p_wire);
+    } else {
+      return std::make_shared<CandidTypeOptVec>();
     }
   } else {
     std::string msg;
@@ -245,8 +273,6 @@ void CandidOpcode::candid_type_opt_from_opcode(
                " (" + name_from_opcode(content_opcode) + ")");
     msg.append("      " + std::string(__func__));
     ICPP_HOOKS::trap(msg);
+    return std::make_shared<CandidTypeOptNull>();
   }
-  std::visit([&content_datatype](
-                 auto &&c_) { c_.set_content_datatype(content_datatype); },
-             c);
 }

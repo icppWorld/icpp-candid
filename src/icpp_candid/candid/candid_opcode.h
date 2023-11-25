@@ -5,9 +5,11 @@
 #pragma once
 
 #include "candid_type.h"
+#include "candid_type_base.h"
 
 #include <cstdint>
 #include <string>
+#include <memory>
 
 class CandidOpcode {
 public:
@@ -17,11 +19,17 @@ public:
   bool is_primtype(const int &t);
   bool is_constype(const int &t);
   bool is_reftype(const int &t);
-  void candid_type_from_opcode(CandidType &c, int opcode);
-  void candid_type_vec_from_opcode(CandidType &c, int content_opcode);
-  void candid_type_opt_from_opcode(CandidType &c, int content_opcode,
-                                   int content_datatype,
-                                   CandidTypeTable *p_content_type_table);
+
+  std::shared_ptr<CandidTypeRoot> candid_type_from_opcode(int opcode);
+
+  std::shared_ptr<CandidTypeRoot>
+  candid_type_vec_from_opcode(int content_opcode,
+                              CandidTypeTable *p_content_type_table);
+
+  std::shared_ptr<CandidTypeRoot>
+  candid_type_opt_from_opcode(int content_opcode,
+                              CandidTypeTable *p_content_type_table);
+
   std::string name_from_opcode(int opcode);
 
   // Primitive Types

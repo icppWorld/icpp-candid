@@ -63,6 +63,27 @@ CandidTypeOptVariant::CandidTypeOptVariant(const CandidTypeVariant v)
   initialize();
 }
 
+// Internal: During deserialization for an additional wire argument (dummy !)
+CandidTypeOptVariant::CandidTypeOptVariant(
+    std::shared_ptr<CandidTypeRoot> p_v_root)
+    : CandidTypeBase() {
+  m_pvs = p_v_root;
+  set_pv(p_v_root.get());
+  CandidTypeVariant *p_v_variant =
+      dynamic_cast<CandidTypeVariant *>(p_v_root.get());
+  if (p_v_variant) {
+    // The cast was successful, it is indeed a Record
+    const CandidTypeVariant v = const_cast<CandidTypeVariant &>(*p_v_variant);
+    set_v(v);
+    initialize();
+  } else {
+    // The cast failed, and p_v_record is nullptr
+    ICPP_HOOKS::trap(
+        "ERROR: p_v_variant is not pointing to a CandidTypeVariant object - " +
+        std::string(__func__));
+  }
+}
+
 CandidTypeOptVariant::~CandidTypeOptVariant() {}
 
 void CandidTypeOptVariant::set_content_type() {
@@ -112,7 +133,9 @@ bool CandidTypeOptVariant::decode_M(CandidDeserialize &de, VecBytes B,
   if (tag == 1) {
     // Found it on the wire.
     // Call the CandidTypeVariant's decoder
-    *m_p_has_value = true;
+    if (m_p_has_value) {
+      *m_p_has_value = true;
+    }
     offset_start = offset;
     parse_error = "";
     if (m_pv) {
