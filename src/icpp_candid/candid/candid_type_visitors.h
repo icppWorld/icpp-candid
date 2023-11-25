@@ -26,16 +26,17 @@ template <typename T> bool is_candid_type(const CandidType &c) {
 // }
 
 // ---------------------------------------------------------
+// These make copies... See candid_args.cpp for an alternative
 // Utility lambda to obtain CandidTypeRoot pointer from CandidType. A non-const & const version.
-auto get_candid_type_root_ptr = [](CandidType &candidType) -> CandidTypeRoot * {
-  return std::visit([](auto &&arg) -> CandidTypeRoot * { return &arg; },
-                    candidType);
-};
-auto get_candid_type_root_ptr_const =
-    [](const CandidType &candidType) -> const CandidTypeRoot * {
-  return std::visit([](auto &&arg) -> const CandidTypeRoot * { return &arg; },
-                    candidType);
-};
+// auto get_candid_type_root_ptr = [](CandidType &candidType) -> CandidTypeRoot * {
+//   return std::visit([](auto &&arg) -> CandidTypeRoot * { return &arg; },
+//                     candidType);
+// };
+// auto get_candid_type_root_ptr_const =
+//     [](const CandidType &candidType) -> const CandidTypeRoot * {
+//   return std::visit([](auto &&arg) -> const CandidTypeRoot * { return &arg; },
+//                     candidType);
+// };
 
 // ---------------------------------------------------------
 // A visitor to the index of a CandidTypeVecXXX, returning it's value as a CandidType

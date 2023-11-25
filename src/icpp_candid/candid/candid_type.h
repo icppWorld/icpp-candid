@@ -81,7 +81,7 @@ class CandidTypeOptInt32;
 class CandidTypeOptInt64;
 class CandidTypeOptText;
 class CandidTypeOptPrincipal;
-// class CandidTypeOptVec;
+class CandidTypeOptVec;
 class CandidTypeOptRecord;
 class CandidTypeOptVariant;
 // These types are not used for opts
@@ -118,4 +118,5 @@ using CandidType = std::variant<
     CandidTypeOptNat32, CandidTypeOptNat64, CandidTypeOptInt8,
     CandidTypeOptInt16, CandidTypeOptInt32, CandidTypeOptInt64,
     CandidTypeOptText, CandidTypeOptPrincipal, CandidTypeOptRecord,
-    CandidTypeOptVariant, CandidTypeRecord, CandidTypeVariant>;
+    CandidTypeOptVariant, CandidTypeOptVec, CandidTypeRecord,
+    CandidTypeVariant>;

@@ -95,10 +95,21 @@ void CandidTypeRecord::_append(uint32_t field_id, std::string field_name,
 
   // Store a shared pointer to the CandidTypeRoot class
   m_field_ptrs.push_back(std::visit(
-      [](auto &&arg) -> std::shared_ptr<CandidTypeRoot> {
-        return std::make_shared<std::decay_t<decltype(arg)>>(arg);
+      [](auto &&arg_) -> std::shared_ptr<CandidTypeRoot> {
+        // Create shared_ptr for the derived type
+        auto derivedPtr = std::make_shared<std::decay_t<decltype(arg_)>>(
+            std::forward<decltype(arg_)>(arg_));
+
+        // Cast it to a shared_ptr of the base type
+        return std::static_pointer_cast<CandidTypeRoot>(derivedPtr);
       },
       field));
+  // This makes a copy
+  // m_field_ptrs.push_back(std::visit(
+  //     [](auto &&arg) -> std::shared_ptr<CandidTypeRoot> {
+  //       return std::make_shared<std::decay_t<decltype(arg)>>(arg);
+  //     },
+  //     field));
 
   // For Vec & Opt fields
   m_field_content_datatypes.push_back(
@@ -284,40 +295,26 @@ void CandidTypeRecord::finish_decode_T(CandidDeserialize &de) {
     }
 
     // Create a dummy CandidType to use during decoding of the Record's fields
+    // Store a shared pointer to a CandidTypeRoot class
+    std::shared_ptr<CandidTypeRoot> field_ptr_wire{nullptr};
     CandidOpcode candidOpcode;
-    auto c = std::make_shared<CandidType>();
-    if (field_opcode_wire != candidOpcode.Vec &&
-        field_opcode_wire != candidOpcode.Opt) {
-      candidOpcode.candid_type_from_opcode(*c, field_opcode_wire);
-    } else if (field_opcode_wire == candidOpcode.Vec) {
-      candidOpcode.candid_type_vec_from_opcode(*c, field_content_opcode_wire);
-    } else if (field_opcode_wire == candidOpcode.Opt) {
-      auto type_tables = de.get_typetables_wire();
+    auto type_tables = de.get_typetables_wire();
+    if (field_opcode_wire == candidOpcode.Vec) {
       CandidTypeTable *p_field_content_type_table =
           &type_tables[field_content_datatype_wire];
-      candidOpcode.candid_type_opt_from_opcode(*c, field_content_opcode_wire,
-                                               field_content_datatype_wire,
-                                               p_field_content_type_table);
+      field_ptr_wire = candidOpcode.candid_type_vec_from_opcode(
+          field_content_opcode_wire, p_field_content_type_table);
+      field_ptr_wire->set_content_datatype(field_content_datatype_wire);
+    } else if (field_opcode_wire == candidOpcode.Opt) {
+      CandidTypeTable *p_field_content_type_table =
+          &type_tables[field_content_datatype_wire];
+      field_ptr_wire = candidOpcode.candid_type_opt_from_opcode(
+          field_content_opcode_wire, p_field_content_type_table);
+      field_ptr_wire->set_content_datatype(field_content_datatype_wire);
     } else {
-      std::string msg;
-      msg.append(std::string(__func__) + ": ERROR: internal code error");
-      msg.append("\n- field_datatype_wire = " +
-                 std::to_string(field_datatype_wire));
-      msg.append("\n- field_opcode_wire = " +
-                 std::to_string(field_opcode_wire));
-      msg.append("\n- field_content_datatype_wire = " +
-                 std::to_string(field_content_datatype_wire));
-      msg.append("\n- field_content_opcode_wire = " +
-                 std::to_string(field_content_opcode_wire));
-      ICPP_HOOKS::trap(msg);
+      field_ptr_wire = candidOpcode.candid_type_from_opcode(field_opcode_wire);
     }
-
-    // Store a shared pointer to a CandidTypeRoot class (copy)
-    std::shared_ptr<CandidTypeRoot> field_ptr_wire = std::visit(
-        [](auto &&arg_) -> std::shared_ptr<CandidTypeRoot> {
-          return std::make_shared<std::decay_t<decltype(arg_)>>(arg_);
-        },
-        *c);
+    if (field_ptr_wire) field_ptr_wire->set_is_internal(true);
 
     m_field_opcodes[i] = field_opcode_wire;
     m_field_content_datatypes[i] = field_content_datatype_wire;
@@ -638,6 +635,35 @@ void CandidTypeRecord::select_decoder_or_trap(
             de.get_typetables_wire()[field_datatype_wire].get_p_wire();
         decoder->set_fields_wire(p_wire);
       } else if (field_opcode_expected == candidOpcode.Opt &&
+                 field_content_opcode_wire == candidOpcode.Vec) {
+        // record { opt {vec} }
+        CandidType c_decoder = decoder->toCandidType();
+        CandidTypeOptVec *p_opt_vec = std::get_if<CandidTypeOptVec>(&c_decoder);
+        if (p_opt_vec) {
+          int field_content_datatype_wire = m_field_content_datatypes_wire[j];
+          auto p_content_wire =
+              de.get_typetables_wire()[field_content_datatype_wire]
+                  .get_p_wire();
+          if (p_content_wire) {
+            if (p_content_wire->get_content_opcode() == candidOpcode.Record) {
+              // OptVecRecord
+              CandidType c_content_wire = p_content_wire->toCandidType();
+              CandidTypeVecRecord *p_vec_record_wire =
+                  std::get_if<CandidTypeVecRecord>(&c_content_wire);
+              auto p_record_wire = p_vec_record_wire->get_pvs();
+
+              CandidType c_content = p_opt_vec->get_pv()->toCandidType();
+              CandidTypeVecRecord *p_vec_record =
+                  std::get_if<CandidTypeVecRecord>(&c_content);
+              p_vec_record->get_pvs()->set_fields_wire(p_record_wire);
+            }
+          } else {
+            ICPP_HOOKS::trap(
+                "ERROR: p_content_wire is a nullptr, likely a bug. for Record field CandidTypeOptVecRecord - " +
+                std::string(__func__));
+          }
+        }
+      } else if (field_opcode_expected == candidOpcode.Opt &&
                  field_content_opcode_wire == candidOpcode.Record) {
         int field_content_datatype_wire = m_field_content_datatypes_wire[j];
         auto p_content_wire =
@@ -653,7 +679,7 @@ void CandidTypeRecord::select_decoder_or_trap(
           p_opt_record->get_pv()->set_fields_wire(p_content_wire);
         } else {
           ICPP_HOOKS::trap(
-              "ERROR: Unexpected type-table for CandidTypeOptRecord - " +
+              "ERROR: Unexpected type-table for Record field CandidTypeOptRecord - " +
               std::string(__func__));
         }
       } else if (field_opcode_expected == candidOpcode.Opt &&
@@ -672,7 +698,7 @@ void CandidTypeRecord::select_decoder_or_trap(
           p_opt_variant->get_pv()->set_fields_wire(p_content_wire);
         } else {
           ICPP_HOOKS::trap(
-              "ERROR: Unexpected type-table for CandidTypeOptVariant - " +
+              "ERROR: Unexpected type-table for Record field CandidTypeOptVariant - " +
               std::string(__func__));
         }
       } else if ((field_content_opcode_wire == candidOpcode.Record) ||
@@ -809,27 +835,22 @@ CandidTypeRecord::build_decoder_wire_for_additional_opt_field(
 
   std::shared_ptr<CandidTypeRoot> p_wire{nullptr};
   if (field_datatype_wire >= 0) {
-    // For types with a type-table, like Record & Variant,
+    // For types with a type-table, like OptRecord, OptVec & OptVariant,
     // the decoder was created during deserialization of the type table section
     p_wire = de.get_typetables_wire()[field_datatype_wire].get_p_wire();
   } else if (field_content_opcode_wire == CANDID_UNDEF) {
     ICPP_HOOKS::trap(
         "ERROR: cannot build the decoder_wire because field_content_opcode_wire is not set.");
   } else {
-    auto c_field = std::make_shared<CandidType>();
     CandidTypeTable *p_field_content_type_table = nullptr;
     if (field_datatype_wire >= 0) {
       p_field_content_type_table =
           &de.get_typetables_wire()[field_datatype_wire];
     }
-    candidOpcode.candid_type_opt_from_opcode(
-        *c_field, field_content_opcode_wire, field_content_opcode_wire,
-        p_field_content_type_table);
-    p_wire = std::visit(
-        [](auto &&c_) -> std::shared_ptr<CandidTypeRoot> {
-          return std::make_shared<std::decay_t<decltype(c_)>>(c_);
-        },
-        *c_field);
+    p_wire = candidOpcode.candid_type_opt_from_opcode(
+        field_content_opcode_wire, p_field_content_type_table);
+    p_wire->set_content_datatype(field_content_opcode_wire);
+    p_wire->set_is_internal(true);
   }
 
   return p_wire;
@@ -846,6 +867,20 @@ void CandidTypeRecord::set_fields_wire(
   m_field_content_datatypes_wire.clear();
   m_field_content_opcodes_wire.clear();
   m_field_ptrs_wire.clear();
+
+  // For additional opts, also set m_field_ids, so decoding checks pass
+  bool add_opt{false};
+  if (m_field_ids.size() == 0) {
+    add_opt = true;
+    m_field_ids.clear();
+    m_field_names.clear();
+    m_field_datatypes.clear();
+    m_field_opcodes.clear();
+    m_field_content_datatypes.clear();
+    m_field_content_opcodes.clear();
+    m_field_ptrs.clear();
+  }
+
   for (size_t i = 0; i < p_from_wire->get_field_ids().size(); ++i) {
     m_field_ids_wire.push_back(p_from_wire->get_field_ids()[i]);
     m_field_datatypes_wire.push_back(p_from_wire->get_field_datatypes()[i]);
@@ -855,5 +890,16 @@ void CandidTypeRecord::set_fields_wire(
     m_field_content_opcodes_wire.push_back(
         p_from_wire->get_field_content_opcodes()[i]);
     m_field_ptrs_wire.push_back(p_from_wire->get_field_ptrs()[i]);
+    if (add_opt) {
+      m_field_ids.push_back(p_from_wire->get_field_ids()[i]);
+      m_field_names.push_back("");
+      m_field_datatypes.push_back(p_from_wire->get_field_datatypes()[i]);
+      m_field_opcodes.push_back(p_from_wire->get_field_opcodes()[i]);
+      m_field_content_datatypes.push_back(
+          p_from_wire->get_field_content_datatypes()[i]);
+      m_field_content_opcodes.push_back(
+          p_from_wire->get_field_content_opcodes()[i]);
+      m_field_ptrs.push_back(p_from_wire->get_field_ptrs()[i]);
+    }
   }
 }
