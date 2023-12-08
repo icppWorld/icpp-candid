@@ -554,7 +554,8 @@ void CandidTypeVariant::select_decoder_or_trap(
   }
 
   decoder = nullptr;
-  bool field_error{false};
+  bool error{false};
+  std::string error_msg;
   if (field_id_wire == field_id_expected) {
     // field Ids (the hash) of expected & wire match
     // ==> Follow exact same logic as for args in candid_type_deserialize
@@ -610,53 +611,93 @@ void CandidTypeVariant::select_decoder_or_trap(
                 std::string(__func__));
           }
         }
-      } else if (field_opcode_expected == candidOpcode.Opt &&
-                 field_content_opcode_wire == candidOpcode.Record) {
-        int field_content_datatype_wire = m_field_content_datatypes_wire[j];
-        auto p_content_wire =
-            de.get_typetables_wire()[field_content_datatype_wire].get_p_wire();
-        CandidType c_content_wire = p_content_wire->toCandidType();
-        CandidTypeRecord *p_content_record =
-            std::get_if<CandidTypeRecord>(&c_content_wire);
-
-        CandidType c_decoder = decoder->toCandidType();
-        CandidTypeOptRecord *p_opt_record =
-            std::get_if<CandidTypeOptRecord>(&c_decoder);
-        if (p_opt_record && p_content_record) {
-          p_opt_record->get_pv()->set_fields_wire(p_content_wire);
+      } else if (field_content_opcode_wire == candidOpcode.Record) {
+        if (field_opcode_expected == candidOpcode.Opt ||
+            field_opcode_expected == candidOpcode.Vec) {
+          // OptRecord, VecRecord
+          int field_content_datatype_wire = m_field_content_datatypes_wire[j];
+          auto p_content_wire =
+              de.get_typetables_wire()[field_content_datatype_wire]
+                  .get_p_wire();
+          if (p_content_wire) {
+            CandidType c_decoder = decoder->toCandidType();
+            if (field_opcode_expected == candidOpcode.Opt) {
+              CandidTypeOptRecord *p_opt_record =
+                  std::get_if<CandidTypeOptRecord>(&c_decoder);
+              if (p_opt_record) {
+                p_opt_record->get_pv()->set_fields_wire(p_content_wire);
+              } else {
+                error = true;
+                error_msg = "p_opt_record is a nullptr, likely a bug.";
+              }
+            } else if (field_opcode_expected == candidOpcode.Vec) {
+              // A VecRecord uses a dummy record during decoding
+              CandidTypeVecRecord *p_vec_record =
+                  std::get_if<CandidTypeVecRecord>(&c_decoder);
+              if (p_vec_record) {
+                p_vec_record->get_pr()->set_fields_wire(p_content_wire);
+                // not used
+                p_vec_record->get_pv()->set_fields_wire(p_content_wire);
+              } else {
+                error = true;
+                error_msg = "p_vec_record is a nullptr, likely a bug.";
+              }
+            } else {
+              error = true;
+              error_msg = "ERROR: ... ";
+            }
+          } else {
+            error = true;
+            error_msg = "p_content_wire is a nullptr, likely a bug.";
+          }
         } else {
-          ICPP_HOOKS::trap(
-              "ERROR: Unexpected type-table for Variant field CandidTypeOptRecord - " +
-              std::string(__func__));
+          error = true;
+          error_msg = "We do NOT yet handle this.";
         }
-      } else if (field_opcode_expected == candidOpcode.Opt &&
-                 field_content_opcode_wire == candidOpcode.Variant) {
-        int field_content_datatype_wire = m_field_content_datatypes_wire[j];
-        auto p_content_wire =
-            de.get_typetables_wire()[field_content_datatype_wire].get_p_wire();
-        CandidType c_content_wire = p_content_wire->toCandidType();
-        CandidTypeVariant *p_content_variant =
-            std::get_if<CandidTypeVariant>(&c_content_wire);
-
-        CandidType c_decoder = decoder->toCandidType();
-        CandidTypeOptVariant *p_opt_variant =
-            std::get_if<CandidTypeOptVariant>(&c_decoder);
-        if (p_opt_variant && p_content_variant) {
-          p_opt_variant->get_pv()->set_fields_wire(p_content_wire);
+      } else if (field_content_opcode_wire == candidOpcode.Variant) {
+        if (field_opcode_expected == candidOpcode.Opt ||
+            field_opcode_expected == candidOpcode.Vec) {
+          // OptVariant, VecVariant
+          int field_content_datatype_wire = m_field_content_datatypes_wire[j];
+          auto p_content_wire =
+              de.get_typetables_wire()[field_content_datatype_wire]
+                  .get_p_wire();
+          if (p_content_wire) {
+            CandidType c_decoder = decoder->toCandidType();
+            if (field_opcode_expected == candidOpcode.Opt) {
+              CandidTypeOptVariant *p_opt_variant =
+                  std::get_if<CandidTypeOptVariant>(&c_decoder);
+              if (p_opt_variant) {
+                p_opt_variant->get_pv()->set_fields_wire(p_content_wire);
+              } else {
+                error = true;
+                error_msg = "p_opt_variant is a nullptr, likely a bug.";
+              }
+            } else if (field_opcode_expected == candidOpcode.Vec) {
+              ICPP_HOOKS::trap("TODO: Implement for CandidTypeVecVariant.");
+              // // A VecVariant uses a dummy record during decoding
+              // CandidTypeVecVariant *p_vec_variant =
+              //     std::get_if<CandidTypeVecVariant>(&c_decoder);
+              // if (p_vec_variant) {
+              //   p_vec_variant->get_pr()->set_fields_wire(p_content_wire);
+              //   // not used
+              //   p_vec_variant->get_pv()->set_fields_wire(p_content_wire);
+              // } else {
+              //   error = true;
+              //   error_msg = "p_vec_variant is a nullptr, likely a bug.";
+              // }
+            } else {
+              error = true;
+              error_msg = "ERROR: ... ";
+            }
+          } else {
+            error = true;
+            error_msg = "p_content_wire is a nullptr, likely a bug.";
+          }
         } else {
-          ICPP_HOOKS::trap(
-              "ERROR: Unexpected type-table for Variant field CandidTypeOptVariant - " +
-              std::string(__func__));
+          error = true;
+          error_msg = "We do NOT yet handle this.";
         }
-      } else if ((field_content_opcode_wire == candidOpcode.Record) ||
-                 (field_content_opcode_wire == candidOpcode.Variant)) {
-        ICPP_HOOKS::trap(
-            "ERROR: We do NOT yet handle this field type: \n " +
-            std::to_string(field_opcode_wire) + " (" +
-            candidOpcode.name_from_opcode(field_opcode_wire) +
-            std::to_string(field_content_opcode_wire) + " (" +
-            candidOpcode.name_from_opcode(field_content_opcode_wire) + " - " +
-            std::string(__func__));
       }
     } else if (field_opcode_wire == candidOpcode.Null &&
                field_opcode_expected == candidOpcode.Opt) {
@@ -696,7 +737,8 @@ void CandidTypeVariant::select_decoder_or_trap(
     } else {
       // Wrong type on wire
       // TODO:  IMPLEMENT CHECK ON COVARIANCE/CONTRAVARIANCE
-      field_error = true;
+      error = true;
+      error_msg = "Wrong type on wire.";
     }
   } else {
     // field Ids (the hash) of expected & wire do not match
@@ -732,12 +774,14 @@ void CandidTypeVariant::select_decoder_or_trap(
     } else {
       // Wrong type on wire
       // TODO:  IMPLEMENT CHECK ON COVARIANCE/CONTRAVARIANCE
-      field_error = true;
+      error = true;
+      error_msg = "Wrong type on wire.";
     }
   }
 
-  if (field_error) {
+  if (error) {
     std::string msg;
+    msg.append("ERROR: " + error_msg + "\n");
     msg.append("ERROR: Wrong Variant field on wire:\n");
     msg.append("\nexpected field has index " + std::to_string(i));
     msg.append("\n- Opcode   = " + std::to_string(field_opcode_expected) +
