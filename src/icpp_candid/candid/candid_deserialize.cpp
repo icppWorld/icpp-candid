@@ -54,6 +54,7 @@ void CandidDeserialize::deserialize() {
   if (CANDID_DESERIALIZE_DEBUG_PRINT) {
     ICPP_HOOKS::debug_print("---------------------------");
     ICPP_HOOKS::debug_print("Entered CandidDeserialize::deserialize");
+    m_B.debug_print_as_hex_string(m_hex_string_wire, B_offset_start, B_offset);
   }
 
   // -------------------------------------------------------------------------------------
