@@ -218,6 +218,12 @@ bool CandidTypeVecRecord::decode_M(CandidDeserialize &de, VecBytes B,
     CandidAssert::trap_with_parse_error(offset_start, offset, to_be_parsed,
                                         parse_error);
   }
+  if (CANDID_DESERIALIZE_DEBUG_PRINT) {
+    std::string msg;
+    msg.append("Size of CandidTypeVecRecord on wire = " +
+               ICPP_HOOKS::to_string_128(size_vec_wire));
+    ICPP_HOOKS::debug_print(msg);
+  }
 
   // Loop over the vector size just read from the wire
   for (size_t i = 0; i < size_vec_wire; ++i) {
