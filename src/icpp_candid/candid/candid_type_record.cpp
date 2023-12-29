@@ -827,10 +827,8 @@ void CandidTypeRecord::select_decoder_or_trap(
       decoder = build_decoder_wire_for_additional_opt_field(de, j);
       decoder_name = "read-and-discard-additional-wire-opt";
     } else {
-      // Wrong type on wire
-      // TODO:  IMPLEMENT CHECK ON COVARIANCE/CONTRAVARIANCE
       error = true;
-      error_msg = "Wrong type on wire.";
+      error_msg = "Wrong id (hash) of a non-opt record field on wire.";
     }
   }
 
@@ -838,6 +836,7 @@ void CandidTypeRecord::select_decoder_or_trap(
     std::string msg;
     msg.append("ERROR: " + error_msg + "\n");
     msg.append("\nexpected field at index " + std::to_string(i));
+    msg.append("\n- id (hash) " + std::to_string(field_id_expected));
     msg.append("\n- Opcode   = " + std::to_string(field_opcode_expected) +
                " (" + candidOpcode.name_from_opcode(field_opcode_expected) +
                ")");
@@ -847,7 +846,8 @@ void CandidTypeRecord::select_decoder_or_trap(
                  field_content_name_expected + ")");
     }
 
-    msg.append("\next field on wire at index " + std::to_string(j));
+    msg.append("\nnext field on wire at index " + std::to_string(j));
+    msg.append("\n- id (hash) " + std::to_string(field_id_wire));
     msg.append("\n- datatype = " + std::to_string(field_datatype_wire));
     msg.append("\n- Opcode   = " + std::to_string(field_opcode_wire) + " (" +
                candidOpcode.name_from_opcode(field_opcode_wire) + ")");
