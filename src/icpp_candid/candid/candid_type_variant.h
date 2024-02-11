@@ -10,10 +10,13 @@
 class CandidTypeVariant : public CandidTypeBase<CandidTypeVariant> {
 public:
   // Constructors
+  // clang-format off
+  // docs start: demo_candid_type_variant
   CandidTypeVariant();
   CandidTypeVariant(std::string *p_label);
   CandidTypeVariant(const std::string label);
-  CandidTypeVariant(const std::string label, const CandidType field);
+  CandidTypeVariant(const std::string label, const CandidType field); // docs end: demo_candid_type_variant
+  // clang-format on
 
   // Destructor
   ~CandidTypeVariant();

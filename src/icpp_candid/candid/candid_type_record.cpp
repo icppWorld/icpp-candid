@@ -836,6 +836,7 @@ void CandidTypeRecord::select_decoder_or_trap(
     std::string msg;
     msg.append("ERROR: " + error_msg + "\n");
     msg.append("\nexpected field at index " + std::to_string(i));
+    msg.append("\n- Name (label) = " + field_name_expected);
     msg.append("\n- id (hash) " + std::to_string(field_id_expected));
     msg.append("\n- Opcode   = " + std::to_string(field_opcode_expected) +
                " (" + candidOpcode.name_from_opcode(field_opcode_expected) +
