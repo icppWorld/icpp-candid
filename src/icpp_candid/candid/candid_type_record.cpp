@@ -51,7 +51,7 @@ void CandidTypeRecord::append(CandidType field) {
   if (m_field_ptrs.size() == 0) {
     uint32_t field_id = 0;
     append(field_id, field);
-  } else if (std::in_range<std::uint32_t>(m_field_ids.back() + 1)) {
+  } else if (in_range<std::uint32_t>(m_field_ids.back() + 1)) {
     uint32_t field_id = m_field_ids.back() + 1;
     append(field_id, field);
   } else {

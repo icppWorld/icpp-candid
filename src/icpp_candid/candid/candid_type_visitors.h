@@ -9,8 +9,16 @@
 
 // ---------------------------------------------------------
 // To check if a variable is a CandidType
-template <typename T> bool is_candid_type(const CandidType &c) {
-  return holds_alternative<T>(c);
+// c++20 only
+// template <typename T> bool is_candid_type(const CandidType &c) {
+//   return holds_alternative<T>(c);
+// }
+template <typename T, typename Variant>
+bool holds_alternative(const Variant& v) noexcept;
+
+template <typename T> 
+bool is_candid_type(const CandidType &c) {
+  return std::holds_alternative<T>(c);
 }
 
 // ---------------------------------------------------------

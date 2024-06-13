@@ -79,7 +79,7 @@ void CandidTypeVariant::append(CandidType field) {
     append(field_id, field);
   }
 
-  if (std::in_range<std::uint32_t>(m_field_ids.back() + 1)) {
+  if (in_range<std::uint32_t>(m_field_ids.back() + 1)) {
     uint32_t field_id = m_field_ids.back() + 1;
     append(field_id, field);
   } else {

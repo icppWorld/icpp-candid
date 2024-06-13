@@ -7,7 +7,7 @@
 #include <cstring>
 
 #include <algorithm>
-#include <bit>
+// #include <bit> // for std::endian (no longer used)
 #include <string>
 
 #include <limits.h>
@@ -570,14 +570,22 @@ unsigned VecBytes::getSLEB128Size(int64_t Value) {
 
 // Utility function to check if we are running on little-endian
 bool VecBytes::is_little_endian() {
-  if constexpr (std::endian::native == std::endian::little) return true;
-  else return false;
+  // if constexpr (std::endian::native == std::endian::little) return true;
+  // else return false;
+  // c++17 version
+  uint16_t number = 0x1;
+  uint8_t *byte_ptr = reinterpret_cast<uint8_t*>(&number);
+  return byte_ptr[0] == 0x1;
 }
 
 // Utility function to check if we are running on big-endian
 bool VecBytes::is_big_endian() {
-  if constexpr (std::endian::native == std::endian::big) return true;
-  else return false;
+  // if constexpr (std::endian::native == std::endian::big) return true;
+  // else return false;
+  // c++17 version
+  uint16_t number = 0x1;
+  uint8_t *byte_ptr = reinterpret_cast<uint8_t*>(&number);
+  return byte_ptr[0] == 0x0;
 }
 
 // Utility function to check if we are running on mixed-endian
@@ -610,8 +618,8 @@ void VecBytes::trap(const std::string &msg) { ICPP_HOOKS::trap(msg); }
 // Doing it this way avoids the COMDAT warnings & multiple definitions errors
 
 template <typename T>
-  requires MyFixedWidthInts<T>
-void VecBytes::append_int_fixed_width(const T &v) {
+typename std::enable_if<MyFixedWidthInts<T>::value>::type
+VecBytes::append_int_fixed_width(const T &v) {
   uint8_t *bytes{nullptr};
   if (is_little_endian()) bytes = (uint8_t *)&v;
   else
@@ -634,8 +642,8 @@ template void VecBytes::append_int_fixed_width<uint64_t>(const uint64_t &v);
 
 // --
 template <typename T>
-  requires MyFloats<T>
-void VecBytes::append_float_ieee754(const T &v) {
+typename std::enable_if<MyFloats<T>::value>::type
+VecBytes::append_float_ieee754(const T &v) {
   if (is_float_ieee754()) {
     // https://github.com/dfinity/candid/blob/master/spec/Candid.md#floating-point-numbers
     // Floating-point values are represented in IEEE 754 binary format and are
@@ -658,8 +666,8 @@ template void VecBytes::append_float_ieee754<double> (const double &v);
 
 // --
 template <typename T>
-  requires MyFixedWidthInts<T>
-bool VecBytes::parse_int_fixed_width(__uint128_t &offset, T &v,
+typename std::enable_if<MyFixedWidthInts<T>::value, bool>::type
+VecBytes::parse_int_fixed_width(__uint128_t &offset, T &v,
                                      std::string &parse_error) {
   __uint128_t len = m_vec.size() - offset;
 
@@ -687,8 +695,8 @@ template bool VecBytes::parse_int_fixed_width<uint64_t>(__uint128_t &offset, uin
 
 // --
 template <typename T>
-  requires MyFloats<T>
-bool VecBytes::parse_float_ieee754(__uint128_t &offset, T &v,
+typename std::enable_if<MyFloats<T>::value, bool>::type
+VecBytes::parse_float_ieee754(__uint128_t &offset, T &v,
                                    std::string &parse_error) {
   if (is_float_ieee754()) {
     // https://github.com/dfinity/candid/blob/master/spec/Candid.md#floating-point-numbers

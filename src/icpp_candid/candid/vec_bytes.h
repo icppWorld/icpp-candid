@@ -7,18 +7,45 @@
 
 #include <string>
 #include <vector>
+#include <type_traits>
 
+// Utility to check if a type is one of the fixed width integers
 template <typename T>
-concept MyFixedWidthInts =
-    std::is_same_v<T, uint8_t> || std::is_same_v<T, uint16_t> ||
-    std::is_same_v<T, uint32_t> || std::is_same_v<T, uint64_t> ||
-    std::is_same_v<T, int8_t> || std::is_same_v<T, int16_t> ||
-    std::is_same_v<T, int32_t> || std::is_same_v<T, int64_t>;
-;
+struct MyFixedWidthInts : std::false_type {};
 
+template <>
+struct MyFixedWidthInts<uint8_t> : std::true_type {};
+
+template <>
+struct MyFixedWidthInts<uint16_t> : std::true_type {};
+
+template <>
+struct MyFixedWidthInts<uint32_t> : std::true_type {};
+
+template <>
+struct MyFixedWidthInts<uint64_t> : std::true_type {};
+
+template <>
+struct MyFixedWidthInts<int8_t> : std::true_type {};
+
+template <>
+struct MyFixedWidthInts<int16_t> : std::true_type {};
+
+template <>
+struct MyFixedWidthInts<int32_t> : std::true_type {};
+
+template <>
+struct MyFixedWidthInts<int64_t> : std::true_type {};
+
+// Utility to check if a type is one of the floating-point types
 template <typename T>
-concept MyFloats = std::is_same_v<T, float> || std::is_same_v<T, double>;
-;
+struct MyFloats : std::false_type {};
+
+template <>
+struct MyFloats<float> : std::true_type {};
+
+template <>
+struct MyFloats<double> : std::true_type {};
 
 class VecBytes {
 public:
@@ -81,12 +108,12 @@ public:
   template <class T> void append_uleb128(T) = delete;
 
   template <typename T>
-    requires MyFixedWidthInts<T>
-  void append_int_fixed_width(const T &v);
+  typename std::enable_if<MyFixedWidthInts<T>::value>::type
+  append_int_fixed_width(const T &v);
 
   template <typename T>
-    requires MyFloats<T>
-  void append_float_ieee754(const T &v);
+  typename std::enable_if<MyFloats<T>::value>::type
+  append_float_ieee754(const T &v);
 
   // parse methods
   void trap_if_vec_does_not_start_with_DIDL();
@@ -104,13 +131,13 @@ public:
                      std::string &parse_error) = delete;
 
   template <typename T>
-    requires MyFixedWidthInts<T>
-  bool parse_int_fixed_width(__uint128_t &offset, T &v,
+  typename std::enable_if<MyFixedWidthInts<T>::value, bool>::type
+  parse_int_fixed_width(__uint128_t &offset, T &v,
                              std::string &parse_error);
 
   template <typename T>
-    requires MyFloats<T>
-  bool parse_float_ieee754(__uint128_t &offset, T &v, std::string &parse_error);
+  typename std::enable_if<MyFloats<T>::value, bool>::type
+  parse_float_ieee754(__uint128_t &offset, T &v, std::string &parse_error);
 
   bool parse_bytes(__uint128_t &offset, std::vector<std::byte> &v,
                    __uint128_t &n, __uint128_t &numbytes,

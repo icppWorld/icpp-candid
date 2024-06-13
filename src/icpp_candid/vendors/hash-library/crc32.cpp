@@ -5,12 +5,13 @@
 //
 
 #include "crc32.h"
+#include "icpp_hash_library_utils.h"
 
 // big endian architectures need #define __BYTE_ORDER __BIG_ENDIAN
 //ICPP-PATCH #ifndef _MSC_VER
 //ICPP-PATCH #include <endian.h>
 //ICPP-PATCH #endif
-#include <bit> // For std::endian
+// #include <bit> // For std::endian ... no longer used
 
 /// same as reset()
 CRC32::CRC32() { reset(); }
@@ -408,6 +409,7 @@ inline uint32_t swap(uint32_t x) {
 }
 } // namespace
 
+
 /// add arbitrary number of bytes
 void CRC32::add(const void *data, size_t numBytes) {
   uint32_t *current = (uint32_t *)data;
@@ -416,7 +418,8 @@ void CRC32::add(const void *data, size_t numBytes) {
   // process eight bytes at once
   while (numBytes >= 8) {
     //ICPP-PATCH #if defined(__BYTE_ORDER) && (__BYTE_ORDER != 0) && (__BYTE_ORDER == __BIG_ENDIAN)
-    if constexpr (std::endian::native == std::endian::big) {
+    // if constexpr (std::endian::native == std::endian::big) { // c++20 only
+    if (icpp_hash_library_utils::is_big_endian()) { // c++17 runtime check
       uint32_t one = *current++ ^ swap(crc);
       uint32_t two = *current++;
       crc = crc32Lookup[7][one >> 24] ^ crc32Lookup[6][(one >> 16) & 0xFF] ^
