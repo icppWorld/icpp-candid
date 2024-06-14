@@ -95,8 +95,7 @@ public:
                         std::string &parse_error);
   virtual void finish_decode_T(CandidDeserialize &de);
 
-  template <typename T, typename U>
-    bool in_range(U value);
+  template <typename T, typename U> bool in_range(U value);
 
 protected:
   // The datatype
@@ -164,7 +163,7 @@ public:
   CandidType toCandidType();
 };
 
-template <typename T, typename U>
-bool CandidTypeRoot::in_range(U value) {
-    return value >= std::numeric_limits<T>::min() && value <= std::numeric_limits<T>::max();
+template <typename T, typename U> bool CandidTypeRoot::in_range(U value) {
+  return value >= std::numeric_limits<T>::min() &&
+         value <= std::numeric_limits<T>::max();
 }

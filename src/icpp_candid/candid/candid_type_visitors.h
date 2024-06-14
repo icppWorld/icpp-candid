@@ -14,10 +14,9 @@
 //   return holds_alternative<T>(c);
 // }
 template <typename T, typename Variant>
-bool holds_alternative(const Variant& v) noexcept;
+bool holds_alternative(const Variant &v) noexcept;
 
-template <typename T> 
-bool is_candid_type(const CandidType &c) {
+template <typename T> bool is_candid_type(const CandidType &c) {
   return std::holds_alternative<T>(c);
 }
 

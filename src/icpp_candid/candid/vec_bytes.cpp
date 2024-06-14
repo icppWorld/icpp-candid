@@ -574,7 +574,7 @@ bool VecBytes::is_little_endian() {
   // else return false;
   // c++17 version
   uint16_t number = 0x1;
-  uint8_t *byte_ptr = reinterpret_cast<uint8_t*>(&number);
+  uint8_t *byte_ptr = reinterpret_cast<uint8_t *>(&number);
   return byte_ptr[0] == 0x1;
 }
 
@@ -584,7 +584,7 @@ bool VecBytes::is_big_endian() {
   // else return false;
   // c++17 version
   uint16_t number = 0x1;
-  uint8_t *byte_ptr = reinterpret_cast<uint8_t*>(&number);
+  uint8_t *byte_ptr = reinterpret_cast<uint8_t *>(&number);
   return byte_ptr[0] == 0x0;
 }
 
@@ -668,7 +668,7 @@ template void VecBytes::append_float_ieee754<double> (const double &v);
 template <typename T>
 typename std::enable_if<MyFixedWidthInts<T>::value, bool>::type
 VecBytes::parse_int_fixed_width(__uint128_t &offset, T &v,
-                                     std::string &parse_error) {
+                                std::string &parse_error) {
   __uint128_t len = m_vec.size() - offset;
 
   uint8_t *buf = &m_vec_uint8_t[offset];
@@ -697,7 +697,7 @@ template bool VecBytes::parse_int_fixed_width<uint64_t>(__uint128_t &offset, uin
 template <typename T>
 typename std::enable_if<MyFloats<T>::value, bool>::type
 VecBytes::parse_float_ieee754(__uint128_t &offset, T &v,
-                                   std::string &parse_error) {
+                              std::string &parse_error) {
   if (is_float_ieee754()) {
     // https://github.com/dfinity/candid/blob/master/spec/Candid.md#floating-point-numbers
     // Floating-point values are represented in IEEE 754 binary format and are

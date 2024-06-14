@@ -10,42 +10,30 @@
 #include <type_traits>
 
 // Utility to check if a type is one of the fixed width integers
-template <typename T>
-struct MyFixedWidthInts : std::false_type {};
+template <typename T> struct MyFixedWidthInts : std::false_type {};
 
-template <>
-struct MyFixedWidthInts<uint8_t> : std::true_type {};
+template <> struct MyFixedWidthInts<uint8_t> : std::true_type {};
 
-template <>
-struct MyFixedWidthInts<uint16_t> : std::true_type {};
+template <> struct MyFixedWidthInts<uint16_t> : std::true_type {};
 
-template <>
-struct MyFixedWidthInts<uint32_t> : std::true_type {};
+template <> struct MyFixedWidthInts<uint32_t> : std::true_type {};
 
-template <>
-struct MyFixedWidthInts<uint64_t> : std::true_type {};
+template <> struct MyFixedWidthInts<uint64_t> : std::true_type {};
 
-template <>
-struct MyFixedWidthInts<int8_t> : std::true_type {};
+template <> struct MyFixedWidthInts<int8_t> : std::true_type {};
 
-template <>
-struct MyFixedWidthInts<int16_t> : std::true_type {};
+template <> struct MyFixedWidthInts<int16_t> : std::true_type {};
 
-template <>
-struct MyFixedWidthInts<int32_t> : std::true_type {};
+template <> struct MyFixedWidthInts<int32_t> : std::true_type {};
 
-template <>
-struct MyFixedWidthInts<int64_t> : std::true_type {};
+template <> struct MyFixedWidthInts<int64_t> : std::true_type {};
 
 // Utility to check if a type is one of the floating-point types
-template <typename T>
-struct MyFloats : std::false_type {};
+template <typename T> struct MyFloats : std::false_type {};
 
-template <>
-struct MyFloats<float> : std::true_type {};
+template <> struct MyFloats<float> : std::true_type {};
 
-template <>
-struct MyFloats<double> : std::true_type {};
+template <> struct MyFloats<double> : std::true_type {};
 
 class VecBytes {
 public:
@@ -132,8 +120,7 @@ public:
 
   template <typename T>
   typename std::enable_if<MyFixedWidthInts<T>::value, bool>::type
-  parse_int_fixed_width(__uint128_t &offset, T &v,
-                             std::string &parse_error);
+  parse_int_fixed_width(__uint128_t &offset, T &v, std::string &parse_error);
 
   template <typename T>
   typename std::enable_if<MyFloats<T>::value, bool>::type
