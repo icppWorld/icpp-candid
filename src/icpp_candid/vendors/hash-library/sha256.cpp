@@ -5,6 +5,7 @@
 //
 
 #include "sha256.h"
+#include "icpp_hash_library_utils.h"
 
 // big endian architectures need #define __BYTE_ORDER __BIG_ENDIAN
 //ICPP-PATCH #ifndef _MSC_VER
@@ -98,7 +99,8 @@ void SHA256::processBlock(const void *data) {
   int i;
   for (i = 0; i < 16; i++)
     //ICPP-PATCH #if defined(__BYTE_ORDER) && (__BYTE_ORDER != 0) && (__BYTE_ORDER == __BIG_ENDIAN)
-    if constexpr (std::endian::native == std::endian::big) {
+    // if constexpr (std::endian::native == std::endian::big) {
+    if (icpp_hash_library_utils::is_big_endian()) { // c++17 runtime check
       words[i] = input[i];
     }
     //ICPP-PATCH #else

@@ -63,6 +63,10 @@ public:
   /// restart
   void reset();
 
+  /// Added by icpp-pro, for cross platform check with c++17
+  bool is_little_endian();
+  bool is_big_endian();
+
 private:
   /// hash
   uint32_t m_hash;
