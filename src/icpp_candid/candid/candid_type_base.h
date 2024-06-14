@@ -5,6 +5,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <limits>
 
 #include "candid_constants.h"
 #include "icpp_hooks.h"
