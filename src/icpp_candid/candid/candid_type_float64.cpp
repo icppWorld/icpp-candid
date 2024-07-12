@@ -5,7 +5,6 @@
 #include "icpp_hooks.h"
 #include "candid_assert.h"
 #include "candid_opcode.h"
-#include "pro.h"
 
 CandidTypeFloat64::CandidTypeFloat64() {
 

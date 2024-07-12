@@ -5,7 +5,6 @@
 #include "candid_assert.h"
 
 #include "candid_opcode.h"
-#include "pro.h"
 
 CandidTypeNat32::CandidTypeNat32() { initialize(0); }
 

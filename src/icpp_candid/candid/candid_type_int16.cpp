@@ -5,7 +5,6 @@
 #include "candid_assert.h"
 
 #include "candid_opcode.h"
-#include "pro.h"
 
 CandidTypeInt16::CandidTypeInt16() { initialize(0); }
 

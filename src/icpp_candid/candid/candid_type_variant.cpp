@@ -10,8 +10,6 @@
 
 #include "candid_type_variant.h"
 
-#include "pro.h"
-
 #include "icpp_hooks.h"
 
 #include <algorithm>

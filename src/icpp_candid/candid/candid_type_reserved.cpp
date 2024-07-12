@@ -4,7 +4,6 @@
 #include "candid_type_reserved.h"
 
 #include "candid_opcode.h"
-#include "pro.h"
 
 CandidTypeReserved::CandidTypeReserved() {
 

@@ -4,7 +4,6 @@
 #include "candid_type_principal.h"
 #include "candid_assert.h"
 #include "candid_opcode.h"
-#include "pro.h"
 
 #include <cassert>
 

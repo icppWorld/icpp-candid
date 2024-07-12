@@ -6,7 +6,6 @@
 #include "candid_assert.h"
 
 #include "candid_opcode.h"
-#include "pro.h"
 
 CandidTypeFloat32::CandidTypeFloat32() {
 
