@@ -18,7 +18,8 @@ public:
   CandidTypePrincipal(const char *c);
   // clang-format off
   // docs start: demo_candid_type_principal
-  CandidTypePrincipal(const std::string v); // docs end: demo_candid_type_principal
+  CandidTypePrincipal(const std::string v); 
+  bool is_anonymous(); // docs end: demo_candid_type_principal
   // clang-format on
 
   CandidTypePrincipal(std::string *v);
@@ -37,7 +38,6 @@ public:
   std::string *get_pv() { return m_pv; }
   std::string get_text() { return m_v; }
   const VecBytes &get_v_bytes() const { return m_v_bytes; }
-  bool is_anonymous();
 
 protected:
   void set_pv(std::string *v);
