@@ -61,6 +61,8 @@ CandidTypePrincipal::CandidTypePrincipal(const std::vector<uint8_t> &bytes) {
 
 CandidTypePrincipal::~CandidTypePrincipal() {}
 
+std::string CandidTypePrincipal::get_text() { return m_v; }
+
 // Initialize things
 void CandidTypePrincipal::initialize(const std::string &v) {
   if (v == "") {

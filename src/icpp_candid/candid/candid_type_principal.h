@@ -18,8 +18,16 @@ public:
   CandidTypePrincipal(const char *c);
   // clang-format off
   // docs start: demo_candid_type_principal
-  CandidTypePrincipal(const std::string v); 
-  bool is_anonymous(); // docs end: demo_candid_type_principal
+  CandidTypePrincipal(const std::string v);
+
+  // Checks if the user is anonymous
+  // If the user is not anonymous, that means that the user is authenticated 
+  // with Internet Identity or other mechanisms that assign a unique 
+  // principal ID.
+  bool is_anonymous(); 
+
+  // Get the principal ID in text format
+  std::string get_text(); // docs end: demo_candid_type_principal
   // clang-format on
 
   CandidTypePrincipal(std::string *v);
@@ -36,7 +44,6 @@ public:
                 std::string &parse_error);
   std::string get_v() { return m_v; }
   std::string *get_pv() { return m_pv; }
-  std::string get_text() { return m_v; }
   const VecBytes &get_v_bytes() const { return m_v_bytes; }
 
 protected:
