@@ -40,31 +40,6 @@ setup(
     #
     packages=find_packages(where="src"),  # Required
     #
-    # This field lists other packages that your project depends on to run.
-    # Any package you put here will be installed by pip when your project is
-    # installed, so they must be valid existing projects.
-    #
-    # For an analysis of "install_requires" vs pip's requirements files see:
-    # https://packaging.python.org/en/latest/requirements.html
-    install_requires=[],  # Optional
-    #
-    # List additional groups of dependencies here (e.g. development
-    # dependencies). Users will be able to install these using the "extras"
-    # syntax, for example:
-    #
-    #   $ pip install "sampleproject[dev]"
-    #
-    # Similar to `install_requires` above, these must be valid existing
-    # projects.
-    extras_require={  # Optional
-        "dev": [
-            "black",
-            "pylint==2.13.9",
-            "mypy",
-            "build",
-            "twine",
-        ],
-    },
     #
     # If there are data files included in your packages that need to be
     # installed, specify them here.
@@ -73,9 +48,6 @@ setup(
     # (-) add 'py.typed', to play nice with mypy
     #     https://mypy.readthedocs.io/en/latest/installed_packages.html
     #     #making-pep-561-compatible-packages
-    # (-) add 'ic/'    , which contains the C++ & Header files of the API
-    # (-) add 'native/', which contains the C++ & Header files for a native build,
-    #                    with a mock IC, allowing interactive debugging.
     #
     package_data={  # Optional
         "icpp_candid": [

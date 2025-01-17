@@ -36,12 +36,23 @@ classifiers = [
     # checked by 'pip install'. See instead 'python_requires' below.
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3 :: Only",
 ]
-dynamic = ["version", "entry-points", "dependencies", "optional-dependencies"]
+dynamic = ["version"]
+
+[project.optional-dependencies]
+dev = [
+    "black==23.12.1",
+    "pylint==2.13.9",
+    "mypy==1.8.0",
+    "build==1.2.2",
+    "twine==6.0.1",
+    "mkdocs==1.5.3",
+    "types-requests==2.31.0.10",
+]
 
 [project.urls]
 Homepage = "https://www.onicai.com/"
