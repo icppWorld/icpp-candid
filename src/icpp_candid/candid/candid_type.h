@@ -60,6 +60,7 @@ class CandidTypeVecInt64;
 class CandidTypeVecText;
 class CandidTypeVecPrincipal;
 class CandidTypeVecRecord;
+class CandidTypeVecVariant;
 // These types are not used for vecs
 // class CandidTypeVecNull;
 // class CandidTypeVecEmpty;
@@ -112,7 +113,8 @@ using CandidType = std::variant<
     CandidTypeVecNat, CandidTypeVecNat8, CandidTypeVecNat16, CandidTypeVecNat32,
     CandidTypeVecNat64, CandidTypeVecInt8, CandidTypeVecInt16,
     CandidTypeVecInt32, CandidTypeVecInt64, CandidTypeVecText,
-    CandidTypeVecPrincipal, CandidTypeVecRecord, CandidTypeOptNull,
+    CandidTypeVecPrincipal, CandidTypeVecRecord, CandidTypeVecVariant,
+    CandidTypeOptNull,
     CandidTypeOptBool, CandidTypeOptFloat32, CandidTypeOptFloat64,
     CandidTypeOptInt, CandidTypeOptNat, CandidTypeOptNat8, CandidTypeOptNat16,
     CandidTypeOptNat32, CandidTypeOptNat64, CandidTypeOptInt8,

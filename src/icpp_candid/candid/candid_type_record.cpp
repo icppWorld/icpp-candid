@@ -727,18 +727,15 @@ void CandidTypeRecord::select_decoder_or_trap(
                 error_msg = "p_opt_variant is a nullptr, likely a bug.";
               }
             } else if (field_opcode_expected == candidOpcode.Vec) {
-              ICPP_HOOKS::trap("TODO: Implement for CandidTypeVecVariant.");
-              // // A VecVariant uses a dummy record during decoding
-              // CandidTypeVecVariant *p_vec_variant =
-              //     std::get_if<CandidTypeVecVariant>(&c_decoder);
-              // if (p_vec_variant) {
-              //   p_vec_variant->get_pr()->set_fields_wire(p_content_wire);
-              //   // not used
-              //   p_vec_variant->get_pv()->set_fields_wire(p_content_wire);
-              // } else {
-              //   error = true;
-              //   error_msg = "p_vec_variant is a nullptr, likely a bug.";
-              // }
+              // VecVariant: set fields on the variant template
+              CandidTypeVecVariant *p_vec_variant =
+                  std::get_if<CandidTypeVecVariant>(&c_decoder);
+              if (p_vec_variant) {
+                p_vec_variant->get_pvs()->set_fields_wire(p_content_wire);
+              } else {
+                error = true;
+                error_msg = "p_vec_variant is a nullptr, likely a bug.";
+              }
             } else {
               error = true;
               error_msg = "ERROR: ... ";

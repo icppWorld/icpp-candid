@@ -432,6 +432,7 @@ bool CandidTypeVariant::decode_M(CandidDeserialize &de, VecBytes B,
     if (m_field_ids_wire[j] == m_field_ids[i]) {
       found_match = true;
       m_label = m_field_names[i];
+      m_selected_field_id = m_field_ids_wire[j];
       // Fill the user's data placeholder, if a pointer was provided
       if (m_p_label) *m_p_label = m_label;
       break;
@@ -672,18 +673,15 @@ void CandidTypeVariant::select_decoder_or_trap(
                 error_msg = "p_opt_variant is a nullptr, likely a bug.";
               }
             } else if (field_opcode_expected == candidOpcode.Vec) {
-              ICPP_HOOKS::trap("TODO: Implement for CandidTypeVecVariant.");
-              // // A VecVariant uses a dummy record during decoding
-              // CandidTypeVecVariant *p_vec_variant =
-              //     std::get_if<CandidTypeVecVariant>(&c_decoder);
-              // if (p_vec_variant) {
-              //   p_vec_variant->get_pr()->set_fields_wire(p_content_wire);
-              //   // not used
-              //   p_vec_variant->get_pv()->set_fields_wire(p_content_wire);
-              // } else {
-              //   error = true;
-              //   error_msg = "p_vec_variant is a nullptr, likely a bug.";
-              // }
+              // A VecVariant uses the wire variant structure during decoding
+              CandidTypeVecVariant *p_vec_variant =
+                  std::get_if<CandidTypeVecVariant>(&c_decoder);
+              if (p_vec_variant) {
+                p_vec_variant->get_pvs()->set_fields_wire(p_content_wire);
+              } else {
+                error = true;
+                error_msg = "p_vec_variant is a nullptr, likely a bug.";
+              }
             } else {
               error = true;
               error_msg = "ERROR: ... ";

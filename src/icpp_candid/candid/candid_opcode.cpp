@@ -177,14 +177,14 @@ std::shared_ptr<CandidTypeRoot> CandidOpcode::candid_type_vec_from_opcode(
     } else {
       return std::make_shared<CandidTypeVecRecord>();
     }
-    // } else if (content_opcode == Variant) {
-    //   if (p_content_type_table) {
-    //     std::shared_ptr<CandidTypeRoot> p_wire =
-    //         p_content_type_table->get_p_wire();
-    //     return std::make_shared<CandidTypeVecVariant>(p_wire);
-    //   } else {
-    //     return std::make_shared<CandidTypeVecVariant>();
-    //   }
+  } else if (content_opcode == Variant) {
+    if (p_content_type_table) {
+      std::shared_ptr<CandidTypeRoot> p_wire_variant =
+          p_content_type_table->get_p_wire();
+      return std::make_shared<CandidTypeVecVariant>(p_wire_variant);
+    } else {
+      return std::make_shared<CandidTypeVecVariant>();
+    }
     // } else if (content_opcode == Vec) {
     //   if (p_content_type_table) {
     //     std::shared_ptr<CandidTypeRoot> p_wire =

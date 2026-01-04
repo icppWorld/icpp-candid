@@ -111,6 +111,30 @@ struct GetCandidTypeVecIndexVisitor {
     return get_vec_value<CandidTypeVecText, CandidTypeText>(c, idx);
   }
 
+  // For VecVariant, return a variant with ALL options but with the selected label
+  auto operator()(CandidTypeVecVariant &c) -> CandidType {
+    auto labels = c.get_labels();
+    auto template_variant = c.get_v();
+
+    if (labels.size() > 0 && idx < labels.size()) {
+      // Create a variant with ALL options from the template
+      // but with m_label set to the selected one at idx
+      std::string selected_label = labels[idx];
+      CandidTypeVariant result{selected_label};
+
+      // Add all options from the template
+      auto template_names = template_variant.get_v();
+      for (const auto &name : template_names) {
+        result.append(name, CandidTypeNull{});
+      }
+
+      return result;
+    }
+    // Return empty variant as default
+    CandidTypeVariant v_default;
+    return v_default;
+  }
+
   // Default handler for types that do not support get_v()
   template <typename T> auto operator()(T &c) -> CandidType {
     std::string msg;

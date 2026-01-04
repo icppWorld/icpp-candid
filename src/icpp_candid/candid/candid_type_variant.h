@@ -36,6 +36,7 @@ public:
   void finish_decode_T(CandidDeserialize &de);
 
   std::string get_label() { return m_label; }
+  uint32_t get_selected_field_id() { return m_selected_field_id; }
 
 protected:
   void set_p_label(std::string *p_label) { m_p_label = p_label; };
@@ -49,6 +50,7 @@ protected:
 
   // Label & id (hash) of the field that contains the Variant's data
   std::string m_label{""};
+  uint32_t m_selected_field_id{0};
   bool m_label_value_set{false};
 
   // Pointer to the label passed in by caller during deserialization
