@@ -21,8 +21,8 @@ CandidTypeVecVariant::CandidTypeVecVariant() : CandidTypeBase() {
 }
 
 // Constructor for encoding: takes a template variant and vector of labels
-CandidTypeVecVariant::CandidTypeVecVariant(const CandidTypeVariant &v_template,
-                                           const std::vector<std::string> &labels)
+CandidTypeVecVariant::CandidTypeVecVariant(
+    const CandidTypeVariant &v_template, const std::vector<std::string> &labels)
     : CandidTypeBase() {
   set_v_template(v_template);
   m_labels = labels;

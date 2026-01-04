@@ -114,11 +114,10 @@ using CandidType = std::variant<
     CandidTypeVecNat64, CandidTypeVecInt8, CandidTypeVecInt16,
     CandidTypeVecInt32, CandidTypeVecInt64, CandidTypeVecText,
     CandidTypeVecPrincipal, CandidTypeVecRecord, CandidTypeVecVariant,
-    CandidTypeOptNull,
-    CandidTypeOptBool, CandidTypeOptFloat32, CandidTypeOptFloat64,
-    CandidTypeOptInt, CandidTypeOptNat, CandidTypeOptNat8, CandidTypeOptNat16,
-    CandidTypeOptNat32, CandidTypeOptNat64, CandidTypeOptInt8,
-    CandidTypeOptInt16, CandidTypeOptInt32, CandidTypeOptInt64,
-    CandidTypeOptText, CandidTypeOptPrincipal, CandidTypeOptRecord,
-    CandidTypeOptVariant, CandidTypeOptVec, CandidTypeRecord,
-    CandidTypeVariant>;
+    CandidTypeOptNull, CandidTypeOptBool, CandidTypeOptFloat32,
+    CandidTypeOptFloat64, CandidTypeOptInt, CandidTypeOptNat, CandidTypeOptNat8,
+    CandidTypeOptNat16, CandidTypeOptNat32, CandidTypeOptNat64,
+    CandidTypeOptInt8, CandidTypeOptInt16, CandidTypeOptInt32,
+    CandidTypeOptInt64, CandidTypeOptText, CandidTypeOptPrincipal,
+    CandidTypeOptRecord, CandidTypeOptVariant, CandidTypeOptVec,
+    CandidTypeRecord, CandidTypeVariant>;
