@@ -87,7 +87,7 @@ uint32_t CandidTypeRoot::idl_hash(const std::string &s) {
 
   // hash(id) = ( Sum_(i=0..k) utf8(id)[i] * 223^(k-i) ) mod 2^32 where k = |utf8(id)|-1
   hash = 0;
-  uint64_t p = 4294967296; // std::pow(2,32)
+  uint64_t p = 4'294'967'296ULL; // std::pow(2,32)
   for (int c : s) {
     hash = (hash * 223 + c) % p;
   }
