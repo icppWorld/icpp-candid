@@ -20,4 +20,4 @@ pypi-build:
 
 .PHONY: pypi-install
 pypi-install:
-	pip install icpp-candid
+	python -m pip install icpp-candid
