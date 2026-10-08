@@ -72,19 +72,18 @@ void CandidTypeVariant::append(std::string field_name, CandidType field) {
 
 // Tuple notation without field_id -> generate sequential uint32_t field_id
 void CandidTypeVariant::append(CandidType field) {
+  // The implicit id follows the previously appended field, not the largest id
   if (m_field_ptrs.size() == 0) {
     uint32_t field_id = 0;
     append(field_id, field);
-  }
-
-  if (in_range<std::uint32_t>(m_field_ids.back() + 1)) {
-    uint32_t field_id = m_field_ids.back() + 1;
+  } else if (in_range<std::uint32_t>(m_last_appended_field_id + 1)) {
+    uint32_t field_id = m_last_appended_field_id + 1;
     append(field_id, field);
   } else {
     std::string msg;
     msg.append("ERROR: field_id outside range of uint32_t\n");
     msg.append("       id of previous field in variant: " +
-               std::to_string(m_field_ids.back()) + "\n");
+               std::to_string(m_last_appended_field_id) + "\n");
     msg.append(
         "       because no field_id was specified for current field, we want to increase it by 1");
     ICPP_HOOKS::trap(msg);
@@ -123,6 +122,7 @@ void CandidTypeVariant::_append(uint32_t field_id, std::string field_name,
   // Add the field
   m_field_ids.push_back(field_id);
   m_field_names.push_back(field_name);
+  m_last_appended_field_id = field_id;
 
   // During encoding, the datatype is always a negative opcode !
   // Store the negative opcode of the field's type

@@ -53,6 +53,9 @@ protected:
   uint32_t m_selected_field_id{0};
   bool m_label_value_set{false};
 
+  // Fields are kept sorted by id; an implicit id follows the last one appended
+  uint32_t m_last_appended_field_id{0};
+
   // Pointer to the label passed in by caller during deserialization
   std::string *m_p_label{nullptr};
 
