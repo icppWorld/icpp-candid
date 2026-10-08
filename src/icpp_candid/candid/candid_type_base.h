@@ -122,6 +122,10 @@ protected:
   std::vector<int> m_field_content_opcodes;
   std::vector<std::shared_ptr<CandidTypeRoot>> m_field_ptrs;
 
+  // Sort the field data by field id (hash), as the Candid spec requires for
+  // the fields of a record and of a variant in the type table
+  void sort_fields_by_id();
+
   // To help with decoding checks in decode_M
   // The deserialized fields (of a record) found on wire (decode_T)
   std::vector<uint32_t> m_field_ids_wire;

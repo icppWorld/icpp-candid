@@ -112,41 +112,7 @@ void CandidTypeRecord::_append(uint32_t field_id, std::string field_name,
       m_field_ptrs.back()->get_content_datatype());
   m_field_content_opcodes.push_back(m_field_ptrs.back()->get_content_opcode());
 
-  // Sort by field_id (hash)
-  for (std::size_t i = 0; i < m_field_ids.size(); ++i) {
-    for (std::size_t j = i + 1; j < m_field_ids.size(); ++j) {
-      if (m_field_ids[i] > m_field_ids[j]) {
-        auto temp_field_id = std::move(m_field_ids[i]);
-        m_field_ids[i] = std::move(m_field_ids[j]);
-        m_field_ids[j] = std::move(temp_field_id);
-
-        auto temp_field_name = std::move(m_field_names[i]);
-        m_field_names[i] = std::move(m_field_names[j]);
-        m_field_names[j] = std::move(temp_field_name);
-
-        auto temp_field = std::move(m_field_ptrs[i]);
-        m_field_ptrs[i] = std::move(m_field_ptrs[j]);
-        m_field_ptrs[j] = std::move(temp_field);
-
-        auto temp_field_datatype = std::move(m_field_datatypes[i]);
-        m_field_datatypes[i] = std::move(m_field_datatypes[j]);
-        m_field_datatypes[j] = std::move(temp_field_datatype);
-
-        auto temp_field_opcode = std::move(m_field_opcodes[i]);
-        m_field_opcodes[i] = std::move(m_field_opcodes[j]);
-        m_field_opcodes[j] = std::move(temp_field_opcode);
-
-        auto temp_field_content_datatype =
-            std::move(m_field_content_datatypes[i]);
-        m_field_content_datatypes[i] = std::move(m_field_content_datatypes[j]);
-        m_field_content_datatypes[j] = std::move(temp_field_content_datatype);
-
-        auto temp_field_content_opcode = std::move(m_field_content_opcodes[i]);
-        m_field_content_opcodes[i] = std::move(m_field_content_opcodes[j]);
-        m_field_content_opcodes[j] = std::move(temp_field_content_opcode);
-      }
-    }
-  }
+  sort_fields_by_id();
 
   encode_T();
   encode_M();

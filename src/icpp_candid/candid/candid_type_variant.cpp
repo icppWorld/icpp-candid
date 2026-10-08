@@ -159,7 +159,7 @@ void CandidTypeVariant::_append(uint32_t field_id, std::string field_name,
     m_label_value_set = true;
   }
 
-  // Note: Unlike for a Record, the variant's fields are not sorted
+  sort_fields_by_id();
 
   encode_T();
   encode_M();
