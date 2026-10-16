@@ -198,3 +198,5 @@ template class CandidTypeBase<CandidTypeVecPrincipal>;
 template class CandidTypeBase<CandidTypeVecRecord>;
 template class CandidTypeBase<CandidTypeVecText>;
 template class CandidTypeBase<CandidTypeVecVariant>;
+template class CandidTypeBase<CandidTypeVecBlob>;
+template class CandidTypeBase<CandidTypeFunc>;

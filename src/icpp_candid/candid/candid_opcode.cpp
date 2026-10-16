@@ -185,14 +185,15 @@ std::shared_ptr<CandidTypeRoot> CandidOpcode::candid_type_vec_from_opcode(
     } else {
       return std::make_shared<CandidTypeVecVariant>();
     }
-    // } else if (content_opcode == Vec) {
-    //   if (p_content_type_table) {
-    //     std::shared_ptr<CandidTypeRoot> p_wire =
-    //         p_content_type_table->get_p_wire();
-    //     return std::make_shared<CandidTypeVecVec>(p_wire);
-    //   } else {
-    //     return std::make_shared<CandidTypeVecVec>();
-    //   }
+  } else if (content_opcode == Vec) {
+    // A vec of vecs: only vec blob (vec vec nat8) is supported
+    if (p_content_type_table && p_content_type_table->get_p_wire() &&
+        p_content_type_table->get_p_wire()->get_content_opcode() != Nat8) {
+      ICPP_HOOKS::trap("ERROR: a vec of vecs is only supported as vec blob "
+                       "(vec vec nat8) - " +
+                       std::string(__func__));
+    }
+    return std::make_shared<CandidTypeVecBlob>();
   } else {
     std::string msg;
     msg.append("ERROR: NOT YET IMPLEMENTED CandidTypeVecXXX.");

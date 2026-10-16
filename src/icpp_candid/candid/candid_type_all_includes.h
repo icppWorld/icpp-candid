@@ -40,6 +40,8 @@
 #include "candid_type_vec_nat16.h"
 #include "candid_type_vec_nat32.h"
 #include "candid_type_vec_nat64.h"
+#include "candid_type_func.h"
+#include "candid_type_vec_blob.h"
 #include "candid_type_vec_nat8.h"
 #include "candid_type_vec_principal.h"
 #include "candid_type_vec_record.h"

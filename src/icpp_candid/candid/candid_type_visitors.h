@@ -104,6 +104,9 @@ struct GetCandidTypeVecIndexVisitor {
   auto operator()(CandidTypeVecPrincipal &c) -> CandidType {
     return get_vec_value<CandidTypeVecPrincipal, CandidTypePrincipal>(c, idx);
   }
+  auto operator()(CandidTypeVecBlob &c) -> CandidType {
+    return get_vec_value<CandidTypeVecBlob, CandidTypeVecNat8>(c, idx);
+  }
   // auto operator()(CandidTypeVecRecord &c) -> CandidType {
   //   return get_vec_value<CandidTypeVecRecord, CandidTypeRecord>(c, idx);
   // }
