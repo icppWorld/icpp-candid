@@ -326,11 +326,6 @@ bool CandidTypeRecord::decode_M(CandidDeserialize &de, VecBytes B,
     debug_hex_string = B.as_hex_string();
   }
 
-  if (m_field_ids.size() == 0) {
-    ICPP_HOOKS::trap(
-        "ERROR: m_field_ids has size 0 in CandidTypeRecord::decode_M");
-  }
-
   CandidOpcode candidOpcode;
   __uint128_t B_offset_start = B_offset;
 
@@ -343,26 +338,24 @@ bool CandidTypeRecord::decode_M(CandidDeserialize &de, VecBytes B,
   //       the loop over args, in candid_deserialize.cpp, except:
   //       (-) Now we also need to check on the field id (hashed name).
   //           The args do not have such an id (hashed name).
-  //       (-) We need to read Opt fields at the end, because the next arg must be read.
-  //           Any Opt args are simply ignored
+  //       (-) Record width subtyping: an additional field on the wire, of any
+  //           type, is decoded and discarded. That includes the fields at the
+  //           end, because the next arg must be read.
 
-  //                   <= to read possible additional Opts on wire at end of record
+  //                   <= to read possible additional fields on wire at end of record
   for (size_t i = 0; i <= m_field_ids.size(); ++i) {
 
     if (i < m_field_ids.size()) {
       handled_field_expected = false;
     } else {
-      // We're already done with all expected fields. Just checking for additional Opt fields
+      // We're already done with all expected fields. Just checking for additional fields
       handled_field_expected = true;
     }
 
     if (j_now >= m_field_ids_wire.size()) {
-      if (i < m_field_ids.size()) {
-        int field_opcode_expected = m_field_opcodes[i];
-        if (field_opcode_expected == candidOpcode.Opt) {
-          // OK! We have an Opt as next field but nothing left on the wire
-          handled_field_expected = true;
-        }
+      if (i < m_field_ids.size() && is_optional_field(i)) {
+        // OK! We have an Opt as next field but nothing left on the wire
+        handled_field_expected = true;
       }
     } else {
       for (size_t j = j_now; j < m_field_ids_wire.size(); ++j) {
@@ -423,8 +416,8 @@ bool CandidTypeRecord::decode_M(CandidDeserialize &de, VecBytes B,
             // -> keep j where it is, to check if next expected arg matches
             handled_field_expected = true;
             break;
-          } else if (decoder_name == "read-and-discard-additional-wire-opt") {
-            // Additional Opt on the wire, is also OK, just check next on wire
+          } else if (decoder_name == "read-and-discard-additional-wire-field") {
+            // Additional field on the wire, is also OK, just check next on wire
             ++j_now;
           } else {
             std::string msg;
@@ -433,6 +426,13 @@ bool CandidTypeRecord::decode_M(CandidDeserialize &de, VecBytes B,
           }
         }
       }
+    }
+
+    if (!handled_field_expected && i < m_field_ids.size() &&
+        is_optional_field(i)) {
+      // All remaining fields on the wire were additional fields, and the
+      // expected Opt is not on the wire, but that is OK
+      handled_field_expected = true;
     }
 
     if (!handled_field_expected) {
@@ -472,36 +472,16 @@ void CandidTypeRecord::select_decoder_or_trap(
   }
 
   if (i >= m_field_ids.size()) {
-    // We're done with the expected fields, but we need to read possible additional Opts on wire at end of record
-    if (field_opcode_wire != candidOpcode.Opt) {
-      std::string msg;
-      msg.append(
-          "\nERROR: Done with all the expected Record fields, but there is an additional non Opt field on the wire.");
-      msg.append("\nnext field on wire at index " + std::to_string(j));
-      msg.append("\n- id   (hash)  = " + std::to_string(field_id_wire));
-      msg.append("\n- datatype     = " + std::to_string(field_datatype_wire));
-      msg.append("\n- Opcode       = " + std::to_string(field_opcode_wire) +
-                 " (" + candidOpcode.name_from_opcode(field_opcode_wire) + ")");
-      if (field_datatype_wire >= 0) {
-        msg.append("\n  (walked the type-tables to find that Opcode!)");
-      }
-      if (field_opcode_wire == candidOpcode.Opt) {
-        msg.append("\n- opt_content_opcode_wire = " +
-                   std::to_string(field_content_opcode_wire) + " (" +
-                   field_content_name_wire + ")");
-      }
-      ICPP_HOOKS::trap(msg);
-    }
-
-    // OK, the next field on the wire is an additional Opt at the end
-    // Additional Opt on wire must be decoded and discarded
-    decoder = build_decoder_wire_for_additional_opt_field(de, j);
-    decoder_name = "read-and-discard-additional-wire-opt";
+    // We're done with the expected fields, but we need to read possible additional fields on wire at end of record
+    // The next field on the wire is an additional field at the end
+    // It must be decoded and discarded
+    decoder = build_decoder_wire_for_additional_field(de, j);
+    decoder_name = "read-and-discard-additional-wire-field";
 
     if (CANDID_DESERIALIZE_DEBUG_PRINT) {
       std::string msg = "--";
       msg.append(
-          "\nDone with all the expected fields, but there is an additional Opt field on the wire...");
+          "\nDone with all the expected fields, but there is an additional field on the wire...");
 
       msg.append("\nnext field on wire at index " + std::to_string(j));
       msg.append("\n- id   (hash)  = " + std::to_string(field_id_wire));
@@ -732,7 +712,7 @@ void CandidTypeRecord::select_decoder_or_trap(
         ICPP_HOOKS::debug_print(
             "--> This field is an expected Opt and found as '(opt (null : null))' on wire.\n    We will decode M & discard the data.");
       }
-      decoder = build_decoder_wire_for_additional_opt_field(de, j);
+      decoder = build_decoder_wire_for_additional_field(de, j);
       decoder_name = "expected-opt-as-opt-null";
     } else if (field_opcode_wire == candidOpcode.Opt) {
       // Additional Opt on wire must be decoded and discarded
@@ -740,8 +720,8 @@ void CandidTypeRecord::select_decoder_or_trap(
         ICPP_HOOKS::debug_print(
             "--> This field is an unexpected additional Opt found on wire.\n    We will decode M & discard the data.");
       }
-      decoder = build_decoder_wire_for_additional_opt_field(de, j);
-      decoder_name = "read-and-discard-additional-wire-opt";
+      decoder = build_decoder_wire_for_additional_field(de, j);
+      decoder_name = "read-and-discard-additional-wire-field";
     } else if (field_opcode_expected == candidOpcode.Opt) {
       // Expected Opt not found on wire. Skip it and continue
       if (CANDID_DESERIALIZE_DEBUG_PRINT) {
@@ -758,20 +738,20 @@ void CandidTypeRecord::select_decoder_or_trap(
     }
   } else {
     // field Ids (the hash) of expected & wire do not match
-    // -> Only allowed if one or both are Opt fields
-
-    // Is the field_id on the wire one of the next expected fields?
-    // - yes: only allowed if expected is an Opt, which has been omitted
-    // - no : only allowed if wire is an addional Opt, which must be read & discarded
-
-    bool found{false};
-    for (auto k = i + 1; k < m_field_ids.size(); ++k) {
-      if (field_id_wire == m_field_ids[k]) {
-        found = true;
-        break;
+    // Both are sorted by id (hash), so:
+    // - a smaller id on the wire is an additional field, of any type, which
+    //   must be read & discarded (record width subtyping)
+    // - a larger id on the wire means the expected field is not on the wire,
+    //   which is only allowed for an expected Opt
+    if (field_id_wire < field_id_expected) {
+      // Additional field on wire must be decoded and discarded
+      if (CANDID_DESERIALIZE_DEBUG_PRINT) {
+        ICPP_HOOKS::debug_print(
+            "--> This field is an unexpected additional field found on wire.\n    We will decode M & discard the data.");
       }
-    }
-    if (found && field_opcode_expected == candidOpcode.Opt) {
+      decoder = build_decoder_wire_for_additional_field(de, j);
+      decoder_name = "read-and-discard-additional-wire-field";
+    } else if (is_optional_field(i)) {
       // Expected Opt not found on wire. Skip it and continue
       if (CANDID_DESERIALIZE_DEBUG_PRINT) {
         ICPP_HOOKS::debug_print(
@@ -779,14 +759,6 @@ void CandidTypeRecord::select_decoder_or_trap(
       }
       decoder = nullptr;
       decoder_name = "skip-expected-opt-not-found-on-wire";
-    } else if (!found && field_opcode_wire == candidOpcode.Opt) {
-      // Additional Opt on wire must be decoded and discarded
-      if (CANDID_DESERIALIZE_DEBUG_PRINT) {
-        ICPP_HOOKS::debug_print(
-            "--> This field is an unexpected additional Opt found on wire.\n    We will decode M & discard the data.");
-      }
-      decoder = build_decoder_wire_for_additional_opt_field(de, j);
-      decoder_name = "read-and-discard-additional-wire-opt";
     } else {
       error = true;
       error_msg = "Wrong id (hash) of a non-opt record field on wire.";
@@ -826,41 +798,30 @@ void CandidTypeRecord::select_decoder_or_trap(
 }
 
 std::shared_ptr<CandidTypeRoot>
-CandidTypeRecord::build_decoder_wire_for_additional_opt_field(
-    CandidDeserialize &de, int j) {
-  // Build the decoder for an additional opt field on the wire
-  CandidOpcode candidOpcode;
+CandidTypeRecord::build_decoder_wire_for_additional_field(CandidDeserialize &de,
+                                                          int j) {
+  // Build the decoder for an additional field on the wire, of any type
   int field_datatype_wire = m_field_datatypes_wire[j];
-  int field_opcode_wire = m_field_opcodes_wire[j];
-  int field_content_datatype_wire = m_field_content_datatypes_wire[j];
-  int field_content_opcode_wire = m_field_content_opcodes_wire[j];
-
-  if (field_opcode_wire != candidOpcode.Opt) {
-    ICPP_HOOKS::trap(
-        "ERROR: this method should only be called for an additional Opt field on the wire.");
-  }
-
-  std::shared_ptr<CandidTypeRoot> p_wire{nullptr};
   if (field_datatype_wire >= 0) {
-    // For types with a type-table, like OptRecord, OptVec & OptVariant,
+    // For types with a type-table, like Record, Variant, Vec & Opt,
     // the decoder was created during deserialization of the type table section
-    p_wire = de.get_typetables_wire()[field_datatype_wire].get_p_wire();
-  } else if (field_content_opcode_wire == CANDID_UNDEF) {
-    ICPP_HOOKS::trap(
-        "ERROR: cannot build the decoder_wire because field_content_opcode_wire is not set.");
-  } else {
-    CandidTypeTable *p_field_content_type_table = nullptr;
-    if (field_datatype_wire >= 0) {
-      p_field_content_type_table =
-          &de.get_typetables_wire()[field_datatype_wire];
-    }
-    p_wire = candidOpcode.candid_type_opt_from_opcode(
-        field_content_opcode_wire, p_field_content_type_table);
-    p_wire->set_content_datatype(field_content_opcode_wire);
-    p_wire->set_is_internal(true);
+    return de.get_typetables_wire()[field_datatype_wire].get_p_wire();
   }
-
+  // For a primitive type, the decoder was created by finish_decode_T
+  std::shared_ptr<CandidTypeRoot> p_wire = m_field_ptrs_wire[j];
+  if (!p_wire) {
+    ICPP_HOOKS::trap(
+        "ERROR: cannot build the decoder_wire for an additional field on the wire.");
+  }
   return p_wire;
+}
+
+// An expected field that may be absent on the wire
+bool CandidTypeRecord::is_optional_field(size_t i) {
+  CandidOpcode candidOpcode;
+  int opcode = m_field_opcodes[i];
+  return opcode == candidOpcode.Opt || opcode == candidOpcode.Null ||
+         opcode == candidOpcode.Reserved;
 }
 
 void CandidTypeRecord::set_fields_wire(
