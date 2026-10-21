@@ -41,5 +41,7 @@ protected:
                               std::string &decoder_name);
 
   std::shared_ptr<CandidTypeRoot>
-  build_decoder_wire_for_additional_opt_field(CandidDeserialize &de, int j);
+  build_decoder_wire_for_additional_field(CandidDeserialize &de, int j);
+
+  bool is_optional_field(size_t i);
 };
