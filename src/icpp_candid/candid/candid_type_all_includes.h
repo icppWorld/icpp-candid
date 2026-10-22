@@ -47,6 +47,7 @@
 #include "candid_type_vec_record.h"
 #include "candid_type_vec_text.h"
 #include "candid_type_vec_variant.h"
+#include "candid_type_vec_of.h"
 // #include "candid_type_vec_vec.h"
 // These types are not used for vectors
 // #include "candid_type_vec_empty.h"

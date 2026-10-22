@@ -19,7 +19,7 @@ public:
   CandidArgs get_A() { return m_A; }
   std::string get_hex_string_wire() { return m_hex_string_wire; }
   VecBytes get_B() { return m_B; }
-  std::vector<CandidTypeTable> get_typetables_wire() {
+  std::vector<CandidTypeTable> &get_typetables_wire() {
     return m_typetables_wire;
   }
 

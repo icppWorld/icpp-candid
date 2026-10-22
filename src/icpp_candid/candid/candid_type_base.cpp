@@ -109,6 +109,10 @@ void CandidTypeRoot::set_fields_wire(
                    m_datatype_textual);
 }
 
+bool CandidTypeRoot::bind_wire(CandidDeserialize &de, int datatype_wire) {
+  return false;
+}
+
 void CandidTypeRoot::finish_decode_T(CandidDeserialize &de) {
   ICPP_HOOKS::trap("ERROR: finish_decode_T not implemented for " +
                    m_datatype_textual);
@@ -199,4 +203,5 @@ template class CandidTypeBase<CandidTypeVecRecord>;
 template class CandidTypeBase<CandidTypeVecText>;
 template class CandidTypeBase<CandidTypeVecVariant>;
 template class CandidTypeBase<CandidTypeVecBlob>;
+template class CandidTypeBase<CandidTypeVecOf>;
 template class CandidTypeBase<CandidTypeFunc>;

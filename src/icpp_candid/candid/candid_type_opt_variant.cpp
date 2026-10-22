@@ -181,7 +181,7 @@ void CandidTypeOptVariant::encode_T() {
 
   // The type-table-index of the Variant that is Optional
   __uint128_t m_content_datatype = m_v.get_type_table_index();
-  m_T.append_uleb128(m_content_datatype);
+  m_T.append_sleb128(__int128_t(m_content_datatype));
 
   // Update the type table registry
   m_type_table_index = CandidSerializeTypeTableRegistry::get_instance()

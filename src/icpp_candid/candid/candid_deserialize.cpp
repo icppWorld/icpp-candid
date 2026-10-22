@@ -572,8 +572,10 @@ void CandidDeserialize::select_decoder_or_trap(
     decoder = m_A.m_args_ptrs[i];
     decoder_name = "expected";
     // Fill the field _wire info used by decode_M
-    if ((opcode_expected == candidOpcode.Record) ||
-        (opcode_expected == candidOpcode.Variant)) {
+    if (decoder->bind_wire(*this, datatype_wire)) {
+      // A CandidTypeVecOf binds itself to its type table on the wire
+    } else if ((opcode_expected == candidOpcode.Record) ||
+               (opcode_expected == candidOpcode.Variant)) {
       // Record, Variant
       int datatype_wire = m_args_datatypes_wire[j];
       auto p_wire = m_typetables_wire[datatype_wire].get_p_wire();
