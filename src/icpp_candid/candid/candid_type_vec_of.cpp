@@ -144,7 +144,7 @@ bool CandidTypeVecOf::bind_wire(CandidDeserialize &de, int datatype_wire) {
   return true;
 }
 
-bool CandidTypeVecOf::decode_M(CandidDeserialize &de, VecBytes B,
+bool CandidTypeVecOf::decode_M(CandidDeserialize &de, VecBytes &B,
                                __uint128_t &offset, std::string &parse_error) {
   if (!m_make_element) {
     ICPP_HOOKS::trap(

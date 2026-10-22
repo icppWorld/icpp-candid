@@ -67,7 +67,7 @@ void CandidTypeVecNat::encode_M() {
 }
 
 // Decode the values, starting at & updating offset
-bool CandidTypeVecNat::decode_M(CandidDeserialize &de, VecBytes B,
+bool CandidTypeVecNat::decode_M(CandidDeserialize &de, VecBytes &B,
                                 __uint128_t &offset, std::string &parse_error) {
   // get size of vec - leb128(N)
   __uint128_t offset_start = offset;

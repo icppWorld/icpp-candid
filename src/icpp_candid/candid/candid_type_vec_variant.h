@@ -36,7 +36,7 @@ public:
   // Destructor
   ~CandidTypeVecVariant();
 
-  bool decode_M(CandidDeserialize &de, VecBytes B, __uint128_t &offset,
+  bool decode_M(CandidDeserialize &de, VecBytes &B, __uint128_t &offset,
                 std::string &parse_error);
 
   void push_back_value(CandidTypeRoot &value);

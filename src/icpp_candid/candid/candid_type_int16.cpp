@@ -53,7 +53,7 @@ void CandidTypeInt16::encode_M() {
 }
 
 // Decode the values, starting at & updating offset
-bool CandidTypeInt16::decode_M(CandidDeserialize &de, VecBytes B,
+bool CandidTypeInt16::decode_M(CandidDeserialize &de, VecBytes &B,
                                __uint128_t &offset, std::string &parse_error) {
 
   __uint128_t offset_start = offset;

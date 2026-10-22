@@ -111,7 +111,7 @@ void CandidTypePrincipal::encode_M() {
 }
 
 // Decode the values, starting at & updating offset
-bool CandidTypePrincipal::decode_M(CandidDeserialize &de, VecBytes B,
+bool CandidTypePrincipal::decode_M(CandidDeserialize &de, VecBytes &B,
                                    __uint128_t &offset,
                                    std::string &parse_error) {
 

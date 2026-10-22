@@ -33,7 +33,7 @@ public:
   ~CandidTypeFunc();
 
   // Decoding a func is not supported
-  bool decode_M(CandidDeserialize &de, VecBytes B, __uint128_t &offset,
+  bool decode_M(CandidDeserialize &de, VecBytes &B, __uint128_t &offset,
                 std::string &parse_error);
 
 protected:

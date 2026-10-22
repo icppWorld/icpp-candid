@@ -18,7 +18,7 @@ public:
   // Destructor
   ~CandidTypeVecInt16();
 
-  bool decode_M(CandidDeserialize &de, VecBytes B, __uint128_t &offset,
+  bool decode_M(CandidDeserialize &de, VecBytes &B, __uint128_t &offset,
                 std::string &parse_error);
   std::vector<int16_t> get_v() { return m_v; }
   std::vector<int16_t> *get_pv() { return m_pv; }

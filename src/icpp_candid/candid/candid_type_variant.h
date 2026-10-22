@@ -29,7 +29,7 @@ public:
   void append(CandidType field);
 
   bool decode_T(VecBytes B, __uint128_t &offset, std::string &parse_error);
-  bool decode_M(CandidDeserialize &de, VecBytes B, __uint128_t &offset,
+  bool decode_M(CandidDeserialize &de, VecBytes &B, __uint128_t &offset,
                 std::string &parse_error);
 
   void set_fields_wire(std::shared_ptr<CandidTypeRoot> p_from_wire);

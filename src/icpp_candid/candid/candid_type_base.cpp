@@ -96,7 +96,7 @@ void CandidTypeRoot::push_back_value(CandidTypeRoot &value) {
 }
 
 // Virtual method to be implemented by all CandidTypes to support deserialization
-bool CandidTypeRoot::decode_M(CandidDeserialize &de, VecBytes B,
+bool CandidTypeRoot::decode_M(CandidDeserialize &de, VecBytes &B,
                               __uint128_t &offset, std::string &parse_error) {
   ICPP_HOOKS::trap("ERROR: decode_M not implemented for " + m_datatype_textual);
   return true;

@@ -26,7 +26,7 @@ public:
   // Destructor
   ~CandidTypeOptRecord();
 
-  bool decode_M(CandidDeserialize &de, VecBytes B, __uint128_t &offset,
+  bool decode_M(CandidDeserialize &de, VecBytes &B, __uint128_t &offset,
                 std::string &parse_error);
   CandidTypeRecord get_v() { return m_v; }
   CandidTypeRoot *get_pv() { return m_pv; }
