@@ -181,7 +181,7 @@ void CandidTypeVariant::encode_T() {
       if (T.size() > 0) {
         // For <comptypes>, we use the index into the type table we defined above
         __uint128_t type_table_index = m_field_ptrs[i]->get_type_table_index();
-        m_T.append_uleb128(type_table_index);
+        m_T.append_sleb128(__int128_t(type_table_index));
       } else {
         // For <primtypes>, use the Opcode, already stored
         VecBytes I = m_field_ptrs[i]->get_I();
@@ -423,6 +423,12 @@ bool CandidTypeVariant::decode_M(CandidDeserialize &de, VecBytes B,
     ICPP_HOOKS::debug_print("Field index into type table on wire = " +
                             ICPP_HOOKS::to_string_128(j128));
   }
+  if (j128 >= __uint128_t(m_field_ids_wire.size())) {
+    ICPP_HOOKS::trap("ERROR: variant index " + ICPP_HOOKS::to_string_128(j128) +
+                     " on the wire is outside the " +
+                     std::to_string(m_field_ids_wire.size()) +
+                     " cases of the variant type table");
+  }
   size_t j = static_cast<size_t>(j128);
 
   // match the variant's id (hash) of wire with passed in variant fields
@@ -574,8 +580,10 @@ void CandidTypeVariant::select_decoder_or_trap(
       decoder = field_ptr_expected;
       decoder_name = "expected";
       // Fill the field _wire info used by decode_M
-      if ((field_opcode_expected == candidOpcode.Record) ||
-          (field_opcode_expected == candidOpcode.Variant)) {
+      if (decoder->bind_wire(de, field_datatype_wire)) {
+        // A CandidTypeVecOf binds itself to its type table on the wire
+      } else if ((field_opcode_expected == candidOpcode.Record) ||
+                 (field_opcode_expected == candidOpcode.Variant)) {
         // record { record } or record {variant}
         int field_datatype_wire = m_field_datatypes_wire[j];
         auto p_wire =

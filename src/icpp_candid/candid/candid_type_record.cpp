@@ -44,6 +44,12 @@ void CandidTypeRecord::append(std::string field_name, CandidType field) {
   _append(field_id, field_name, field);
 }
 
+void CandidTypeRecord::append_optional(std::string field_name, CandidType field,
+                                       bool *p_on_wire) {
+  append(field_name, field);
+  m_optional_fields[idl_hash(field_name)] = p_on_wire;
+}
+
 // Tuple notation without field_id -> generate sequential uint32_t field_id
 void CandidTypeRecord::append(CandidType field) {
   if (m_field_ptrs.size() == 0) {
@@ -134,7 +140,7 @@ void CandidTypeRecord::encode_T() {
       if (T.size() > 0) {
         // For <comptypes>, we use the index into the type table we defined above
         __uint128_t type_table_index = m_field_ptrs[i]->get_type_table_index();
-        m_T.append_uleb128(type_table_index);
+        m_T.append_sleb128(__int128_t(type_table_index));
       } else {
         // For <primtypes>, use the Opcode, already stored
         VecBytes I = m_field_ptrs[i]->get_I();
@@ -334,6 +340,10 @@ bool CandidTypeRecord::decode_M(CandidDeserialize &de, VecBytes B,
 
   bool handled_field_expected{false};
 
+  for (auto &[field_id, p_on_wire] : m_optional_fields) {
+    if (p_on_wire) *p_on_wire = false;
+  }
+
   // Note: This loop over the record fields is similar to
   //       the loop over args, in candid_deserialize.cpp, except:
   //       (-) Now we also need to check on the field id (hashed name).
@@ -408,6 +418,8 @@ bool CandidTypeRecord::decode_M(CandidDeserialize &de, VecBytes B,
               decoder_name == "expected-opt-as-null" ||
               decoder_name == "expected-opt-as-opt-null") {
             // Found Expected on the wire
+            auto it = m_optional_fields.find(m_field_ids[i]);
+            if (it != m_optional_fields.end() && it->second) *it->second = true;
             ++j_now;
             handled_field_expected = true;
             break;
@@ -570,8 +582,10 @@ void CandidTypeRecord::select_decoder_or_trap(
       decoder = field_ptr_expected;
       decoder_name = "expected";
       // Fill the field _wire info used by decode_M
-      if ((field_opcode_expected == candidOpcode.Record) ||
-          (field_opcode_expected == candidOpcode.Variant)) {
+      if (decoder->bind_wire(de, field_datatype_wire)) {
+        // A CandidTypeVecOf binds itself to its type table on the wire
+      } else if ((field_opcode_expected == candidOpcode.Record) ||
+                 (field_opcode_expected == candidOpcode.Variant)) {
         // record { record } or record {variant}
         int field_datatype_wire = m_field_datatypes_wire[j];
         auto p_wire =
@@ -821,7 +835,8 @@ bool CandidTypeRecord::is_optional_field(size_t i) {
   CandidOpcode candidOpcode;
   int opcode = m_field_opcodes[i];
   return opcode == candidOpcode.Opt || opcode == candidOpcode.Null ||
-         opcode == candidOpcode.Reserved;
+         opcode == candidOpcode.Reserved ||
+         m_optional_fields.count(m_field_ids[i]) > 0;
 }
 
 void CandidTypeRecord::set_fields_wire(

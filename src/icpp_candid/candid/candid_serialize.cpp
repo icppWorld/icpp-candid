@@ -62,7 +62,7 @@ void CandidSerialize::serialize() {
     if (T.size() > 0) {
       // For <comptypes>, we use the index into the type table we defined above
       __uint128_t type_table_index = m_A.m_args_ptrs[i]->get_type_table_index();
-      m_B.append_uleb128(type_table_index);
+      m_B.append_sleb128(__int128_t(type_table_index));
     } else {
       // For <primtypes>, use the Opcode, already stored
       VecBytes I = m_A.m_args_ptrs[i]->get_I();

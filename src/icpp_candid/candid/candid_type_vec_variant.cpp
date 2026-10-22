@@ -217,65 +217,33 @@ bool CandidTypeVecVariant::decode_M(CandidDeserialize &de, VecBytes B,
   }
 
   m_labels.clear();
+  if (m_p_labels) m_p_labels->clear();
 
-  // Get field names from the wire variant if available, otherwise from template
-  std::vector<std::string> field_names;
-  if (m_pvs) {
-    field_names = m_pvs->get_field_names();
-  } else if (m_pv) {
-    CandidTypeVariant *p_v_variant = dynamic_cast<CandidTypeVariant *>(m_pv);
-    if (p_v_variant) {
-      field_names = p_v_variant->get_v();
-    }
-  }
-  if (field_names.empty()) {
-    field_names = m_v_template.get_v();
+  // Each element is decoded by the variant itself, bound to the variant's type
+  // table on the wire. So the case is matched by its id (hash), the wire may
+  // have more cases than expected, in any order, and a payload is read. For an
+  // additional vec on the wire, m_pvs is the variant from the wire.
+  CandidTypeVariant *p_variant = dynamic_cast<CandidTypeVariant *>(m_pvs.get());
+  if (!p_variant) {
+    ICPP_HOOKS::trap("ERROR: m_pvs is not pointing to a CandidTypeVariant - " +
+                     std::string(__func__));
   }
 
   // Loop over the vector size just read from the wire
   for (size_t i = 0; i < size_vec_wire; ++i) {
-    if (CANDID_DESERIALIZE_DEBUG_PRINT) {
-      std::string msg;
-      msg.append("Reading variant index for vec element " + std::to_string(i));
-      ICPP_HOOKS::debug_print(msg);
-    }
-
-    // Read variant index
     offset_start = offset;
-    __uint128_t variant_index;
-    if (B.parse_uleb128(offset, variant_index, numbytes, parse_error)) {
-      std::string to_be_parsed = "Variant index - leb128(i)";
+    parse_error = "";
+    if (p_variant->decode_M(de, B, offset, parse_error)) {
+      std::string to_be_parsed = "VecVariant: Value for CandidTypeVariant";
       CandidAssert::trap_with_parse_error(offset_start, offset, to_be_parsed,
                                           parse_error);
     }
-
-    // Map index to label name
-    size_t idx = static_cast<size_t>(variant_index);
-    if (idx >= field_names.size()) {
-      std::string msg;
-      msg.append("ERROR: Variant index " + std::to_string(idx) +
-                 " out of range. Max index is " +
-                 std::to_string(field_names.size() - 1));
-      ICPP_HOOKS::trap(msg);
-    }
-
-    std::string label = field_names[idx];
-    m_labels.push_back(label);
+    push_back_value(*p_variant);
 
     if (CANDID_DESERIALIZE_DEBUG_PRINT) {
-      std::string msg;
-      msg.append("Decoded variant index " + std::to_string(idx) +
-                 " as label '" + label + "'");
-      ICPP_HOOKS::debug_print(msg);
+      ICPP_HOOKS::debug_print("Decoded vec element " + std::to_string(i) +
+                              " as label '" + p_variant->get_label() + "'");
     }
-
-    // For unit variants, there's no additional data to decode
-    // (the variant value is null/unit type)
-  }
-
-  // Fill the user's data placeholder, if a pointer was provided
-  if (m_p_labels) {
-    *m_p_labels = m_labels;
   }
 
   return false;

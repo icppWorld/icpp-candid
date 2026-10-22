@@ -88,6 +88,10 @@ public:
 
   virtual void set_fields_wire(std::shared_ptr<CandidTypeRoot> p_from_wire);
 
+  // Binds a decoder to its type table on the wire. Implemented by VecOf, which
+  // needs it before decode_M. Returns false for the other types.
+  virtual bool bind_wire(CandidDeserialize &de, int datatype_wire);
+
   uint32_t idl_hash(const std::string &s);
 
   // Methods used by instances created during deserialization of bytes from wire

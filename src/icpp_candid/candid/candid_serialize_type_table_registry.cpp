@@ -31,6 +31,15 @@ CandidSerializeTypeTableRegistry::add_or_replace_type_table(size_t index,
     return add_type_table(T);
   } else if (m_unique_type_tables[index].count == 1) {
     // Only one reference to the type table exists, so we can replace it.
+    // If the new type table already exists, use that one instead, so that
+    // identical types share one index (e.g. the elements of a vec).
+    for (size_t i = 0; i < m_unique_type_tables.size(); ++i) {
+      if (i != index && T == m_unique_type_tables[i].type_table_vec_bytes) {
+        m_unique_type_tables[i].count++;
+        decrement_count_and_prune(index);
+        return i;
+      }
+    }
     replace_type_table(index, T);
     return index; // Return the same index as the type table was replaced in-place.
   } else {
