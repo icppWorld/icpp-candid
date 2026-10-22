@@ -374,7 +374,7 @@ void CandidTypeVariant::encode_M() {
 }
 
 // Decode the values, starting at & updating offset
-bool CandidTypeVariant::decode_M(CandidDeserialize &de, VecBytes B,
+bool CandidTypeVariant::decode_M(CandidDeserialize &de, VecBytes &B,
                                  __uint128_t &B_offset,
                                  std::string &parse_error) {
   std::string debug_hex_string;

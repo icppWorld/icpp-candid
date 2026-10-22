@@ -126,7 +126,7 @@ void CandidTypeFunc::encode_M() {
     m_M.append_byte((std::byte)c);
 }
 
-bool CandidTypeFunc::decode_M(CandidDeserialize &de, VecBytes B,
+bool CandidTypeFunc::decode_M(CandidDeserialize &de, VecBytes &B,
                               __uint128_t &offset, std::string &parse_error) {
   ICPP_HOOKS::trap("ERROR: decoding a CandidTypeFunc is not supported - " +
                    std::string(__func__));

@@ -19,7 +19,7 @@ public:
   // Destructor
   ~CandidTypeVecBlob();
 
-  bool decode_M(CandidDeserialize &de, VecBytes B, __uint128_t &offset,
+  bool decode_M(CandidDeserialize &de, VecBytes &B, __uint128_t &offset,
                 std::string &parse_error);
   std::vector<std::vector<uint8_t>> get_v() { return m_v; }
   std::vector<std::vector<uint8_t>> *get_pv() { return m_pv; }

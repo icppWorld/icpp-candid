@@ -28,7 +28,7 @@ public:
   virtual void create_dummy_record_encode();
 
   // Virtual methods to be implemented by all CandidTypes
-  virtual bool decode_M(CandidDeserialize &de, VecBytes B, __uint128_t &offset,
+  virtual bool decode_M(CandidDeserialize &de, VecBytes &B, __uint128_t &offset,
                         std::string &parse_error);
   virtual void encode_M();
 

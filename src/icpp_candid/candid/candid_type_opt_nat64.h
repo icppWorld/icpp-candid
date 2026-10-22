@@ -20,7 +20,7 @@ public:
   // Destructor
   ~CandidTypeOptNat64();
 
-  bool decode_M(CandidDeserialize &de, VecBytes B, __uint128_t &offset,
+  bool decode_M(CandidDeserialize &de, VecBytes &B, __uint128_t &offset,
                 std::string &parse_error);
   std::optional<uint64_t> get_v() { return m_v; }
   std::optional<uint64_t> *get_pv() { return m_pv; }

@@ -66,7 +66,7 @@ void CandidTypeOptText::encode_M() {
 }
 
 // Decode the values, starting at & updating offset
-bool CandidTypeOptText::decode_M(CandidDeserialize &de, VecBytes B,
+bool CandidTypeOptText::decode_M(CandidDeserialize &de, VecBytes &B,
                                  __uint128_t &offset,
                                  std::string &parse_error) {
   // https://github.com/dfinity/candid/blob/master/spec/Candid.md#memory

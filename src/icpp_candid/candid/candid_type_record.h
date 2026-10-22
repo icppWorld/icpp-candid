@@ -27,7 +27,7 @@ public:
   ~CandidTypeRecord();
 
   bool decode_T(VecBytes B, __uint128_t &offset, std::string &parse_error);
-  bool decode_M(CandidDeserialize &de, VecBytes B, __uint128_t &offset,
+  bool decode_M(CandidDeserialize &de, VecBytes &B, __uint128_t &offset,
                 std::string &parse_error);
   std::vector<std::string> get_v() { return m_field_names; }
   std::vector<std::string> *get_pv() { return &m_field_names; }
