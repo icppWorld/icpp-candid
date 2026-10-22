@@ -423,6 +423,12 @@ bool CandidTypeVariant::decode_M(CandidDeserialize &de, VecBytes B,
     ICPP_HOOKS::debug_print("Field index into type table on wire = " +
                             ICPP_HOOKS::to_string_128(j128));
   }
+  if (j128 >= __uint128_t(m_field_ids_wire.size())) {
+    ICPP_HOOKS::trap("ERROR: variant index " + ICPP_HOOKS::to_string_128(j128) +
+                     " on the wire is outside the " +
+                     std::to_string(m_field_ids_wire.size()) +
+                     " cases of the variant type table");
+  }
   size_t j = static_cast<size_t>(j128);
 
   // match the variant's id (hash) of wire with passed in variant fields
