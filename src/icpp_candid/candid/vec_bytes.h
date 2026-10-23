@@ -162,6 +162,11 @@ public:
 private:
   void check_endian();
   void trap(const std::string &msg);
+  // The bytes left from offset to the end, 0 when offset is past the end
+  __uint128_t bytes_left(__uint128_t offset) const;
+  // An error when fewer than n bytes are left, as for parse_bytes
+  bool not_enough_bytes(__uint128_t offset, __uint128_t n,
+                        std::string &parse_error) const;
 
   std::vector<std::byte> m_vec;
   std::vector<uint8_t> m_vec_uint8_t;
