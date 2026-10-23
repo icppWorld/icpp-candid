@@ -167,7 +167,8 @@ __uint128_t VecBytes::bytes_left(__uint128_t offset) const {
 bool VecBytes::not_enough_bytes(__uint128_t offset, __uint128_t n,
                                 std::string &parse_error) const {
   __uint128_t len = bytes_left(offset);
-  if (n <= len) {
+  // An offset past the end is an error, also for 0 bytes
+  if (offset <= m_vec_uint8_t.size() && n <= len) {
     return false;
   }
   parse_error =
