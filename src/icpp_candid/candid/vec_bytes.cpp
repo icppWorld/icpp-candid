@@ -160,13 +160,32 @@ void VecBytes::append_sleb128(const __int128_t &v) {
   }
 }
 
+__uint128_t VecBytes::bytes_left(__uint128_t offset) const {
+  return offset < m_vec_uint8_t.size() ? m_vec_uint8_t.size() - offset : 0;
+}
+
+bool VecBytes::not_enough_bytes(__uint128_t offset, __uint128_t n,
+                                std::string &parse_error) const {
+  __uint128_t len = bytes_left(offset);
+  // An offset past the end is an error, also for 0 bytes
+  if (offset <= m_vec_uint8_t.size() && n <= len) {
+    return false;
+  }
+  parse_error =
+      "Not enough bytes left. The remaining bytes in the byte stream on wire is ";
+  parse_error.append(ICPP_HOOKS::to_string_128(len));
+  parse_error.append(", but specified number to parse is ");
+  parse_error.append(ICPP_HOOKS::to_string_128(n));
+  return true;
+}
+
 // Decode with uleb128, starting at & updating offset
 bool VecBytes::parse_uleb128(__uint128_t &offset, __uint128_t &v,
                              __uint128_t &numbytes, std::string &parse_error) {
-  __uint128_t len = m_vec.size() - offset;
+  __uint128_t len = bytes_left(offset);
 
-  uint8_t *buf = &m_vec_uint8_t[offset];
-  uint8_t *buf_end = &m_vec_uint8_t[offset + len];
+  const uint8_t *buf = m_vec_uint8_t.data() + (m_vec_uint8_t.size() - len);
+  const uint8_t *buf_end = buf + len;
 
   parse_error = "";
   v = decode_uleb128(buf, &numbytes, buf_end, parse_error);
@@ -182,10 +201,10 @@ bool VecBytes::parse_uleb128(__uint128_t &offset, __uint128_t &v,
 // Decode bytes with sleb128, starting at & updating offset
 bool VecBytes::parse_sleb128(__uint128_t &offset, __int128_t &v,
                              __uint128_t &numbytes, std::string &parse_error) {
-  __uint128_t len = m_vec.size() - offset;
+  __uint128_t len = bytes_left(offset);
 
-  uint8_t *buf = &m_vec_uint8_t[offset];
-  uint8_t *buf_end = &m_vec_uint8_t[offset + len];
+  const uint8_t *buf = m_vec_uint8_t.data() + (m_vec_uint8_t.size() - len);
+  const uint8_t *buf_end = buf + len;
 
   parse_error = "";
   v = decode_sleb128(buf, &numbytes, buf_end, parse_error);
@@ -205,14 +224,7 @@ bool VecBytes::parse_bytes(__uint128_t &offset, std::vector<std::byte> &v,
   parse_error = "";
   numbytes = 0;
 
-  __uint128_t len = m_vec.size() - offset;
-
-  if (n > len) {
-    parse_error =
-        "Not enough bytes left. The remaining bytes in the byte stream on wire is ";
-    parse_error.append(ICPP_HOOKS::to_string_128(len));
-    parse_error.append(", but specified number to parse is ");
-    parse_error.append(ICPP_HOOKS::to_string_128(n));
+  if (not_enough_bytes(offset, n, parse_error)) {
     return true;
   }
 
@@ -232,14 +244,7 @@ bool VecBytes::parse_bytes(__uint128_t &offset, std::vector<uint8_t> &v,
   parse_error = "";
   numbytes = 0;
 
-  __uint128_t len = m_vec.size() - offset;
-
-  if (n > len) {
-    parse_error =
-        "Not enough bytes left. The remaining bytes in the byte stream on wire is ";
-    parse_error.append(ICPP_HOOKS::to_string_128(len));
-    parse_error.append(", but specified number to parse is ");
-    parse_error.append(ICPP_HOOKS::to_string_128(n));
+  if (not_enough_bytes(offset, n, parse_error)) {
     return true;
   }
 
@@ -669,13 +674,11 @@ template <typename T>
 typename std::enable_if<MyFixedWidthInts<T>::value, bool>::type
 VecBytes::parse_int_fixed_width(__uint128_t &offset, T &v,
                                 std::string &parse_error) {
-  __uint128_t len = m_vec.size() - offset;
-
-  uint8_t *buf = &m_vec_uint8_t[offset];
-  uint8_t *buf_end = &m_vec_uint8_t[offset + len];
-
   parse_error = "";
-  std::memcpy(&v, buf, sizeof(v));
+  if (not_enough_bytes(offset, sizeof(v), parse_error)) {
+    return true;
+  }
+  std::memcpy(&v, m_vec_uint8_t.data() + offset, sizeof(v));
 
   offset += sizeof(v);
 
@@ -704,13 +707,11 @@ VecBytes::parse_float_ieee754(__uint128_t &offset, T &v,
     // supported in single precision (32 bit) and double precision (64 bit).
     // https://github.com/dfinity/candid/blob/master/spec/Candid.md#memory
     // M(z : float<N>) = f<N>(z)
-    __uint128_t len = m_vec.size() - offset;
-
-    uint8_t *buf = &m_vec_uint8_t[offset];
-    uint8_t *buf_end = &m_vec_uint8_t[offset + len];
-
     parse_error = "";
-    std::memcpy(&v, buf, sizeof(v));
+    if (not_enough_bytes(offset, sizeof(v), parse_error)) {
+      return true;
+    }
+    std::memcpy(&v, m_vec_uint8_t.data() + offset, sizeof(v));
 
     offset += sizeof(v);
 
