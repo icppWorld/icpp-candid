@@ -228,10 +228,10 @@ bool CandidTypeVecRecord::decode_M(CandidDeserialize &de, VecBytes &B,
 
   // A record that takes bytes on the wire takes at least one, so a size larger
   // than the bytes left can only be met by zero width records: count those
-  // against the budget per message, before decoding any element
-  if (size_vec_wire > B.size() - offset) {
-    de.charge_zero_width_elements(size_vec_wire);
-  }
+  // against the budget per message, before decoding any element. Otherwise,
+  // each record that takes no bytes is counted as it is decoded.
+  bool charged = size_vec_wire > B.size() - offset;
+  if (charged) de.charge_zero_width_elements(size_vec_wire);
 
   // Loop over the vector size just read from the wire
   for (__uint128_t i = 0; i < size_vec_wire; ++i) {
@@ -249,6 +249,7 @@ bool CandidTypeVecRecord::decode_M(CandidDeserialize &de, VecBytes &B,
       CandidAssert::trap_with_parse_error(offset_start, offset, to_be_parsed,
                                           parse_error);
     }
+    if (!charged && offset == offset_start) de.charge_zero_width_elements(1);
 
     if (m_pv) {
       // Now map the Record fields read from the wire onto the passed in vectors

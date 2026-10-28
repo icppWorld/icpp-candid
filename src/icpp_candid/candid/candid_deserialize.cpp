@@ -829,6 +829,8 @@ bool CandidDeserialize::is_zero_width(int datatype_wire) {
   }
   int8_t &cached = m_zero_width_cache[size_t(datatype_wire)];
   if (cached >= 0) return cached == 1;
+  // Each nested record type is a level of recursion, bounded as decoding is
+  CandidNestingGuard nesting_guard(*this);
   // Not zero width while it is checked, so a record that contains itself ends
   cached = 0;
   bool zero_width = type_table.get_opcode() == candidOpcode.Record;
