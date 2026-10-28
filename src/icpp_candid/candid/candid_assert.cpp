@@ -3,6 +3,8 @@
 #include "candid_assert.h"
 #include "icpp_hooks.h"
 
+#include <limits>
+
 CandidAssert::CandidAssert() {}
 CandidAssert::~CandidAssert() {}
 
@@ -46,4 +48,16 @@ void CandidAssert::trap_with_parse_error(const __uint128_t &B_offset_start,
   msg.append("       byte offset:" + ICPP_HOOKS::to_string_128(B_offset_start) +
              "\n");
   ICPP_HOOKS::trap(msg);
+}
+
+int CandidAssert::type_index_or_trap(const __int128_t &datatype,
+                                     const std::string &what) {
+  if (datatype < std::numeric_limits<int>::min() ||
+      datatype > std::numeric_limits<int>::max()) {
+    ICPP_HOOKS::trap("ERROR: decoding of Candid byte stream failed.\n"
+                     "       the " +
+                     what + " " + ICPP_HOOKS::to_string_128(datatype) +
+                     " is out of range");
+  }
+  return int(datatype);
 }

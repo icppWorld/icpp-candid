@@ -159,8 +159,8 @@ void CandidDeserialize::deserialize() {
         int content_datatype = m_typetables_wire[i].get_content_datatype();
         CandidTypeTable *p_content_type_table = nullptr;
         if (content_datatype >= 0) {
-          if (m_typetables_wire[content_datatype].get_p_wire()) {
-            p_content_type_table = &m_typetables_wire[content_datatype];
+          if (typetable_wire(content_datatype).get_p_wire()) {
+            p_content_type_table = &typetable_wire(content_datatype);
             content_opcode_wire =
                 p_content_type_table->get_p_wire()->get_datatype_opcode();
             assert(content_opcode_wire ==
@@ -271,14 +271,15 @@ void CandidDeserialize::deserialize() {
     }
 
     // Fill the references
-    int opcode_wire = int(datatype_wire);
+    int opcode_wire =
+        CandidAssert::type_index_or_trap(datatype_wire, "argument type");
     int content_datatype_wire{CANDID_UNDEF};
     int content_opcode_wire{CANDID_UNDEF};
     if (opcode_wire >= 0) {
       int idx = opcode_wire;
-      opcode_wire = m_typetables_wire[idx].get_opcode();
-      content_datatype_wire = m_typetables_wire[idx].get_content_datatype();
-      content_opcode_wire = m_typetables_wire[idx].get_content_opcode();
+      opcode_wire = typetable_wire(idx).get_opcode();
+      content_datatype_wire = typetable_wire(idx).get_content_datatype();
+      content_opcode_wire = typetable_wire(idx).get_content_opcode();
     }
 
     if (CANDID_DESERIALIZE_DEBUG_PRINT) {
@@ -301,7 +302,8 @@ void CandidDeserialize::deserialize() {
       }
       ICPP_HOOKS::debug_print(msg);
     }
-    m_args_datatypes_wire.push_back(int(datatype_wire));
+    m_args_datatypes_wire.push_back(
+        CandidAssert::type_index_or_trap(datatype_wire, "argument type"));
     m_args_opcodes_wire.push_back(opcode_wire);
     m_args_content_datatypes_wire.push_back(content_datatype_wire);
     m_args_content_opcodes_wire.push_back(content_opcode_wire);
@@ -460,7 +462,7 @@ void CandidDeserialize::select_decoder_or_trap(
     // datatype_wire is an index into the type-tables
     int idx = datatype_wire;
     if (idx >= 0 && idx < m_typetables_wire.size()) {
-      content_opcode_wire = m_typetables_wire[idx].get_content_opcode();
+      content_opcode_wire = typetable_wire(idx).get_content_opcode();
       content_name_wire = candidOpcode.name_from_opcode(content_opcode_wire);
     } else {
       ICPP_HOOKS::trap("ERROR: Logic error with retrieval of Opt. or Vec");
@@ -578,7 +580,7 @@ void CandidDeserialize::select_decoder_or_trap(
                (opcode_expected == candidOpcode.Variant)) {
       // Record, Variant
       int datatype_wire = m_args_datatypes_wire[j];
-      auto p_wire = m_typetables_wire[datatype_wire].get_p_wire();
+      auto p_wire = typetable_wire(datatype_wire).get_p_wire();
       decoder->set_fields_wire(p_wire);
     } else if (opcode_expected == candidOpcode.Opt &&
                content_opcode_wire == candidOpcode.Vec) {
@@ -589,19 +591,25 @@ void CandidDeserialize::select_decoder_or_trap(
       if (p_opt_vec) {
         int content_datatype_wire = m_args_content_datatypes_wire[j];
         auto p_content_wire =
-            m_typetables_wire[content_datatype_wire].get_p_wire();
+            typetable_wire(content_datatype_wire).get_p_wire();
         if (p_content_wire) {
           if (p_content_wire->get_content_opcode() == candidOpcode.Record) {
             // OptVecRecord
             CandidType c_content_wire = p_content_wire->toCandidType();
             CandidTypeVecRecord *p_vec_record_wire =
                 std::get_if<CandidTypeVecRecord>(&c_content_wire);
-            auto p_record_wire = p_vec_record_wire->get_pvs();
-
             CandidType c_content = p_opt_vec->get_pv()->toCandidType();
             CandidTypeVecRecord *p_vec_record =
                 std::get_if<CandidTypeVecRecord>(&c_content);
-            p_vec_record->get_pvs()->set_fields_wire(p_record_wire);
+            if (!p_vec_record_wire || !p_vec_record) {
+              // The wire has an opt vec record, the expected type is an opt vec
+              // of another type
+              ICPP_HOOKS::trap(
+                  "ERROR: Wrong type on wire: an opt vec record, where an opt vec "
+                  "of another type is expected");
+            }
+            p_vec_record->get_pvs()->set_fields_wire(
+                p_vec_record_wire->get_pvs());
           }
         } else {
           error = true;
@@ -614,7 +622,7 @@ void CandidDeserialize::select_decoder_or_trap(
         // OptRecord, VecRecord
         int content_datatype_wire = m_args_content_datatypes_wire[j];
         auto p_content_wire =
-            m_typetables_wire[content_datatype_wire].get_p_wire();
+            typetable_wire(content_datatype_wire).get_p_wire();
         if (p_content_wire) {
           CandidType c_decoder = decoder->toCandidType();
           if (opcode_expected == candidOpcode.Opt) {
@@ -656,7 +664,7 @@ void CandidDeserialize::select_decoder_or_trap(
         // OptVariant, VecVariant
         int content_datatype_wire = m_args_content_datatypes_wire[j];
         auto p_content_wire =
-            m_typetables_wire[content_datatype_wire].get_p_wire();
+            typetable_wire(content_datatype_wire).get_p_wire();
         if (p_content_wire) {
           CandidType c_decoder = decoder->toCandidType();
           if (opcode_expected == candidOpcode.Opt) {
@@ -769,7 +777,7 @@ CandidDeserialize::build_decoder_wire_for_additional_opt_arg(int j) {
   if (datatype_wire >= 0) {
     // For types with a type-table, like Record & Variant,
     // the decoder was created during deserialization of the type table section
-    p_wire = m_typetables_wire[datatype_wire].get_p_wire();
+    p_wire = typetable_wire(datatype_wire).get_p_wire();
   } else if (content_opcode_wire == CANDID_UNDEF) {
     ICPP_HOOKS::trap(
         "ERROR: cannot build the decoder_wire because content_opcode_wire is not set.");
@@ -777,7 +785,7 @@ CandidDeserialize::build_decoder_wire_for_additional_opt_arg(int j) {
     // Primitives with simple decoder (i.e. no fields)
     CandidTypeTable *p_content_type_table = nullptr;
     if (content_datatype_wire >= 0) {
-      p_content_type_table = &m_typetables_wire[content_datatype_wire];
+      p_content_type_table = &typetable_wire(content_datatype_wire);
     }
     p_wire = candidOpcode.candid_type_opt_from_opcode(content_opcode_wire,
                                                       p_content_type_table);
@@ -791,6 +799,15 @@ CandidDeserialize::build_decoder_wire_for_additional_opt_arg(int j) {
 int CandidDeserialize::assert_candid(const std::string &candid_expected,
                                      const bool &assert_value) {
   return CandidAssert::assert_candid(m_B, candid_expected, assert_value);
+}
+
+CandidTypeTable &CandidDeserialize::typetable_wire(int datatype) {
+  if (datatype < 0 || size_t(datatype) >= m_typetables_wire.size()) {
+    ICPP_HOOKS::trap("ERROR: Candid type index " + std::to_string(datatype) +
+                     " is not in the type table section, which has " +
+                     std::to_string(m_typetables_wire.size()) + " entries");
+  }
+  return m_typetables_wire[size_t(datatype)];
 }
 
 int CandidDeserialize::get_opcode_from_datatype_on_wire(int datatype) {

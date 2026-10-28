@@ -247,11 +247,24 @@ bool CandidTypeVecRecord::decode_M(CandidDeserialize &de, VecBytes &B,
       // Note: We only support a VecRecord that can be transposed into a Record of Vecs
       for (size_t j = 0; j < m_pvs->get_field_ptrs().size(); ++j) {
 
+        // The wire's fields must be the expected ones, each of the vec's
+        // element type: push_back_value casts the value to that type
+        if (j >= m_pv->get_field_ptrs().size()) {
+          ICPP_HOOKS::trap("ERROR: VecRecord: the record on the wire has more "
+                           "fields than the expected record");
+        }
+
         // The CandidTypeXXX just decoded from the wire
         auto &c_field_wire = *m_pvs->get_field_ptrs()[j];
 
         // The user-provided CandidTypeVecXXX to fill with that value
         auto &c_field_vec = *m_pv->get_field_ptrs()[j];
+
+        if (c_field_wire.get_datatype_opcode() !=
+            c_field_vec.get_content_opcode()) {
+          ICPP_HOOKS::trap("ERROR: VecRecord: a field on the wire is not of "
+                           "the expected type");
+        }
 
         // Use the push_back_value directly
         c_field_vec.push_back_value(c_field_wire);

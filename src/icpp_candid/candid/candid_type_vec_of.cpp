@@ -35,7 +35,7 @@ bool is_zero_width(CandidDeserialize &de, int datatype_wire, int depth = 0) {
   if (depth > 64 || datatype_wire >= int(de.get_typetables_wire().size())) {
     return false;
   }
-  CandidTypeTable &type_table = de.get_typetables_wire()[datatype_wire];
+  CandidTypeTable &type_table = de.typetable_wire(datatype_wire);
   if (type_table.get_opcode() != candidOpcode.Record) return false;
   for (int field_datatype : type_table.get_p_wire()->get_field_datatypes()) {
     if (!is_zero_width(de, field_datatype, depth + 1)) return false;
@@ -140,7 +140,7 @@ bool CandidTypeVecOf::bind_wire(CandidDeserialize &de, int datatype_wire) {
                      "type table");
   }
   m_content_datatype_wire =
-      de.get_typetables_wire()[datatype_wire].get_content_datatype();
+      de.typetable_wire(datatype_wire).get_content_datatype();
   return true;
 }
 
@@ -185,8 +185,7 @@ bool CandidTypeVecOf::decode_M(CandidDeserialize &de, VecBytes &B,
 
     if (m_content_datatype_wire >= 0) {
       // A <comptype> element: bind it to its type table on the wire
-      CandidTypeTable &type_table =
-          de.get_typetables_wire()[m_content_datatype_wire];
+      CandidTypeTable &type_table = de.typetable_wire(m_content_datatype_wire);
       int opcode_wire = type_table.get_opcode();
       if (opcode_wire != opcode_expected) {
         ICPP_HOOKS::trap(

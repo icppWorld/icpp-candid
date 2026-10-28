@@ -204,7 +204,8 @@ bool CandidTypeOptVariant::decode_T(VecBytes B, __uint128_t &offset,
                                         parse_error);
   }
   assert(content_type >= 0);
-  m_content_datatype = int(content_type);
+  m_content_datatype =
+      CandidAssert::type_index_or_trap(content_type, "content type");
   return false;
 }
 

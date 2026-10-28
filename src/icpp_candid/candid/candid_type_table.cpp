@@ -46,7 +46,17 @@ void CandidTypeTable::deserialize(__uint128_t &B_offset) {
     CandidAssert::trap_with_parse_error(B_offset_start, B_offset, to_be_parsed,
                                         parse_error);
   }
-  m_datatype = int(datatype);
+  m_datatype = CandidAssert::type_index_or_trap(datatype, "type table entry");
+  if (m_datatype >= 0 || !(candidOpcode.is_constype(m_datatype) ||
+                           candidOpcode.is_reftype(m_datatype))) {
+    // A type table entry is a type constructor: opt, vec, record, variant,
+    // func or service. Never a primitive, nor an index into the type tables,
+    // which would get no decoder
+    ICPP_HOOKS::trap("ERROR: decoding of Candid byte stream failed.\n"
+                     "       a type table entry must be a type constructor, "
+                     "found " +
+                     std::to_string(m_datatype));
+  }
   if (CANDID_DESERIALIZE_DEBUG_PRINT) {
     m_B.debug_print_as_hex_string(m_hex_string_wire, B_offset_start, B_offset);
     ICPP_HOOKS::debug_print(
@@ -96,7 +106,8 @@ void CandidTypeTable::deserialize(__uint128_t &B_offset) {
         CandidAssert::trap_with_parse_error(B_offset_start, B_offset,
                                             to_be_parsed, parse_error);
       }
-      m_content_datatype = int(content_datatype);
+      m_content_datatype =
+          CandidAssert::type_index_or_trap(content_datatype, "content type");
       if (CANDID_DESERIALIZE_DEBUG_PRINT) {
         m_B.debug_print_as_hex_string(m_hex_string_wire, B_offset_start,
                                       B_offset);
