@@ -212,7 +212,8 @@ bool CandidTypeRecord::decode_T(VecBytes B, __uint128_t &offset,
       CandidAssert::trap_with_parse_error(offset_start, offset, to_be_parsed,
                                           parse_error);
     }
-    int field_datatype = int(datatype);
+    int field_datatype =
+        CandidAssert::type_index_or_trap(datatype, "record field type");
     // Cannot yet set opcode & content_, because we did not yet parse all the type tables
     int field_opcode = CANDID_UNDEF;
     m_field_datatypes.push_back(field_datatype);
@@ -255,7 +256,7 @@ void CandidTypeRecord::finish_decode_T(CandidDeserialize &de) {
         de.get_opcode_from_datatype_on_wire(field_datatype_wire);
     if (field_datatype_wire >= 0) { // index into the type tables
       CandidTypeTable field_type_table_wire =
-          de.get_typetables_wire()[field_datatype_wire];
+          de.typetable_wire(field_datatype_wire);
       field_opcode_wire = field_type_table_wire.get_opcode();
       field_content_datatype_wire =
           field_type_table_wire.get_content_datatype();
@@ -266,16 +267,19 @@ void CandidTypeRecord::finish_decode_T(CandidDeserialize &de) {
     // Store a shared pointer to a CandidTypeRoot class
     std::shared_ptr<CandidTypeRoot> field_ptr_wire{nullptr};
     CandidOpcode candidOpcode;
-    auto type_tables = de.get_typetables_wire();
     if (field_opcode_wire == candidOpcode.Vec) {
       CandidTypeTable *p_field_content_type_table =
-          &type_tables[field_content_datatype_wire];
+          field_content_datatype_wire >= 0
+              ? &de.typetable_wire(field_content_datatype_wire)
+              : nullptr;
       field_ptr_wire = candidOpcode.candid_type_vec_from_opcode(
           field_content_opcode_wire, p_field_content_type_table);
       field_ptr_wire->set_content_datatype(field_content_datatype_wire);
     } else if (field_opcode_wire == candidOpcode.Opt) {
       CandidTypeTable *p_field_content_type_table =
-          &type_tables[field_content_datatype_wire];
+          field_content_datatype_wire >= 0
+              ? &de.typetable_wire(field_content_datatype_wire)
+              : nullptr;
       field_ptr_wire = candidOpcode.candid_type_opt_from_opcode(
           field_content_opcode_wire, p_field_content_type_table);
       field_ptr_wire->set_content_datatype(field_content_datatype_wire);
@@ -588,8 +592,7 @@ void CandidTypeRecord::select_decoder_or_trap(
                  (field_opcode_expected == candidOpcode.Variant)) {
         // record { record } or record {variant}
         int field_datatype_wire = m_field_datatypes_wire[j];
-        auto p_wire =
-            de.get_typetables_wire()[field_datatype_wire].get_p_wire();
+        auto p_wire = de.typetable_wire(field_datatype_wire).get_p_wire();
         decoder->set_fields_wire(p_wire);
       } else if (field_opcode_expected == candidOpcode.Opt &&
                  field_content_opcode_wire == candidOpcode.Vec) {
@@ -600,20 +603,25 @@ void CandidTypeRecord::select_decoder_or_trap(
         if (p_opt_vec) {
           int field_content_datatype_wire = m_field_content_datatypes_wire[j];
           auto p_content_wire =
-              de.get_typetables_wire()[field_content_datatype_wire]
-                  .get_p_wire();
+              de.typetable_wire(field_content_datatype_wire).get_p_wire();
           if (p_content_wire) {
             if (p_content_wire->get_content_opcode() == candidOpcode.Record) {
               // OptVecRecord
               CandidType c_content_wire = p_content_wire->toCandidType();
               CandidTypeVecRecord *p_vec_record_wire =
                   std::get_if<CandidTypeVecRecord>(&c_content_wire);
-              auto p_record_wire = p_vec_record_wire->get_pvs();
-
               CandidType c_content = p_opt_vec->get_pv()->toCandidType();
               CandidTypeVecRecord *p_vec_record =
                   std::get_if<CandidTypeVecRecord>(&c_content);
-              p_vec_record->get_pvs()->set_fields_wire(p_record_wire);
+              if (!p_vec_record_wire || !p_vec_record) {
+                // The wire has an opt vec record, the expected type is an opt vec
+                // of another type
+                ICPP_HOOKS::trap(
+                    "ERROR: Wrong type on wire: an opt vec record, where an opt vec "
+                    "of another type is expected");
+              }
+              p_vec_record->get_pvs()->set_fields_wire(
+                  p_vec_record_wire->get_pvs());
             }
           } else {
             error = true;
@@ -630,8 +638,7 @@ void CandidTypeRecord::select_decoder_or_trap(
           // OptRecord, VecRecord
           int field_content_datatype_wire = m_field_content_datatypes_wire[j];
           auto p_content_wire =
-              de.get_typetables_wire()[field_content_datatype_wire]
-                  .get_p_wire();
+              de.typetable_wire(field_content_datatype_wire).get_p_wire();
           if (p_content_wire) {
             CandidType c_decoder = decoder->toCandidType();
             if (field_opcode_expected == candidOpcode.Opt) {
@@ -673,8 +680,7 @@ void CandidTypeRecord::select_decoder_or_trap(
           // OptVariant, VecVariant
           int field_content_datatype_wire = m_field_content_datatypes_wire[j];
           auto p_content_wire =
-              de.get_typetables_wire()[field_content_datatype_wire]
-                  .get_p_wire();
+              de.typetable_wire(field_content_datatype_wire).get_p_wire();
           if (p_content_wire) {
             CandidType c_decoder = decoder->toCandidType();
             if (field_opcode_expected == candidOpcode.Opt) {
@@ -819,7 +825,7 @@ CandidTypeRecord::build_decoder_wire_for_additional_field(CandidDeserialize &de,
   if (field_datatype_wire >= 0) {
     // For types with a type-table, like Record, Variant, Vec & Opt,
     // the decoder was created during deserialization of the type table section
-    return de.get_typetables_wire()[field_datatype_wire].get_p_wire();
+    return de.typetable_wire(field_datatype_wire).get_p_wire();
   }
   // For a primitive type, the decoder was created by finish_decode_T
   std::shared_ptr<CandidTypeRoot> p_wire = m_field_ptrs_wire[j];

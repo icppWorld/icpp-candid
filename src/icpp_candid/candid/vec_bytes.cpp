@@ -49,8 +49,10 @@ std::string VecBytes::int_to_dec(const int i, const int width) {
   char str[INT_STR_SIZE] = {'\0'};
   c_int_to_dec(str, INT_STR_SIZE, i);
   std::string s;
-  for (size_t i = 0; i < (width - strlen(str)); ++i) {
-    s.append(" ");
+  // Pad to width; a number longer than width is not padded
+  size_t len = strlen(str);
+  if (width > 0 && size_t(width) > len) {
+    s.append(size_t(width) - len, ' ');
   }
   s.append(str);
   return std::string{s};
@@ -312,6 +314,10 @@ void VecBytes::append(const VecBytes &other) {
 }
 
 void VecBytes::trap_if_vec_does_not_start_with_DIDL() {
+  // A message shorter than the magic number is not read past its end
+  if (m_vec.size() < 4) {
+    ICPP_HOOKS::trap("ERROR: Message does not start with DIDL");
+  }
   std::string s;
   s.append(byte_to_char(m_vec[0]));
   s.append(byte_to_char(m_vec[1]));

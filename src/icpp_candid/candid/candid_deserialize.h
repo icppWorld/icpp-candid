@@ -22,6 +22,9 @@ public:
   std::vector<CandidTypeTable> &get_typetables_wire() {
     return m_typetables_wire;
   }
+  // The type table at a type index from the wire. Traps when the index is not
+  // in the type table section, so an index from the wire is never used unchecked
+  CandidTypeTable &typetable_wire(int datatype);
 
   int assert_candid(const std::string &candid_expected,
                     const bool &assert_value);

@@ -92,18 +92,15 @@ bool CandidTypeVecBlob::decode_M(CandidDeserialize &de, VecBytes &B,
       CandidAssert::trap_with_parse_error(offset_start, offset, to_be_parsed,
                                           parse_error);
     }
+    // parse_bytes checks that the bytes are there before it copies them, so a
+    // huge size on the wire allocates nothing
     std::vector<uint8_t> blob;
-    blob.reserve(size_blob);
-    uint8_t v;
-    for (size_t k = 0; k < size_blob; ++k) {
-      offset_start = offset;
-      parse_error = "";
-      if (B.parse_int_fixed_width(offset, v, parse_error)) {
-        std::string to_be_parsed = "VecBlob: a byte of a blob";
-        CandidAssert::trap_with_parse_error(offset_start, offset, to_be_parsed,
-                                            parse_error);
-      }
-      blob.push_back(v);
+    offset_start = offset;
+    parse_error = "";
+    if (B.parse_bytes(offset, blob, size_blob, numbytes, parse_error)) {
+      std::string to_be_parsed = "VecBlob: the bytes of a blob";
+      CandidAssert::trap_with_parse_error(offset_start, offset, to_be_parsed,
+                                          parse_error);
     }
     m_v.push_back(blob);
   }

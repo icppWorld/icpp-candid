@@ -20,4 +20,9 @@ public:
                                     const __uint128_t &B_offset,
                                     const std::string &to_be_parsed,
                                     const std::string &parse_error);
+
+  // A type index or opcode read from the wire as sleb128, as an int. Traps when
+  // it does not fit, so a huge value cannot wrap around into a valid index
+  static int type_index_or_trap(const __int128_t &datatype,
+                                const std::string &what);
 };
