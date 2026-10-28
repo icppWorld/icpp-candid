@@ -23,7 +23,7 @@ public:
   std::vector<bool> get_v() { return m_v; }
   std::vector<bool> *get_pv() { return m_pv; }
 
-  bool decode_T(VecBytes B, __uint128_t &offset, std::string &parse_error);
+  bool decode_T(VecBytes &B, __uint128_t &offset, std::string &parse_error);
 
   void push_back_value(CandidTypeRoot &value);
 

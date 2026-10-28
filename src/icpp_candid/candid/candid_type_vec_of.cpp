@@ -25,24 +25,6 @@ std::shared_ptr<CandidTypeRoot> root_ptr(CandidType c) {
       c);
 }
 
-// Whether a value of this type on the wire takes zero bytes
-bool is_zero_width(CandidDeserialize &de, int datatype_wire, int depth = 0) {
-  CandidOpcode candidOpcode;
-  if (datatype_wire < 0) {
-    return datatype_wire == candidOpcode.Null ||
-           datatype_wire == candidOpcode.Reserved;
-  }
-  if (depth > 64 || datatype_wire >= int(de.get_typetables_wire().size())) {
-    return false;
-  }
-  CandidTypeTable &type_table = de.typetable_wire(datatype_wire);
-  if (type_table.get_opcode() != candidOpcode.Record) return false;
-  for (int field_datatype : type_table.get_p_wire()->get_field_datatypes()) {
-    if (!is_zero_width(de, field_datatype, depth + 1)) return false;
-  }
-  return true;
-}
-
 bool same_type(const std::shared_ptr<CandidTypeRoot> &a,
                const std::shared_ptr<CandidTypeRoot> &b) {
   if (a->get_T().size() > 0 || b->get_T().size() > 0) {
@@ -146,6 +128,7 @@ bool CandidTypeVecOf::bind_wire(CandidDeserialize &de, int datatype_wire) {
 
 bool CandidTypeVecOf::decode_M(CandidDeserialize &de, VecBytes &B,
                                __uint128_t &offset, std::string &parse_error) {
+  CandidNestingGuard nesting_guard(de);
   if (!m_make_element) {
     ICPP_HOOKS::trap(
         "ERROR: CandidTypeVecOf - decoding needs the make_element constructor");
@@ -168,10 +151,11 @@ bool CandidTypeVecOf::decode_M(CandidDeserialize &de, VecBytes &B,
   }
   // An element takes at least one byte, unless its type on the wire is zero
   // width (null, reserved, or a record of only those). Refuse a size that
-  // cannot fit, before decoding any element. A vec of zero width elements is
-  // bounded only by the instruction limit of the message.
-  if (size_vec_wire > B.size() - offset &&
-      !is_zero_width(de, m_content_datatype_wire)) {
+  // cannot fit, before decoding any element. Zero width elements are not
+  // bounded by the message size, so they count against a budget per message.
+  if (de.is_zero_width(m_content_datatype_wire)) {
+    de.charge_zero_width_elements(size_vec_wire);
+  } else if (size_vec_wire > B.size() - offset) {
     ICPP_HOOKS::trap("ERROR: CandidTypeVecOf - the size of the vec on the "
                      "wire, " +
                      ICPP_HOOKS::to_string_128(size_vec_wire) +

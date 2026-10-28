@@ -129,7 +129,7 @@ void CandidTypeVecPrincipal::encode_T() {
 }
 
 // Decode the type table, starting at & updating offset
-bool CandidTypeVecPrincipal::decode_T(VecBytes B, __uint128_t &offset,
+bool CandidTypeVecPrincipal::decode_T(VecBytes &B, __uint128_t &offset,
                                       std::string &parse_error) {
   __uint128_t len = B.size() - offset;
 

@@ -33,7 +33,7 @@ public:
   std::shared_ptr<CandidTypeRoot> get_pvs() { return m_pvs; }
   std::shared_ptr<CandidTypeRecord> get_pr() { return m_pr; }
 
-  bool decode_T(VecBytes B, __uint128_t &offset, std::string &parse_error);
+  bool decode_T(VecBytes &B, __uint128_t &offset, std::string &parse_error);
 
 protected:
   void set_pv(CandidTypeRoot *p_v) { m_pv = p_v; }

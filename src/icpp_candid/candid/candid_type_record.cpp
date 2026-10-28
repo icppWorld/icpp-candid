@@ -157,7 +157,7 @@ void CandidTypeRecord::encode_T() {
 }
 
 // Decode the type table, starting at & updating offset
-bool CandidTypeRecord::decode_T(VecBytes B, __uint128_t &offset,
+bool CandidTypeRecord::decode_T(VecBytes &B, __uint128_t &offset,
                                 std::string &parse_error) {
   std::string debug_hex_string;
   if (CANDID_DESERIALIZE_DEBUG_PRINT) {
@@ -255,7 +255,7 @@ void CandidTypeRecord::finish_decode_T(CandidDeserialize &de) {
     int field_opcode_wire =
         de.get_opcode_from_datatype_on_wire(field_datatype_wire);
     if (field_datatype_wire >= 0) { // index into the type tables
-      CandidTypeTable field_type_table_wire =
+      CandidTypeTable &field_type_table_wire =
           de.typetable_wire(field_datatype_wire);
       field_opcode_wire = field_type_table_wire.get_opcode();
       field_content_datatype_wire =
@@ -329,6 +329,7 @@ void CandidTypeRecord::encode_M() {
 bool CandidTypeRecord::decode_M(CandidDeserialize &de, VecBytes &B,
                                 __uint128_t &B_offset,
                                 std::string &parse_error) {
+  CandidNestingGuard nesting_guard(de);
   std::string debug_hex_string;
   if (CANDID_DESERIALIZE_DEBUG_PRINT) {
     ICPP_HOOKS::debug_print("+++++");

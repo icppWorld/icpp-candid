@@ -801,6 +801,49 @@ int CandidDeserialize::assert_candid(const std::string &candid_expected,
   return CandidAssert::assert_candid(m_B, candid_expected, assert_value);
 }
 
+void CandidDeserialize::enter_nested() {
+  if (++m_nesting_depth > MAX_NESTING_DEPTH) {
+    ICPP_HOOKS::trap("ERROR: Candid message nested deeper than " +
+                     std::to_string(MAX_NESTING_DEPTH) + " levels");
+  }
+}
+
+void CandidDeserialize::charge_zero_width_elements(__uint128_t n) {
+  if (n > MAX_ZERO_WIDTH_ELEMENTS - m_zero_width_elements) {
+    ICPP_HOOKS::trap("ERROR: Candid message with more than " +
+                     ICPP_HOOKS::to_string_128(MAX_ZERO_WIDTH_ELEMENTS) +
+                     " vec elements that take no bytes on the wire");
+  }
+  m_zero_width_elements += n;
+}
+
+bool CandidDeserialize::is_zero_width(int datatype_wire) {
+  CandidOpcode candidOpcode;
+  if (datatype_wire < 0) {
+    return datatype_wire == candidOpcode.Null ||
+           datatype_wire == candidOpcode.Reserved;
+  }
+  CandidTypeTable &type_table = typetable_wire(datatype_wire);
+  if (m_zero_width_cache.size() != m_typetables_wire.size()) {
+    m_zero_width_cache.assign(m_typetables_wire.size(), -1);
+  }
+  int8_t &cached = m_zero_width_cache[size_t(datatype_wire)];
+  if (cached >= 0) return cached == 1;
+  // Not zero width while it is checked, so a record that contains itself ends
+  cached = 0;
+  bool zero_width = type_table.get_opcode() == candidOpcode.Record;
+  if (zero_width) {
+    for (int field_datatype : type_table.get_p_wire()->get_field_datatypes()) {
+      if (!is_zero_width(field_datatype)) {
+        zero_width = false;
+        break;
+      }
+    }
+  }
+  cached = zero_width ? 1 : 0;
+  return zero_width;
+}
+
 CandidTypeTable &CandidDeserialize::typetable_wire(int datatype) {
   if (datatype < 0 || size_t(datatype) >= m_typetables_wire.size()) {
     ICPP_HOOKS::trap("ERROR: Candid type index " + std::to_string(datatype) +
