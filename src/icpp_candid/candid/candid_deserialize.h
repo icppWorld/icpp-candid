@@ -43,7 +43,6 @@ public:
   void charge_zero_width_elements(__uint128_t n);
   // Whether a type on the wire is zero width, per type table index:
   // -1 not known yet, 0 no, 1 yes
-  std::vector<int8_t> &zero_width_cache() { return m_zero_width_cache; }
   // Whether a value of this type on the wire takes zero bytes: null, reserved,
   // or a record of only those. Cached per type table index, so a deep chain of
   // shared record types is walked once
