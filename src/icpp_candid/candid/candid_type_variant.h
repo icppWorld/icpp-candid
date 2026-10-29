@@ -28,7 +28,7 @@ public:
   void append(std::string field_name, CandidType field);
   void append(CandidType field);
 
-  bool decode_T(VecBytes B, __uint128_t &offset, std::string &parse_error);
+  bool decode_T(VecBytes &B, __uint128_t &offset, std::string &parse_error);
   bool decode_M(CandidDeserialize &de, VecBytes &B, __uint128_t &offset,
                 std::string &parse_error);
 

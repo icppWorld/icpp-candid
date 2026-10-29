@@ -9,10 +9,9 @@
 class CandidTypeTable {
 public:
   CandidTypeTable();
-  CandidTypeTable(const VecBytes &B, __uint128_t &B_offset);
+  CandidTypeTable(VecBytes &B, __uint128_t &B_offset);
   ~CandidTypeTable();
 
-  VecBytes get_B() { return m_B; }
   int get_datatype() { return m_datatype; }
   int get_opcode() { return m_opcode; }
   int get_content_datatype() { return m_content_datatype; }
@@ -25,7 +24,7 @@ public:
                           CandidTypeTable *p_content_type_table);
 
 private:
-  void deserialize(__uint128_t &B_offset);
+  void deserialize(VecBytes &B, __uint128_t &B_offset);
 
   int m_datatype{CANDID_UNDEF}; // could be a type table index
   int m_opcode{CANDID_UNDEF};   // always < 0, walk the type tables if needed
@@ -37,8 +36,7 @@ private:
   // A dummy CandidType, to use it's encode & decode methods
   std::shared_ptr<CandidTypeRoot> m_p_wire{nullptr};
 
-  // The byte stream to be deserialized
-  __uint128_t m_B_offset;
-  VecBytes m_B;
+  // The message is not stored: a copy per type table made decoding a message
+  // of many type tables quadratic in its size
   std::string m_hex_string_wire;
 };

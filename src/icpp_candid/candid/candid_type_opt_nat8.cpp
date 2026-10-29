@@ -121,7 +121,7 @@ void CandidTypeOptNat8::encode_T() {
 }
 
 // Decode the type table, starting at & updating offset
-bool CandidTypeOptNat8::decode_T(VecBytes B, __uint128_t &offset,
+bool CandidTypeOptNat8::decode_T(VecBytes &B, __uint128_t &offset,
                                  std::string &parse_error) {
   __uint128_t len = B.size() - offset;
 

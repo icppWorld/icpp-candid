@@ -72,7 +72,7 @@ CandidType CandidTypeRoot::toCandidType() {
 
 // Virtual method to be implemented by the <comptype> CandidTypes
 // Non <comptype> should not call this method.
-bool CandidTypeRoot::decode_T(const VecBytes B, __uint128_t &offset,
+bool CandidTypeRoot::decode_T(VecBytes &B, __uint128_t &offset,
                               std::string &parse_error) {
   ICPP_HOOKS::trap("ERROR: decode_T not implemented for " + m_datatype_textual);
   return true;

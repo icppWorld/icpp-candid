@@ -25,7 +25,7 @@ public:
   std::optional<float> get_v() { return m_v; }
   std::optional<float> *get_pv() { return m_pv; }
 
-  bool decode_T(VecBytes B, __uint128_t &offset, std::string &parse_error);
+  bool decode_T(VecBytes &B, __uint128_t &offset, std::string &parse_error);
 
 protected:
   void set_pv(std::optional<float> *v) { m_pv = v; }
