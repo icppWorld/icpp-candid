@@ -59,6 +59,10 @@ protected:
   // Pointer to the label passed in by caller during deserialization
   std::string *m_p_label{nullptr};
 
+  // For each case on the wire, the index of the expected case it matches:
+  // -1 not looked up yet, -2 no match. Found once, not per decoded value
+  std::vector<int> m_expected_for_wire;
+
   void select_decoder_or_trap(CandidDeserialize &de, size_t i, size_t j,
                               std::shared_ptr<CandidTypeRoot> &decoder,
                               std::string &decoder_name);

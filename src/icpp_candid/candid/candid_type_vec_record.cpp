@@ -201,6 +201,7 @@ void CandidTypeVecRecord::encode_M() {
 bool CandidTypeVecRecord::decode_M(CandidDeserialize &de, VecBytes &B,
                                    __uint128_t &offset,
                                    std::string &parse_error) {
+  CandidNestingGuard nesting_guard(de);
   std::string debug_hex_string;
   if (CANDID_DESERIALIZE_DEBUG_PRINT) {
     ICPP_HOOKS::debug_print("+++++");
@@ -225,13 +226,20 @@ bool CandidTypeVecRecord::decode_M(CandidDeserialize &de, VecBytes &B,
     ICPP_HOOKS::debug_print(msg);
   }
 
+  // A record that takes bytes on the wire takes at least one, so a size larger
+  // than the bytes left can only be met by zero width records: count those
+  // against the budget per message, before decoding any element. Otherwise,
+  // each record that takes no bytes is counted as it is decoded.
+  bool charged = size_vec_wire > B.size() - offset;
+  if (charged) de.charge_zero_width_elements(size_vec_wire);
+
   // Loop over the vector size just read from the wire
-  for (size_t i = 0; i < size_vec_wire; ++i) {
+  for (__uint128_t i = 0; i < size_vec_wire; ++i) {
     if (CANDID_DESERIALIZE_DEBUG_PRINT) {
       std::string msg;
       msg.append(
           "Start reading data by calling record's decode_M for vec index " +
-          std::to_string(i));
+          ICPP_HOOKS::to_string_128(i));
       ICPP_HOOKS::debug_print(msg);
     }
     offset_start = offset;
@@ -241,6 +249,7 @@ bool CandidTypeVecRecord::decode_M(CandidDeserialize &de, VecBytes &B,
       CandidAssert::trap_with_parse_error(offset_start, offset, to_be_parsed,
                                           parse_error);
     }
+    if (!charged && offset == offset_start) de.charge_zero_width_elements(1);
 
     if (m_pv) {
       // Now map the Record fields read from the wire onto the passed in vectors

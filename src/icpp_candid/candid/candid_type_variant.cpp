@@ -278,6 +278,7 @@ bool CandidTypeVariant::decode_T(VecBytes &B, __uint128_t &offset,
 
   // Also set the _wire fields
   m_field_ids_wire = m_field_ids;
+  m_expected_for_wire.clear();
   m_field_ptrs_wire = m_field_ptrs;
   m_field_datatypes_wire = m_field_datatypes;
   m_field_opcodes_wire = m_field_opcodes;
@@ -297,7 +298,7 @@ void CandidTypeVariant::finish_decode_T(CandidDeserialize &de) {
     int field_opcode_wire =
         de.get_opcode_from_datatype_on_wire(field_datatype_wire);
     if (field_datatype_wire >= 0) { // index into the type tables
-      CandidTypeTable field_type_table_wire =
+      CandidTypeTable &field_type_table_wire =
           de.typetable_wire(field_datatype_wire);
       field_opcode_wire = field_type_table_wire.get_opcode();
       field_content_datatype_wire =
@@ -381,6 +382,7 @@ void CandidTypeVariant::encode_M() {
 bool CandidTypeVariant::decode_M(CandidDeserialize &de, VecBytes &B,
                                  __uint128_t &B_offset,
                                  std::string &parse_error) {
+  CandidNestingGuard nesting_guard(de);
   std::string debug_hex_string;
   if (CANDID_DESERIALIZE_DEBUG_PRINT) {
     ICPP_HOOKS::debug_print("+++++");
@@ -435,18 +437,27 @@ bool CandidTypeVariant::decode_M(CandidDeserialize &de, VecBytes &B,
   }
   size_t j = static_cast<size_t>(j128);
 
-  // match the variant's id (hash) of wire with passed in variant fields
-  bool found_match{false};
-  size_t i{0};
-  for (i = 0; i < m_field_ptrs.size(); ++i) {
-    if (m_field_ids_wire[j] == m_field_ids[i]) {
-      found_match = true;
-      m_label = m_field_names[i];
-      m_selected_field_id = m_field_ids_wire[j];
-      // Fill the user's data placeholder, if a pointer was provided
-      if (m_p_label) *m_p_label = m_label;
-      break;
+  // match the variant's id (hash) of wire with passed in variant fields,
+  // looked up once per case on the wire
+  if (m_expected_for_wire.size() != m_field_ids_wire.size()) {
+    m_expected_for_wire.assign(m_field_ids_wire.size(), -1);
+  }
+  if (m_expected_for_wire[j] == -1) {
+    m_expected_for_wire[j] = -2;
+    for (size_t k = 0; k < m_field_ptrs.size(); ++k) {
+      if (m_field_ids_wire[j] == m_field_ids[k]) {
+        m_expected_for_wire[j] = int(k);
+        break;
+      }
     }
+  }
+  bool found_match{m_expected_for_wire[j] >= 0};
+  size_t i = found_match ? size_t(m_expected_for_wire[j]) : m_field_ptrs.size();
+  if (found_match) {
+    m_label = m_field_names[i];
+    m_selected_field_id = m_field_ids_wire[j];
+    // Fill the user's data placeholder, if a pointer was provided
+    if (m_p_label) *m_p_label = m_label;
   }
   if (!found_match) {
     std::string msg;
@@ -862,6 +873,7 @@ void CandidTypeVariant::set_fields_wire(
   // into vectors with the corresponding Variant we are expecting
   // We do all the checking on correctness in decode_M
   m_field_ids_wire.clear();
+  m_expected_for_wire.clear();
   m_field_datatypes_wire.clear();
   m_field_opcodes_wire.clear();
   m_field_content_datatypes_wire.clear();

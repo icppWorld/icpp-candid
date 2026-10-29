@@ -192,6 +192,7 @@ void CandidTypeVecVariant::encode_M() {
 bool CandidTypeVecVariant::decode_M(CandidDeserialize &de, VecBytes &B,
                                     __uint128_t &offset,
                                     std::string &parse_error) {
+  CandidNestingGuard nesting_guard(de);
   std::string debug_hex_string;
   if (CANDID_DESERIALIZE_DEBUG_PRINT) {
     ICPP_HOOKS::debug_print("+++++");

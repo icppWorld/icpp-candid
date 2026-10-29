@@ -226,7 +226,10 @@ bool VecBytes::parse_bytes(__uint128_t &offset, std::vector<std::byte> &v,
   parse_error = "";
   numbytes = 0;
 
-  if (not_enough_bytes(offset, n, parse_error)) {
+  // not_enough_bytes checks m_vec_uint8_t, so also check m_vec, copied here
+  if (not_enough_bytes(offset, n, parse_error) ||
+      m_vec.size() != m_vec_uint8_t.size()) {
+    if (parse_error.empty()) parse_error = "Not enough bytes left.";
     return true;
   }
 
