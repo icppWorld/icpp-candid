@@ -72,10 +72,10 @@ CandidTypeOptVariant::CandidTypeOptVariant(
   CandidTypeVariant *p_v_variant =
       dynamic_cast<CandidTypeVariant *>(p_v_root.get());
   if (p_v_variant) {
-    // The cast was successful, it is indeed a Record
-    const CandidTypeVariant v = const_cast<CandidTypeVariant &>(*p_v_variant);
-    set_v(v);
-    initialize();
+    // A decoder only: copying the schema and encoding it cost memory per opt
+    // that refers to it, and registered a type for serialization
+    set_datatype();
+    set_content_type();
   } else {
     // The cast failed, and p_v_record is nullptr
     ICPP_HOOKS::trap(

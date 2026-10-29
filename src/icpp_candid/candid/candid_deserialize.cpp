@@ -561,7 +561,9 @@ void CandidDeserialize::select_decoder_or_trap(
   decoder = nullptr;
   bool error{false};
   std::string error_msg;
-  if ((opcode_wire != candidOpcode.Opt && opcode_wire == opcode_expected) ||
+  // An opt or a vec matches only with the same content type
+  if ((opcode_wire != candidOpcode.Opt && opcode_wire != candidOpcode.Vec &&
+       opcode_wire == opcode_expected) ||
       (opcode_wire == candidOpcode.Opt && opcode_expected == candidOpcode.Opt &&
        content_opcode_wire == content_opcode_expected) ||
       (opcode_wire == candidOpcode.Vec && opcode_expected == candidOpcode.Vec &&
@@ -808,13 +810,17 @@ void CandidDeserialize::enter_nested() {
   }
 }
 
-void CandidDeserialize::charge_zero_width_elements(__uint128_t n) {
-  if (n > MAX_ZERO_WIDTH_ELEMENTS - m_zero_width_elements) {
+void CandidDeserialize::charge_zero_width_values(__uint128_t n) {
+  require_zero_width_values(n);
+  m_zero_width_values += n;
+}
+
+void CandidDeserialize::require_zero_width_values(__uint128_t n) {
+  if (n > MAX_ZERO_WIDTH_VALUES - m_zero_width_values) {
     ICPP_HOOKS::trap("ERROR: Candid message with more than " +
-                     ICPP_HOOKS::to_string_128(MAX_ZERO_WIDTH_ELEMENTS) +
-                     " vec elements that take no bytes on the wire");
+                     ICPP_HOOKS::to_string_128(MAX_ZERO_WIDTH_VALUES) +
+                     " values that take no bytes on the wire");
   }
-  m_zero_width_elements += n;
 }
 
 bool CandidDeserialize::is_zero_width(int datatype_wire) {

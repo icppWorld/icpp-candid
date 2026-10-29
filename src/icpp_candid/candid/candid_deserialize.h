@@ -32,15 +32,19 @@ public:
   // about 3 KiB of stack, and must trap before the stack runs out. icpp-pro
   // links canisters with a 1 MiB stack; wasm-ld's default 64 KiB fits ~20.
   static constexpr int MAX_NESTING_DEPTH = 128;
-  // The elements, in all the vecs of a message, that take no bytes on the wire
-  // (null, reserved, a record of only those), so their count is not bounded by
-  // the message size
-  static constexpr __uint128_t MAX_ZERO_WIDTH_ELEMENTS = 1000000;
+  // The values in a message that take no bytes on the wire: vec elements and
+  // records of only null, reserved or such records. Their count is not bounded
+  // by the message size, and shared record types can make it grow
+  // exponentially with the nesting depth
+  static constexpr __uint128_t MAX_ZERO_WIDTH_VALUES = 1000000;
   void enter_nested();
   void leave_nested() { --m_nesting_depth; }
-  // A vec declaring more elements than the bytes left can only hold zero width
-  // elements: count them against MAX_ZERO_WIDTH_ELEMENTS
-  void charge_zero_width_elements(__uint128_t n);
+  // Counts n values that took no bytes against MAX_ZERO_WIDTH_VALUES, e.g. the
+  // elements of a vec declaring more elements than the bytes left
+  void charge_zero_width_values(__uint128_t n);
+  // Traps when n more values that take no bytes would exceed the budget,
+  // without counting them: for values that count themselves when decoded
+  void require_zero_width_values(__uint128_t n);
   // Whether a type on the wire is zero width, per type table index:
   // -1 not known yet, 0 no, 1 yes
   // Whether a value of this type on the wire takes zero bytes: null, reserved,
@@ -69,7 +73,7 @@ private:
   // The deserialized type tables found on wire
   std::vector<CandidTypeTable> m_typetables_wire;
   int m_nesting_depth{0};
-  __uint128_t m_zero_width_elements{0};
+  __uint128_t m_zero_width_values{0};
   std::vector<int8_t> m_zero_width_cache;
 
   // The deserialized args found on wire

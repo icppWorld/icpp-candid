@@ -43,13 +43,19 @@ void CandidTypeVecBlob::set_content_type() {
 
 // A blob, e.g. while decoding a vec record whose field is a blob
 void CandidTypeVecBlob::push_back_value(CandidTypeRoot &value) {
-  auto &derived_value = static_cast<CandidTypeVecNat8 &>(value);
+  // Only a blob: a vec of another element type on the wire, e.g. a vec of
+  // blobs, also has the opcode of a vec
+  CandidType c_value = value.toCandidType();
+  CandidTypeVecNat8 *p_value = std::get_if<CandidTypeVecNat8>(&c_value);
+  if (!p_value) {
+    ICPP_HOOKS::trap("ERROR: VecBlob: a value on the wire is not a blob");
+  }
   if (m_pv) {
     // We're deserializing
-    m_pv->push_back(derived_value.get_v());
+    m_pv->push_back(p_value->get_v());
   } else {
     // We're serializing
-    m_v.push_back(derived_value.get_v());
+    m_v.push_back(p_value->get_v());
   }
 }
 

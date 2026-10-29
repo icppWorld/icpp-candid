@@ -14,6 +14,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <unordered_map>
 #include <utility>
 
 CandidTypeVariant::CandidTypeVariant() : CandidTypeBase() { initialize(); }
@@ -437,18 +438,18 @@ bool CandidTypeVariant::decode_M(CandidDeserialize &de, VecBytes &B,
   }
   size_t j = static_cast<size_t>(j128);
 
-  // match the variant's id (hash) of wire with passed in variant fields,
-  // looked up once per case on the wire
+  // match the variant's id (hash) of wire with passed in variant fields: map
+  // each case on the wire to its expected case once, through an index of the
+  // expected ids, so that matching is linear in the number of cases
   if (m_expected_for_wire.size() != m_field_ids_wire.size()) {
-    m_expected_for_wire.assign(m_field_ids_wire.size(), -1);
-  }
-  if (m_expected_for_wire[j] == -1) {
-    m_expected_for_wire[j] = -2;
+    std::unordered_map<uint32_t, int> expected_by_id;
     for (size_t k = 0; k < m_field_ptrs.size(); ++k) {
-      if (m_field_ids_wire[j] == m_field_ids[k]) {
-        m_expected_for_wire[j] = int(k);
-        break;
-      }
+      expected_by_id.emplace(m_field_ids[k], int(k));
+    }
+    m_expected_for_wire.assign(m_field_ids_wire.size(), -2);
+    for (size_t w = 0; w < m_field_ids_wire.size(); ++w) {
+      auto it = expected_by_id.find(m_field_ids_wire[w]);
+      if (it != expected_by_id.end()) m_expected_for_wire[w] = it->second;
     }
   }
   bool found_match{m_expected_for_wire[j] >= 0};
@@ -579,7 +580,9 @@ void CandidTypeVariant::select_decoder_or_trap(
   if (field_id_wire == field_id_expected) {
     // field Ids (the hash) of expected & wire match
     // ==> Follow exact same logic as for args in candid_type_deserialize
+    // An opt or a vec matches only with the same content type
     if (((field_opcode_wire != candidOpcode.Opt &&
+          field_opcode_wire != candidOpcode.Vec &&
           field_opcode_wire == field_opcode_expected) ||
          (field_opcode_wire == candidOpcode.Opt &&
           field_opcode_expected == candidOpcode.Opt &&
@@ -893,26 +896,32 @@ void CandidTypeVariant::set_fields_wire(
     m_field_ptrs.clear();
   }
 
-  for (size_t i = 0; i < p_from_wire->get_field_ids().size(); ++i) {
-    m_field_ids_wire.push_back(p_from_wire->get_field_ids()[i]);
-    m_field_datatypes_wire.push_back(p_from_wire->get_field_datatypes()[i]);
-    m_field_opcodes_wire.push_back(p_from_wire->get_field_opcodes()[i]);
-    m_field_content_datatypes_wire.push_back(
-        p_from_wire->get_field_content_datatypes()[i]);
-    m_field_content_opcodes_wire.push_back(
-        p_from_wire->get_field_content_opcodes()[i]);
-    m_field_ptrs_wire.push_back(p_from_wire->get_field_ptrs()[i]);
-
+  // Copy each of the wire's vectors once: a getter returns a copy, and a call
+  // per field made this quadratic in the number of fields on the wire
+  const std::vector<uint32_t> ids = p_from_wire->get_field_ids();
+  const std::vector<int> datatypes = p_from_wire->get_field_datatypes();
+  const std::vector<int> opcodes = p_from_wire->get_field_opcodes();
+  const std::vector<int> content_datatypes =
+      p_from_wire->get_field_content_datatypes();
+  const std::vector<int> content_opcodes =
+      p_from_wire->get_field_content_opcodes();
+  const std::vector<std::shared_ptr<CandidTypeRoot>> ptrs =
+      p_from_wire->get_field_ptrs();
+  for (size_t i = 0; i < ids.size(); ++i) {
+    m_field_ids_wire.push_back(ids[i]);
+    m_field_datatypes_wire.push_back(datatypes[i]);
+    m_field_opcodes_wire.push_back(opcodes[i]);
+    m_field_content_datatypes_wire.push_back(content_datatypes[i]);
+    m_field_content_opcodes_wire.push_back(content_opcodes[i]);
+    m_field_ptrs_wire.push_back(ptrs[i]);
     if (add_opt) {
-      m_field_ids.push_back(p_from_wire->get_field_ids()[i]);
+      m_field_ids.push_back(ids[i]);
       m_field_names.push_back("");
-      m_field_datatypes.push_back(p_from_wire->get_field_datatypes()[i]);
-      m_field_opcodes.push_back(p_from_wire->get_field_opcodes()[i]);
-      m_field_content_datatypes.push_back(
-          p_from_wire->get_field_content_datatypes()[i]);
-      m_field_content_opcodes.push_back(
-          p_from_wire->get_field_content_opcodes()[i]);
-      m_field_ptrs.push_back(p_from_wire->get_field_ptrs()[i]);
+      m_field_datatypes.push_back(datatypes[i]);
+      m_field_opcodes.push_back(opcodes[i]);
+      m_field_content_datatypes.push_back(content_datatypes[i]);
+      m_field_content_opcodes.push_back(content_opcodes[i]);
+      m_field_ptrs.push_back(ptrs[i]);
     }
   }
 }
