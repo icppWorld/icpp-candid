@@ -330,6 +330,7 @@ bool CandidTypeRecord::decode_M(CandidDeserialize &de, VecBytes &B,
                                 __uint128_t &B_offset,
                                 std::string &parse_error) {
   CandidNestingGuard nesting_guard(de);
+  const __uint128_t offset_at_start = B_offset;
   std::string debug_hex_string;
   if (CANDID_DESERIALIZE_DEBUG_PRINT) {
     ICPP_HOOKS::debug_print("+++++");
@@ -465,6 +466,9 @@ bool CandidTypeRecord::decode_M(CandidDeserialize &de, VecBytes &B,
       ICPP_HOOKS::trap(msg);
     }
   }
+  // A record that took no bytes on the wire counts against the budget per
+  // message: shared record types can make their number exponential
+  if (B_offset == offset_at_start) de.charge_zero_width_values(1);
   return false;
 }
 
@@ -571,7 +575,9 @@ void CandidTypeRecord::select_decoder_or_trap(
   if (field_id_wire == field_id_expected) {
     // field Ids (the hash) of expected & wire match
     // ==> Follow exact same logic as for args in candid_deserialize
+    // An opt or a vec matches only with the same content type
     if (((field_opcode_wire != candidOpcode.Opt &&
+          field_opcode_wire != candidOpcode.Vec &&
           field_opcode_wire == field_opcode_expected) ||
          (field_opcode_wire == candidOpcode.Opt &&
           field_opcode_expected == candidOpcode.Opt &&
@@ -871,25 +877,32 @@ void CandidTypeRecord::set_fields_wire(
     m_field_ptrs.clear();
   }
 
-  for (size_t i = 0; i < p_from_wire->get_field_ids().size(); ++i) {
-    m_field_ids_wire.push_back(p_from_wire->get_field_ids()[i]);
-    m_field_datatypes_wire.push_back(p_from_wire->get_field_datatypes()[i]);
-    m_field_opcodes_wire.push_back(p_from_wire->get_field_opcodes()[i]);
-    m_field_content_datatypes_wire.push_back(
-        p_from_wire->get_field_content_datatypes()[i]);
-    m_field_content_opcodes_wire.push_back(
-        p_from_wire->get_field_content_opcodes()[i]);
-    m_field_ptrs_wire.push_back(p_from_wire->get_field_ptrs()[i]);
+  // Copy each of the wire's vectors once: a getter returns a copy, and a call
+  // per field made this quadratic in the number of fields on the wire
+  const std::vector<uint32_t> ids = p_from_wire->get_field_ids();
+  const std::vector<int> datatypes = p_from_wire->get_field_datatypes();
+  const std::vector<int> opcodes = p_from_wire->get_field_opcodes();
+  const std::vector<int> content_datatypes =
+      p_from_wire->get_field_content_datatypes();
+  const std::vector<int> content_opcodes =
+      p_from_wire->get_field_content_opcodes();
+  const std::vector<std::shared_ptr<CandidTypeRoot>> ptrs =
+      p_from_wire->get_field_ptrs();
+  for (size_t i = 0; i < ids.size(); ++i) {
+    m_field_ids_wire.push_back(ids[i]);
+    m_field_datatypes_wire.push_back(datatypes[i]);
+    m_field_opcodes_wire.push_back(opcodes[i]);
+    m_field_content_datatypes_wire.push_back(content_datatypes[i]);
+    m_field_content_opcodes_wire.push_back(content_opcodes[i]);
+    m_field_ptrs_wire.push_back(ptrs[i]);
     if (add_opt) {
-      m_field_ids.push_back(p_from_wire->get_field_ids()[i]);
+      m_field_ids.push_back(ids[i]);
       m_field_names.push_back("");
-      m_field_datatypes.push_back(p_from_wire->get_field_datatypes()[i]);
-      m_field_opcodes.push_back(p_from_wire->get_field_opcodes()[i]);
-      m_field_content_datatypes.push_back(
-          p_from_wire->get_field_content_datatypes()[i]);
-      m_field_content_opcodes.push_back(
-          p_from_wire->get_field_content_opcodes()[i]);
-      m_field_ptrs.push_back(p_from_wire->get_field_ptrs()[i]);
+      m_field_datatypes.push_back(datatypes[i]);
+      m_field_opcodes.push_back(opcodes[i]);
+      m_field_content_datatypes.push_back(content_datatypes[i]);
+      m_field_content_opcodes.push_back(content_opcodes[i]);
+      m_field_ptrs.push_back(ptrs[i]);
     }
   }
 }

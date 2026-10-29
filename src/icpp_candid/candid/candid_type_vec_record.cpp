@@ -227,11 +227,12 @@ bool CandidTypeVecRecord::decode_M(CandidDeserialize &de, VecBytes &B,
   }
 
   // A record that takes bytes on the wire takes at least one, so a size larger
-  // than the bytes left can only be met by zero width records: count those
-  // against the budget per message, before decoding any element. Otherwise,
-  // each record that takes no bytes is counted as it is decoded.
-  bool charged = size_vec_wire > B.size() - offset;
-  if (charged) de.charge_zero_width_elements(size_vec_wire);
+  // than the bytes left can only be met by zero width records: refuse it when
+  // they would exceed the budget per message. Each record that takes no bytes
+  // counts itself against that budget as it is decoded.
+  if (size_vec_wire > B.size() - offset) {
+    de.require_zero_width_values(size_vec_wire);
+  }
 
   // Loop over the vector size just read from the wire
   for (__uint128_t i = 0; i < size_vec_wire; ++i) {
@@ -249,25 +250,27 @@ bool CandidTypeVecRecord::decode_M(CandidDeserialize &de, VecBytes &B,
       CandidAssert::trap_with_parse_error(offset_start, offset, to_be_parsed,
                                           parse_error);
     }
-    if (!charged && offset == offset_start) de.charge_zero_width_elements(1);
 
     if (m_pv) {
       // Now map the Record fields read from the wire onto the passed in vectors
       // Note: We only support a VecRecord that can be transposed into a Record of Vecs
-      for (size_t j = 0; j < m_pvs->get_field_ptrs().size(); ++j) {
+      // Copied once per element: a getter returns a copy of the vector
+      const auto field_ptrs_wire = m_pvs->get_field_ptrs();
+      const auto field_ptrs_vec = m_pv->get_field_ptrs();
+      for (size_t j = 0; j < field_ptrs_wire.size(); ++j) {
 
         // The wire's fields must be the expected ones, each of the vec's
         // element type: push_back_value casts the value to that type
-        if (j >= m_pv->get_field_ptrs().size()) {
+        if (j >= field_ptrs_vec.size()) {
           ICPP_HOOKS::trap("ERROR: VecRecord: the record on the wire has more "
                            "fields than the expected record");
         }
 
         // The CandidTypeXXX just decoded from the wire
-        auto &c_field_wire = *m_pvs->get_field_ptrs()[j];
+        auto &c_field_wire = *field_ptrs_wire[j];
 
         // The user-provided CandidTypeVecXXX to fill with that value
-        auto &c_field_vec = *m_pv->get_field_ptrs()[j];
+        auto &c_field_vec = *field_ptrs_vec[j];
 
         if (c_field_wire.get_datatype_opcode() !=
             c_field_vec.get_content_opcode()) {

@@ -152,9 +152,14 @@ bool CandidTypeVecOf::decode_M(CandidDeserialize &de, VecBytes &B,
   // An element takes at least one byte, unless its type on the wire is zero
   // width (null, reserved, or a record of only those). Refuse a size that
   // cannot fit, before decoding any element. Zero width elements are not
-  // bounded by the message size, so they count against a budget per message.
+  // bounded by the message size, so they count against a budget per message:
+  // a null or reserved here, a record as it is decoded.
   if (size_vec_wire > 0 && de.is_zero_width(m_content_datatype_wire)) {
-    de.charge_zero_width_elements(size_vec_wire);
+    if (m_content_datatype_wire < 0) {
+      de.charge_zero_width_values(size_vec_wire);
+    } else {
+      de.require_zero_width_values(size_vec_wire);
+    }
   } else if (size_vec_wire > B.size() - offset) {
     ICPP_HOOKS::trap("ERROR: CandidTypeVecOf - the size of the vec on the "
                      "wire, " +

@@ -112,8 +112,10 @@ CandidTypeOptVec::CandidTypeOptVec(std::shared_ptr<CandidTypeRoot> v)
     : CandidTypeBase() {
   m_pvs = v;
   set_pv(v.get());
-  set_v(*v);
-  initialize();
+  // A decoder only: copying the vec and encoding it cost memory per opt that
+  // refers to it, and registered a type for serialization
+  set_datatype();
+  set_content_type();
 }
 
 CandidTypeOptVec::~CandidTypeOptVec() {}
