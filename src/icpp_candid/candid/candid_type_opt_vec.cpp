@@ -136,6 +136,7 @@ void CandidTypeOptVec::encode_M() {
 // Decode the values, starting at & updating offset
 bool CandidTypeOptVec::decode_M(CandidDeserialize &de, VecBytes &B,
                                 __uint128_t &offset, std::string &parse_error) {
+  CandidNestingGuard nesting_guard(de);
   // https://github.com/dfinity/candid/blob/master/spec/Candid.md#memory
   // M(null : opt <datatype>) = i8(0)
   // M(?v   : opt <datatype>) = i8(1) M(v : <datatype>)
