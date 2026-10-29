@@ -265,7 +265,7 @@ void CandidTypeVecVariant::set_datatype() {
 }
 
 // Decode the type table, starting at & updating offset
-bool CandidTypeVecVariant::decode_T(VecBytes B, __uint128_t &offset,
+bool CandidTypeVecVariant::decode_T(VecBytes &B, __uint128_t &offset,
                                     std::string &parse_error) {
   if (CANDID_DESERIALIZE_DEBUG_PRINT) {
     ICPP_HOOKS::debug_print("+++++");

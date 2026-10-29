@@ -141,7 +141,7 @@ void CandidTypeVecBlob::encode_T() {
 }
 
 // Decode the type table, starting at & updating offset
-bool CandidTypeVecBlob::decode_T(VecBytes B, __uint128_t &offset,
+bool CandidTypeVecBlob::decode_T(VecBytes &B, __uint128_t &offset,
                                  std::string &parse_error) {
   // The content type: an index into the type table, for the vec nat8
   __uint128_t offset_start = offset;

@@ -220,7 +220,7 @@ void CandidTypeOptVec::encode_T() {
 }
 
 // To decode the type table on the wire, starting at & updating offset
-bool CandidTypeOptVec::decode_T(VecBytes B, __uint128_t &offset,
+bool CandidTypeOptVec::decode_T(VecBytes &B, __uint128_t &offset,
                                 std::string &parse_error) {
   __uint128_t len = B.size() - offset;
 

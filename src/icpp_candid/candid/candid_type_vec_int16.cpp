@@ -126,7 +126,7 @@ void CandidTypeVecInt16::encode_T() {
 }
 
 // Decode the type table, starting at & updating offset
-bool CandidTypeVecInt16::decode_T(VecBytes B, __uint128_t &offset,
+bool CandidTypeVecInt16::decode_T(VecBytes &B, __uint128_t &offset,
                                   std::string &parse_error) {
   __uint128_t len = B.size() - offset;
 

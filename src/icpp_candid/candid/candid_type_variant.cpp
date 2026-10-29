@@ -199,7 +199,7 @@ void CandidTypeVariant::encode_T() {
 }
 
 // Decode the type table, starting at & updating offset
-bool CandidTypeVariant::decode_T(VecBytes B, __uint128_t &offset,
+bool CandidTypeVariant::decode_T(VecBytes &B, __uint128_t &offset,
                                  std::string &parse_error) {
   std::string debug_hex_string;
   if (CANDID_DESERIALIZE_DEBUG_PRINT) {

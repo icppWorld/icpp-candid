@@ -96,7 +96,7 @@ public:
 
   // Methods used by instances created during deserialization of bytes from wire
   void trap_if_wrong_type_on_wire(const std::string &type_on_wire);
-  virtual bool decode_T(const VecBytes B, __uint128_t &offset,
+  virtual bool decode_T(VecBytes &B, __uint128_t &offset,
                         std::string &parse_error);
   virtual void finish_decode_T(CandidDeserialize &de);
 

@@ -17,18 +17,16 @@
 
 CandidTypeTable::CandidTypeTable() {}
 
-CandidTypeTable::CandidTypeTable(const VecBytes &B, __uint128_t &B_offset) {
-  m_B = B;
-  m_B_offset = B_offset;
+CandidTypeTable::CandidTypeTable(VecBytes &B, __uint128_t &B_offset) {
   if (CANDID_DESERIALIZE_DEBUG_PRINT) {
-    m_hex_string_wire = m_B.as_hex_string();
+    m_hex_string_wire = B.as_hex_string();
   }
-  deserialize(B_offset);
+  deserialize(B, B_offset);
 }
 
 CandidTypeTable::~CandidTypeTable() {}
 
-void CandidTypeTable::deserialize(__uint128_t &B_offset) {
+void CandidTypeTable::deserialize(VecBytes &B, __uint128_t &B_offset) {
   if (CANDID_DESERIALIZE_DEBUG_PRINT) {
     ICPP_HOOKS::debug_print("---------------------------");
     ICPP_HOOKS::debug_print("Entered CandidTypeTable::deserialize");
@@ -41,7 +39,7 @@ void CandidTypeTable::deserialize(__uint128_t &B_offset) {
   std::string parse_error;
   __int128_t datatype;
   __uint128_t numbytes;
-  if (m_B.parse_sleb128(B_offset, datatype, numbytes, parse_error)) {
+  if (B.parse_sleb128(B_offset, datatype, numbytes, parse_error)) {
     std::string to_be_parsed = "Type table: opcode";
     CandidAssert::trap_with_parse_error(B_offset_start, B_offset, to_be_parsed,
                                         parse_error);
@@ -58,7 +56,7 @@ void CandidTypeTable::deserialize(__uint128_t &B_offset) {
                      std::to_string(m_datatype));
   }
   if (CANDID_DESERIALIZE_DEBUG_PRINT) {
-    m_B.debug_print_as_hex_string(m_hex_string_wire, B_offset_start, B_offset);
+    B.debug_print_as_hex_string(m_hex_string_wire, B_offset_start, B_offset);
     ICPP_HOOKS::debug_print(
         "datatype = " + ICPP_HOOKS::to_string_128(datatype) + " (" +
         candidOpcode.name_from_opcode(m_datatype) + ")");
@@ -78,14 +76,14 @@ void CandidTypeTable::deserialize(__uint128_t &B_offset) {
       // We now have a dummy CandidType, and we can use decode_T
       B_offset_start = B_offset;
       parse_error = "";
-      if (m_p_wire->decode_T(m_B, B_offset, parse_error)) {
+      if (m_p_wire->decode_T(B, B_offset, parse_error)) {
         std::string to_be_parsed = "Parsing of the type tables.";
         CandidAssert::trap_with_parse_error(B_offset_start, B_offset,
                                             to_be_parsed, parse_error);
       }
       if (CANDID_DESERIALIZE_DEBUG_PRINT) {
-        m_B.debug_print_as_hex_string(m_hex_string_wire, B_offset_start,
-                                      B_offset);
+        B.debug_print_as_hex_string(m_hex_string_wire, B_offset_start,
+                                    B_offset);
         ICPP_HOOKS::debug_print(
             "Parsed the type table with decode_T of dummy CandidType instance");
       }
@@ -99,8 +97,7 @@ void CandidTypeTable::deserialize(__uint128_t &B_offset) {
       B_offset_start = B_offset;
       parse_error = "";
       __int128_t content_datatype;
-      if (m_B.parse_sleb128(B_offset, content_datatype, numbytes,
-                            parse_error)) {
+      if (B.parse_sleb128(B_offset, content_datatype, numbytes, parse_error)) {
         std::string to_be_parsed = "Type table: content type for a " +
                                    candidOpcode.name_from_opcode(m_opcode);
         CandidAssert::trap_with_parse_error(B_offset_start, B_offset,
@@ -109,8 +106,8 @@ void CandidTypeTable::deserialize(__uint128_t &B_offset) {
       m_content_datatype =
           CandidAssert::type_index_or_trap(content_datatype, "content type");
       if (CANDID_DESERIALIZE_DEBUG_PRINT) {
-        m_B.debug_print_as_hex_string(m_hex_string_wire, B_offset_start,
-                                      B_offset);
+        B.debug_print_as_hex_string(m_hex_string_wire, B_offset_start,
+                                    B_offset);
         ICPP_HOOKS::debug_print(
             "Manually parsed type table for " +
             candidOpcode.name_from_opcode(m_opcode) +
