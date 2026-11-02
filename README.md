@@ -19,7 +19,7 @@ Simply [install](https://icpp-pro.onicai.com/installation.html) & [Get Started](
 
 If you want to use the C++ Candid Library in your Rich Client, you need to include it in your application and then compile it to a native executable.
 
-We already do this ourselves as part of `icpp-pro` to enable interactive debugging with VS Code, as described [here](https://icpp-pro.onicai.com/getting-started.html#debug-icpp-pro-only).
+We already do this ourselves as part of `icpp-pro` to enable interactive debugging with VS Code, as described in [debugging with VS Code](https://icpp-pro.onicai.com/getting-started.html#debug-icpp-pro-only).
 
 The command we use is:
 
