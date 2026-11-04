@@ -105,6 +105,7 @@ int CandidTypeGraph::reserve() {
   n.defined = false;
   m_nodes.push_back(n);
   m_zero_width.clear();
+  m_infinite_opt.clear();
   return int(m_nodes.size() - 1);
 }
 
@@ -112,12 +113,14 @@ void CandidTypeGraph::define(int idx, CandidGraphNode n) {
   n.defined = true;
   m_nodes[size_t(idx)] = std::move(n);
   m_zero_width.clear();
+  m_infinite_opt.clear();
 }
 
 int CandidTypeGraph::add(CandidGraphNode n) {
   n.defined = true;
   m_nodes.push_back(std::move(n));
   m_zero_width.clear();
+  m_infinite_opt.clear();
   return int(m_nodes.size() - 1);
 }
 
@@ -243,15 +246,34 @@ bool CandidTypeGraph::is_null_like(int t) const {
 }
 
 bool CandidTypeGraph::is_infinite_opt(int t) const {
-  // Follow the chain of opt constituents. It is infinite if it comes back to
-  // a node already seen; it is finite as soon as it reaches anything else.
-  std::vector<bool> seen(m_nodes.size(), false);
-  while (t >= 0 && m_nodes[size_t(t)].kind == CandidKind::Opt) {
-    if (seen[size_t(t)]) return true;
-    seen[size_t(t)] = true;
-    t = m_nodes[size_t(t)].inner;
+  // Infinite: the chain of opt constituents comes back to a node already on
+  // it. Worked out for every node at once, in one pass over the chains.
+  auto &cache = const_cast<std::vector<int8_t> &>(m_infinite_opt);
+  if (cache.size() != m_nodes.size()) {
+    // 0 unvisited, 1 on the chain being followed, 2 finite, 3 infinite
+    std::vector<uint8_t> state(m_nodes.size(), 0);
+    std::vector<int> chain;
+    for (size_t i = 0; i < m_nodes.size(); ++i) {
+      int n = int(i);
+      chain.clear();
+      while (n >= 0 && state[size_t(n)] == 0 &&
+             m_nodes[size_t(n)].kind == CandidKind::Opt) {
+        state[size_t(n)] = 1;
+        chain.push_back(n);
+        n = m_nodes[size_t(n)].inner;
+      }
+      // Where the chain ends decides it: back on itself, or at an infinite
+      // one, it is infinite
+      uint8_t result =
+          n >= 0 && (state[size_t(n)] == 1 || state[size_t(n)] == 3) ? 3 : 2;
+      for (int c : chain)
+        state[size_t(c)] = result;
+    }
+    cache.assign(m_nodes.size(), 0);
+    for (size_t i = 0; i < m_nodes.size(); ++i)
+      cache[i] = state[i] == 3 ? 1 : 0;
   }
-  return false;
+  return t >= 0 && cache[size_t(t)] == 1;
 }
 
 bool CandidTypeGraph::is_zero_width(int t) const {
@@ -261,25 +283,48 @@ bool CandidTypeGraph::is_zero_width(int t) const {
   }
   auto &cache = const_cast<std::vector<int8_t> &>(m_zero_width);
   if (cache.size() != m_nodes.size()) cache.assign(m_nodes.size(), -1);
-  int8_t &c = cache[size_t(t)];
-  if (c >= 0) return c == 1;
-  const CandidGraphNode &n = m_nodes[size_t(t)];
-  if (n.kind != CandidKind::Record) {
-    c = 0;
-    return false;
-  }
-  // In progress: a record that reaches itself is not zero width here (on the
-  // wire, such records are already replaced by empty)
-  c = 0;
-  bool all = true;
-  for (const auto &f : n.fields) {
-    if (!is_zero_width(f.type)) {
-      all = false;
-      break;
+  if (cache[size_t(t)] >= 0) return cache[size_t(t)] == 1;
+
+  // A record all of whose fields are zero width. Without recursion, so the
+  // stack it takes does not depend on the length of a chain of records in the
+  // type table. A record on the path
+  // being followed counts as not zero width: a record that reaches itself is
+  // not zero width here (on the wire, such records are already empty).
+  auto known = [&](int n, bool &z) {
+    if (n < 0) {
+      CandidKind k = kind(n);
+      z = k == CandidKind::Null || k == CandidKind::Reserved;
+      return true;
     }
+    if (cache[size_t(n)] < 0) return false;
+    z = cache[size_t(n)] == 1;
+    return true;
+  };
+  std::vector<std::pair<int, size_t>> path{{t, 0}}; // node, next field
+  cache[size_t(t)] = 0;
+  while (!path.empty()) {
+    int n = path.back().first;
+    size_t k = path.back().second;
+    const CandidGraphNode &node = m_nodes[size_t(n)];
+    bool done = true, zero = node.kind == CandidKind::Record;
+    while (zero && k < node.fields.size()) {
+      int f = node.fields[k].type;
+      bool fz;
+      if (!known(f, fz)) {
+        path.back().second = k;
+        cache[size_t(f)] = 0;
+        path.push_back({f, 0});
+        done = false;
+        break;
+      }
+      if (!fz) zero = false;
+      ++k;
+    }
+    if (!done) continue;
+    cache[size_t(n)] = zero ? 1 : 0;
+    path.pop_back();
   }
-  c = all ? 1 : 0;
-  return all;
+  return cache[size_t(t)] == 1;
 }
 
 uint32_t CandidTypeGraph::idl_hash(const std::string &name) {
@@ -293,33 +338,45 @@ void CandidTypeGraph::replace_empty_records() {
   // As dfinity/candid's TypeEnv::replace_empty: a record is empty when one of
   // its fields leads, through records only, back to a record still being
   // visited. 0 = unvisited, 1 = in progress, 2 = not empty, 3 = empty.
+  // Without recursion, so the stack it takes does not depend on the length of
+  // a chain of records in the type table.
   std::vector<uint8_t> state(m_nodes.size(), 0);
-  std::function<bool(int)> is_empty = [&](int t) -> bool {
-    if (t < 0) return false;
-    uint8_t &s = state[size_t(t)];
-    if (s == 1) {
-      s = 3;
-      return true;
-    }
-    if (s == 2) return false;
-    if (s == 3) return true;
-    s = 1;
-    bool result = false;
-    if (m_nodes[size_t(t)].kind == CandidKind::Record) {
-      for (const auto &f : m_nodes[size_t(t)].fields) {
-        if (is_empty(f.type)) {
-          result = true;
-          break;
+  std::vector<std::pair<int, size_t>> path; // node, next field
+  for (size_t i = 0; i < m_nodes.size(); ++i) {
+    if (state[i] != 0) continue;
+    state[i] = 1;
+    path.push_back({int(i), 0});
+    while (!path.empty()) {
+      int n = path.back().first;
+      size_t k = path.back().second;
+      const CandidGraphNode &node = m_nodes[size_t(n)];
+      bool done = true, empty = false;
+      if (node.kind == CandidKind::Record) {
+        for (; k < node.fields.size(); ++k) {
+          int f = node.fields[k].type;
+          if (f < 0) continue;
+          uint8_t &s = state[size_t(f)];
+          if (s == 0) {
+            path.back().second = k; // back here when f is done
+            s = 1;
+            path.push_back({f, 0});
+            done = false;
+            break;
+          }
+          if (s == 1) s = 3; // a cycle
+          if (s == 3) {
+            empty = true;
+            break;
+          }
         }
       }
+      if (!done) continue;
+      // A cycle may already have marked this node empty
+      if (state[size_t(n)] == 3) empty = true;
+      state[size_t(n)] = empty ? 3 : 2;
+      path.pop_back();
     }
-    // A cycle may already have marked this node empty
-    if (state[size_t(t)] == 3) result = true;
-    state[size_t(t)] = result ? 3 : 2;
-    return result;
-  };
-  for (size_t i = 0; i < m_nodes.size(); ++i)
-    is_empty(int(i));
+  }
   for (size_t i = 0; i < m_nodes.size(); ++i) {
     if (state[i] == 3) {
       CandidGraphNode n;
@@ -328,6 +385,7 @@ void CandidTypeGraph::replace_empty_records() {
     }
   }
   m_zero_width.clear();
+  m_infinite_opt.clear();
 }
 
 static const char *kind_name(CandidKind k) {

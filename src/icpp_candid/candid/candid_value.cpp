@@ -3,6 +3,7 @@
 #include "candid_value.h"
 #include "candid_principal_text.h"
 
+#include <algorithm>
 #include <cstdio>
 #include <cstring>
 
@@ -60,8 +61,34 @@ CandidValue CandidValue::packed_element(size_t idx) const {
   return v;
 }
 
+static const CandidValue *find_field(const std::vector<uint32_t> &ids,
+                                     const std::vector<CandidValue> &items,
+                                     uint32_t id) {
+  auto it = std::lower_bound(ids.begin(), ids.end(), id);
+  if (it == ids.end() || *it != id) return nullptr;
+  return &items[size_t(it - ids.begin())];
+}
+
+const CandidValue *CandidValue::field(uint32_t id) const {
+  if (const CandidValue *f = find_field(ids, items, id)) return f;
+  return rest ? find_field(rest->ids, rest->items, id) : nullptr;
+}
+
+size_t CandidValue::field_count() const {
+  return ids.size() + (rest ? rest->ids.size() : 0);
+}
+
+static std::vector<std::pair<uint32_t, const CandidValue *>>
+fields_of(const CandidValue &v) {
+  std::vector<std::pair<uint32_t, const CandidValue *>> fs;
+  fs.reserve(v.field_count());
+  v.for_each_field(
+      [&](uint32_t id, const CandidValue &f) { fs.emplace_back(id, &f); });
+  return fs;
+}
+
 bool CandidValue::operator==(const CandidValue &o) const {
-  if (kind != o.kind) return false;
+  if (kind != o.kind || absent != o.absent) return false;
   switch (kind) {
   case CandidKind::Null:
   case CandidKind::Reserved:
@@ -105,9 +132,17 @@ bool CandidValue::operator==(const CandidValue &o) const {
     return true;
   }
   case CandidKind::Opt:
-  case CandidKind::Record:
   case CandidKind::Variant:
     return ids == o.ids && items == o.items;
+  case CandidKind::Record: {
+    if (rest == o.rest) return ids == o.ids && items == o.items;
+    auto a = fields_of(*this), c = fields_of(o);
+    if (a.size() != c.size()) return false;
+    for (size_t k = 0; k < a.size(); ++k)
+      if (a[k].first != c[k].first || *a[k].second != *c[k].second)
+        return false;
+    return true;
+  }
   }
   return false;
 }
@@ -229,8 +264,9 @@ std::string CandidValue::to_text() const {
   }
   case CandidKind::Record:
     out = "record {";
-    for (size_t k = 0; k < items.size(); ++k)
-      out += " " + std::to_string(ids[k]) + " = " + items[k].to_text() + ";";
+    for_each_field([&](uint32_t id, const CandidValue &f) {
+      out += " " + std::to_string(id) + " = " + f.to_text() + ";";
+    });
     out += " }";
     break;
   case CandidKind::Variant:

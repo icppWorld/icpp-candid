@@ -7,6 +7,8 @@
 #include <algorithm>
 #include <climits>
 #include <cstring>
+#include <map>
+#include <memory>
 
 namespace {
 
@@ -41,6 +43,9 @@ private:
   size_t m_zero_width{0};
   size_t m_depth{0};
   std::string m_err;
+  // The rest of the records decoded so far (see CandidValue::rest), by wire
+  // type and expected type. Values are made only at the expected types.
+  std::map<std::pair<int, int>, std::shared_ptr<const CandidValue>> m_rest;
 
   St fail(const std::string &msg) {
     m_err = msg;
@@ -600,8 +605,9 @@ St Decoder::decode_vec(int w, const CandidTypeGraph &g, int e,
   // Elements that take no bytes all decode to the same value: keep the
   // first, and only check the others, which counts them against the budget
   bool repeat = m_w.is_zero_width(wi);
-  if (out && !repeat)
-    out->items.reserve(size_t(std::min<uint64_t>(len, left() + 1)));
+  // No room is reserved for the length the message claims: vecs nest, and
+  // each would reserve for nearly all the bytes left. The elements that are
+  // there make the room for themselves.
   for (uint64_t k = 0; k < len; ++k) {
     bool keep = out && (!repeat || k == 0);
     CandidValue item;
@@ -618,12 +624,24 @@ St Decoder::decode_record(int w, const CandidTypeGraph &g, int e,
   if (m_w.kind(w) != CandidKind::Record) return mismatch("Expected record");
   const auto &wfs = m_w.node(w).fields;
   const auto &efs = g.node(e).fields;
-  if (out) {
-    out->ids.reserve(efs.size());
-    for (const auto &f : efs)
-      out->ids.push_back(f.id);
-    out->items.resize(efs.size());
+
+  // The fields that take no bytes on the wire and the missing ones go in the
+  // rest, which is made the first time, and shared after that. They are
+  // still decoded every time: that checks them, and counts them against the
+  // budget for values that take no bytes.
+  auto cached = m_rest.find({w, e});
+  std::shared_ptr<CandidValue> rest;
+  if (out && cached == m_rest.end()) {
+    rest = std::make_shared<CandidValue>();
+    rest->kind = CandidKind::Record;
   }
+  auto slot = [&](uint32_t id, bool in_rest) -> CandidValue * {
+    CandidValue *r = in_rest ? rest.get() : out;
+    if (!r) return nullptr;
+    r->ids.push_back(id);
+    r->items.emplace_back();
+    return &r->items.back();
+  };
 
   // Both are sorted by id: walk them together
   size_t j = 0;
@@ -631,13 +649,13 @@ St Decoder::decode_record(int w, const CandidTypeGraph &g, int e,
     // A field only in the expected type must be null, opt or reserved, or be
     // marked optional
     if (efs[idx].optional) {
-      if (out) out->items[idx].absent = true;
+      if (CandidValue *v = slot(efs[idx].id, true)) v->absent = true;
       return St::Ok;
     }
     if (!g.is_null_like(efs[idx].type))
       return mismatch("Record field " + std::to_string(efs[idx].id) +
                       " is missing");
-    null_value(g, efs[idx].type, out ? &out->items[idx] : nullptr);
+    null_value(g, efs[idx].type, slot(efs[idx].id, true));
     return St::Ok;
   };
   for (const auto &wf : wfs) {
@@ -647,7 +665,8 @@ St Decoder::decode_record(int w, const CandidTypeGraph &g, int e,
     }
     St st;
     if (j < efs.size() && efs[j].id == wf.id) {
-      st = decode(wf.type, g, efs[j].type, out ? &out->items[j] : nullptr);
+      st = decode(wf.type, g, efs[j].type,
+                  slot(wf.id, m_w.is_zero_width(wf.type)));
       ++j;
     } else {
       st = skip(wf.type); // a field only on the wire is read and ignored
@@ -657,6 +676,13 @@ St Decoder::decode_record(int w, const CandidTypeGraph &g, int e,
   while (j < efs.size()) {
     St st = missing(j++);
     if (st != St::Ok) return st;
+  }
+
+  if (out) {
+    std::shared_ptr<const CandidValue> r =
+        rest ? m_rest.emplace(std::make_pair(w, e), rest).first->second
+             : cached->second;
+    if (!r->ids.empty()) out->rest = std::move(r);
   }
   return St::Ok;
 }

@@ -134,7 +134,10 @@ public:
 
 private:
   std::vector<CandidGraphNode> m_nodes;
-  std::vector<int8_t> m_zero_width; // cache: -1 unknown, 0 no, 1 yes
+  // Caches, of is_zero_width (-1 unknown, 0 no, 1 yes) and is_infinite_opt
+  // (0 no, 1 yes, for every node at once)
+  std::vector<int8_t> m_zero_width;
+  std::vector<int8_t> m_infinite_opt;
 
   void to_string_(int t, std::string &out, std::vector<bool> &seen) const;
 };

@@ -256,9 +256,11 @@ void CandidTypeVecRecord::bind(const CandidValue &v) {
   for (size_t k = 0; k < v.vec_size(); ++k) {
     const CandidValue &element = v.at(k);
     for (size_t i = 0; i < ids.size(); ++i) {
-      auto it = std::find(element.ids.begin(), element.ids.end(), ids[i]);
-      ptrs[i]->bind_push_back(
-          element.items.at(size_t(it - element.ids.begin())));
+      const CandidValue *f = element.field(ids[i]);
+      if (!f)
+        ICPP_HOOKS::trap("ERROR: CandidTypeVecRecord - no value for field " +
+                         std::to_string(ids[i]));
+      ptrs[i]->bind_push_back(*f);
     }
   }
 }

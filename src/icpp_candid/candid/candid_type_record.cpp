@@ -196,12 +196,12 @@ int CandidTypeRecord::graph_type(CandidTypeGraph &g) {
 
 void CandidTypeRecord::bind(const CandidValue &v) {
   for (size_t i = 0; i < m_field_ids.size(); ++i) {
-    auto it = std::find(v.ids.begin(), v.ids.end(), m_field_ids[i]);
-    if (it == v.ids.end()) {
+    const CandidValue *f = v.field(m_field_ids[i]);
+    if (!f) {
       ICPP_HOOKS::trap("ERROR: CandidTypeRecord - no value for field " +
                        m_field_names[i]);
     }
-    const CandidValue &fv = v.items[size_t(it - v.ids.begin())];
+    const CandidValue &fv = *f;
     auto opt = m_optional_fields.find(m_field_ids[i]);
     if (opt != m_optional_fields.end() && opt->second) {
       *opt->second = !fv.absent;
