@@ -9,32 +9,13 @@
 #include "candid_debug_config.h"
 #include "candid_assert.h"
 #include "candid_opcode.h"
+#include "candid_type_of.h"
 #include "candid_type_vec_of.h"
 
 #include "icpp_hooks.h"
 
-#include <utility>
-
-namespace {
-std::shared_ptr<CandidTypeRoot> root_ptr(CandidType c) {
-  return std::visit(
-      [](auto &&arg_) -> std::shared_ptr<CandidTypeRoot> {
-        auto derivedPtr = std::make_shared<std::decay_t<decltype(arg_)>>(
-            std::forward<decltype(arg_)>(arg_));
-        return std::static_pointer_cast<CandidTypeRoot>(derivedPtr);
-      },
-      c);
-}
-
-bool same_type(const std::shared_ptr<CandidTypeRoot> &a,
-               const std::shared_ptr<CandidTypeRoot> &b) {
-  if (a->get_T().size() > 0 || b->get_T().size() > 0) {
-    return a->get_T().size() > 0 && b->get_T().size() > 0 &&
-           a->get_type_table_index() == b->get_type_table_index();
-  }
-  return a->get_datatype_opcode() == b->get_datatype_opcode();
-}
-} // namespace
+using candid_type_of::root_ptr;
+using candid_type_of::same_type;
 
 CandidTypeVecOf::CandidTypeVecOf(CandidType element_type,
                                  std::vector<CandidType> elements)

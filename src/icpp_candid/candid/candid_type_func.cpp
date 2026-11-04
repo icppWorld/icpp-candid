@@ -1,26 +1,18 @@
 // The class for the Candid Type: func - a reference to a method of a canister
 #include <algorithm>
 #include "candid_type.h"
+#include "candid_type_all_includes.h"
 
 #include "candid_serialize_type_table_registry.h"
 
 #include "candid_assert.h"
 #include "candid_opcode.h"
 #include "candid_type_func.h"
+#include "candid_type_of.h"
 
 #include <cassert>
 
-namespace {
-std::shared_ptr<CandidTypeRoot> to_root_ptr(CandidType c) {
-  return std::visit(
-      [](auto &&arg_) -> std::shared_ptr<CandidTypeRoot> {
-        auto derivedPtr = std::make_shared<std::decay_t<decltype(arg_)>>(
-            std::forward<decltype(arg_)>(arg_));
-        return std::static_pointer_cast<CandidTypeRoot>(derivedPtr);
-      },
-      c);
-}
-} // namespace
+using candid_type_of::root_ptr;
 
 CandidTypeFunc::CandidTypeFunc() : CandidTypeBase() {
   set_datatype();
@@ -49,12 +41,12 @@ CandidTypeFunc::CandidTypeFunc(std::string *p_canister, std::string *p_method)
 CandidTypeFunc::~CandidTypeFunc() {}
 
 void CandidTypeFunc::append_arg(CandidType arg_type) {
-  m_arg_ptrs.push_back(to_root_ptr(arg_type));
+  m_arg_ptrs.push_back(root_ptr(arg_type));
   encode_T();
 }
 
 void CandidTypeFunc::append_ret(CandidType ret_type) {
-  m_ret_ptrs.push_back(to_root_ptr(ret_type));
+  m_ret_ptrs.push_back(root_ptr(ret_type));
   encode_T();
 }
 

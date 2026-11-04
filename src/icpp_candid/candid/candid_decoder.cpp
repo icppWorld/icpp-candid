@@ -27,6 +27,7 @@ public:
 
   bool run(const std::vector<int> &args, std::vector<CandidValue> &out,
            std::string &err);
+  bool types(CandidTypeGraph &wire, std::vector<int> &args, std::string &err);
 
 private:
   const uint8_t *m_p;
@@ -714,7 +715,27 @@ bool Decoder::run(const std::vector<int> &args, std::vector<CandidValue> &out,
   return true;
 }
 
+bool Decoder::types(CandidTypeGraph &wire, std::vector<int> &args,
+                    std::string &err) {
+  if (!read_header()) {
+    err = m_err;
+    return false;
+  }
+  wire = m_w;
+  args = m_wargs;
+  return true;
+}
+
 } // namespace
+
+bool CandidDecoder::read_types(const uint8_t *data, size_t size,
+                               CandidTypeGraph &wire, std::vector<int> &args,
+                               std::string &err,
+                               const CandidDecodeLimits &limits) {
+  CandidTypeGraph none;
+  Decoder d(data, size, none, limits);
+  return d.types(wire, args, err);
+}
 
 bool CandidDecoder::decode(const uint8_t *data, size_t size,
                            const CandidTypeGraph &expected,

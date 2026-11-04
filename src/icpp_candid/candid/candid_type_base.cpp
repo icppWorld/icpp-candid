@@ -181,4 +181,6 @@ template class CandidTypeBase<CandidTypeVecText>;
 template class CandidTypeBase<CandidTypeVecVariant>;
 template class CandidTypeBase<CandidTypeVecBlob>;
 template class CandidTypeBase<CandidTypeVecOf>;
+template class CandidTypeBase<CandidTypeOptOf>;
+template class CandidTypeBase<CandidTypeService>;
 template class CandidTypeBase<CandidTypeFunc>;

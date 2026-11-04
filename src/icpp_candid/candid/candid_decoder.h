@@ -47,6 +47,13 @@ public:
                      std::vector<CandidValue> &out, std::string &err,
                      const CandidDecodeLimits &limits = CandidDecodeLimits());
 
+  // Read only the header of a message: its type table and the types of its
+  // arguments, as the decoder sees them
+  static bool
+  read_types(const uint8_t *data, size_t size, CandidTypeGraph &wire,
+             std::vector<int> &args, std::string &err,
+             const CandidDecodeLimits &limits = CandidDecodeLimits());
+
   // True if the bytes are valid UTF-8 (no overlong forms, no surrogates, at
   // most U+10FFFF)
   static bool is_valid_utf8(const uint8_t *s, size_t n);
