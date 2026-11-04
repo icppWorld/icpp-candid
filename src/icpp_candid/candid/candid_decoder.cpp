@@ -58,7 +58,11 @@ private:
   size_t left() const { return m_n - m_pos; }
 
   // --- Reading ---
+  // The only two functions that read the message's bytes, and both check
+  // that they are there: scripts/check_decoder_reads.py checks that nothing
+  // else touches m_p
   bool read_byte(uint8_t &b);
+  bool read_bytes(size_t n, const uint8_t *&s);
   bool read_uleb64(uint64_t &v);
   bool read_sleb64(int64_t &v);
   bool read_leb_groups(std::vector<uint8_t> &groups);
@@ -85,6 +89,14 @@ private:
 bool Decoder::read_byte(uint8_t &b) {
   if (m_pos >= m_n) return false;
   b = m_p[m_pos++];
+  return true;
+}
+
+// The next n bytes, in place
+bool Decoder::read_bytes(size_t n, const uint8_t *&s) {
+  if (n > left()) return false;
+  s = m_p + m_pos;
+  m_pos += n;
   return true;
 }
 
@@ -253,8 +265,9 @@ bool Decoder::read_entry(CandidGraphNode &n) {
       // A future type: skipped by its declared size
       n.kind = CandidKind::Future;
       uint64_t len;
-      if (!read_len(len, "future type length")) return false;
-      m_pos += size_t(len);
+      const uint8_t *s;
+      if (!read_len(len, "future type length") || !read_bytes(size_t(len), s))
+        return false;
       return true;
     }
     m_err =
@@ -264,11 +277,11 @@ bool Decoder::read_entry(CandidGraphNode &n) {
 }
 
 bool Decoder::read_header() {
-  if (m_n < 4 || std::memcmp(m_p, "DIDL", 4) != 0) {
+  const uint8_t *magic;
+  if (!read_bytes(4, magic) || std::memcmp(magic, "DIDL", 4) != 0) {
     m_err = "Not a Candid message: it does not start with DIDL";
     return false;
   }
-  m_pos = 4;
 
   uint64_t count;
   if (!read_len(count, "type table length")) return false;
@@ -325,12 +338,11 @@ bool Decoder::read_header() {
 
 St Decoder::read_text(std::string *text, const char *what) {
   uint64_t len;
-  if (!read_len(len, what)) return St::Fail;
-  const uint8_t *s = m_p + m_pos;
+  const uint8_t *s;
+  if (!read_len(len, what) || !read_bytes(size_t(len), s)) return St::Fail;
   if (!CandidDecoder::is_valid_utf8(s, size_t(len)))
     return fail(std::string("Invalid UTF-8 in a ") + what);
   if (text) text->assign(reinterpret_cast<const char *>(s), size_t(len));
-  m_pos += size_t(len);
   return St::Ok;
 }
 
@@ -342,8 +354,9 @@ St Decoder::read_principal(std::vector<uint8_t> *bytes) {
   uint64_t len;
   if (!read_len(len, "principal length")) return St::Fail;
   if (len > 29) return fail("A principal is at most 29 bytes");
-  if (bytes) bytes->assign(m_p + m_pos, m_p + m_pos + len);
-  m_pos += size_t(len);
+  const uint8_t *s;
+  if (!read_bytes(size_t(len), s)) return St::Fail;
+  if (bytes) bytes->assign(s, s + len);
   return St::Ok;
 }
 
@@ -461,11 +474,12 @@ St Decoder::decode_(int w, const CandidTypeGraph &g, int e, CandidValue *out) {
     if (wk != ek) return mismatch("Fixed-width types must match exactly");
     size_t width = 0;
     CandidTypeGraph::is_fixed_width(ek, width);
-    if (left() < width) return fail("Not enough bytes for a fixed-width value");
+    const uint8_t *s;
+    if (!read_bytes(width, s))
+      return fail("Not enough bytes for a fixed-width value");
     uint64_t raw = 0;
     for (size_t k = 0; k < width; ++k)
-      raw |= uint64_t(m_p[m_pos + k]) << (8 * k);
-    m_pos += width;
+      raw |= uint64_t(s[k]) << (8 * k);
     if (out) {
       switch (ek) {
       case CandidKind::Int8:
@@ -540,9 +554,9 @@ St Decoder::decode_(int w, const CandidTypeGraph &g, int e, CandidValue *out) {
     uint64_t m, n;
     if (!read_len(m, "future value length")) return St::Fail;
     if (!read_uleb64(n)) return fail("Cannot read a future value");
-    if (left() < m)
+    const uint8_t *s;
+    if (!read_bytes(size_t(m), s))
       return fail("The future value length is larger than the bytes left");
-    m_pos += size_t(m);
     return St::Ok;
   }
   }
@@ -577,7 +591,8 @@ St Decoder::decode_vec(int w, const CandidTypeGraph &g, int e,
   if (CandidTypeGraph::is_fixed_width(eik, width) && wik == eik) {
     if (len > left() / width) return fail("Not enough bytes for the vec");
     size_t nbytes = size_t(len) * width;
-    const uint8_t *s = m_p + m_pos;
+    const uint8_t *s;
+    if (!read_bytes(nbytes, s)) return fail("Not enough bytes for the vec");
     if (eik == CandidKind::Bool) {
       for (size_t k = 0; k < nbytes; ++k)
         if (s[k] > 1) return fail("A bool must be 0 or 1");
@@ -587,7 +602,6 @@ St Decoder::decode_vec(int w, const CandidTypeGraph &g, int e,
       out->elem_kind = eik;
       out->bytes.assign(s, s + nbytes);
     }
-    m_pos += nbytes;
     return St::Ok;
   }
   if (out && CandidTypeGraph::is_fixed_width(eik, width)) {
