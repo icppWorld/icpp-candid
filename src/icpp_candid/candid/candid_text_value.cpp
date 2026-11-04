@@ -628,10 +628,21 @@ bool Annotator::annotate(const Raw &r, int t, CandidValue &out) {
     out.b = r.b;
     return true;
   case CandidKind::Float32:
-  case CandidKind::Float64:
-    if (r.kind != Raw::Float) return mismatch();
-    out.f64 = k == CandidKind::Float32 ? double(float(r.f)) : r.f;
+  case CandidKind::Float64: {
+    // A float literal, or a decimal integer literal (to_text writes 1.0 as 1)
+    double d = r.f;
+    if (r.kind == Raw::Number && r.text.find('x') == std::string::npos) {
+      char *end = nullptr;
+      errno = 0;
+      d = std::strtod(r.text.c_str(), &end);
+      if (end != r.text.c_str() + r.text.size() || errno == ERANGE)
+        return fail("Invalid float literal " + r.text);
+    } else if (r.kind != Raw::Float) {
+      return mismatch();
+    }
+    out.f64 = k == CandidKind::Float32 ? double(float(d)) : d;
     return true;
+  }
   case CandidKind::Text:
     if (r.kind != Raw::Text) return mismatch();
     if (!CandidDecoder::is_valid_utf8(r.bytes.data(), r.bytes.size()))
