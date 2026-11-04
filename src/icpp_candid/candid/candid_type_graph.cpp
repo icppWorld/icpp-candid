@@ -206,8 +206,14 @@ bool CandidTypeGraph::validate(std::string &err) const {
     case CandidKind::Variant:
       for (size_t f = 0; f < n.fields.size(); ++f) {
         if (!ref_ok(n.fields[f].type, "record/variant")) return false;
+        // Sorted by id, as the decoder and CandidValue::field look fields
+        // up; define() and add() take them as given
         if (f > 0 && n.fields[f - 1].id == n.fields[f].id) {
           err = "Duplicate field id " + std::to_string(n.fields[f].id);
+          return false;
+        }
+        if (f > 0 && n.fields[f - 1].id > n.fields[f].id) {
+          err = "Field ids are not sorted at " + std::to_string(n.fields[f].id);
           return false;
         }
       }
@@ -228,6 +234,10 @@ bool CandidTypeGraph::validate(std::string &err) const {
         }
         if (m > 0 && n.methods[m - 1].name == n.methods[m].name) {
           err = "Duplicate method " + n.methods[m].name;
+          return false;
+        }
+        if (m > 0 && n.methods[m - 1].name > n.methods[m].name) {
+          err = "Method names are not sorted at " + n.methods[m].name;
           return false;
         }
       }

@@ -648,6 +648,9 @@ bool Annotator::annotate(const Raw &r, int t, CandidValue &out) {
     return true;
   case CandidKind::Func:
     if (r.kind != Raw::Func) return mismatch();
+    if (!CandidDecoder::is_valid_utf8(
+            reinterpret_cast<const uint8_t *>(r.text.data()), r.text.size()))
+      return fail("Invalid UTF-8 in a method name");
     out.bytes = r.bytes;
     out.text = r.text;
     return true;
