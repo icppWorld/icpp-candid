@@ -16,7 +16,7 @@ public:
   ~CandidTypeNull();
 
   std::string get_v() { return m_v; }
-  std::string *get_pv() { return m_pv; }
+  std::string *get_pv() { return &m_v; }
 
 protected:
   void set_datatype();
@@ -24,5 +24,7 @@ protected:
   void encode_I();
   void encode_M();
   std::string m_v{"NULL_VALUE"};
-  std::string *m_pv{&m_v};
+  // No caller variable: a pointer to m_v would dangle in a copy, such as
+  // variant.append("a", CandidTypeNull{}), which bind() then writes through.
+  std::string *m_pv{nullptr};
 };
