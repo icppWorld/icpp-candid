@@ -45,6 +45,11 @@ struct CandidValue {
   CandidKind elem_kind{CandidKind::Null}; // for a packed vec
   std::vector<uint32_t> ids;
   std::vector<CandidValue> items;
+  // A vec whose elements take no bytes on the wire (null, reserved, records
+  // of those) has elements that are all equal: it holds one, in items[0],
+  // and its length here. So a message of a few bytes cannot make the decoder
+  // store a million values.
+  size_t repeat{0};
   // A record field marked optional in the expected type, not in the message
   bool absent{false};
 
@@ -52,6 +57,8 @@ struct CandidValue {
   size_t vec_size() const;
   // Element i of a packed vec, unpacked
   CandidValue packed_element(size_t i) const;
+  // Element i of a vec that is not packed
+  const CandidValue &at(size_t i) const { return repeat ? items[0] : items[i]; }
 
   bool operator==(const CandidValue &o) const;
   bool operator!=(const CandidValue &o) const { return !(*this == o); }

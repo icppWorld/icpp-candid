@@ -253,7 +253,8 @@ void CandidTypeVecRecord::bind(const CandidValue &v) {
   if (!m_pv) return;
   const auto ids = m_pv->get_field_ids();
   const auto ptrs = m_pv->get_field_ptrs();
-  for (const CandidValue &element : v.items) {
+  for (size_t k = 0; k < v.vec_size(); ++k) {
+    const CandidValue &element = v.at(k);
     for (size_t i = 0; i < ids.size(); ++i) {
       auto it = std::find(element.ids.begin(), element.ids.end(), ids[i]);
       ptrs[i]->bind_push_back(

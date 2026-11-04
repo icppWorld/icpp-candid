@@ -7,6 +7,7 @@
 #include <cstring>
 
 size_t CandidValue::vec_size() const {
+  if (repeat) return repeat;
   if (!packed) return items.size();
   size_t w = 1;
   CandidTypeGraph::is_fixed_width(elem_kind, w);
@@ -97,8 +98,8 @@ bool CandidValue::operator==(const CandidValue &o) const {
     size_t sz = vec_size();
     if (sz != o.vec_size()) return false;
     for (size_t k = 0; k < sz; ++k) {
-      CandidValue a = packed ? packed_element(k) : items[k];
-      CandidValue c = o.packed ? o.packed_element(k) : o.items[k];
+      CandidValue a = packed ? packed_element(k) : at(k);
+      CandidValue c = o.packed ? o.packed_element(k) : o.at(k);
       if (a != c) return false;
     }
     return true;
@@ -220,7 +221,7 @@ std::string CandidValue::to_text() const {
     size_t sz = vec_size();
     for (size_t k = 0; k < sz; ++k) {
       out += " ";
-      out += packed ? packed_element(k).to_text() : items[k].to_text();
+      out += packed ? packed_element(k).to_text() : at(k).to_text();
       out += ";";
     }
     out += " }";

@@ -89,7 +89,8 @@ template <typename T> void assign(const CandidValue &v, std::vector<T> &out) {
   out.reserve(n);
   for (size_t i = 0; i < n; ++i) {
     T x{};
-    assign(v.packed ? v.packed_element(i) : v.items[i], x);
+    if (v.packed) assign(v.packed_element(i), x);
+    else assign(v.at(i), x);
     out.push_back(std::move(x));
   }
 }

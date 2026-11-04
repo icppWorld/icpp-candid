@@ -390,9 +390,10 @@ St Decoder::decode_(int w, const CandidTypeGraph &g, int e, CandidValue *out) {
 
   switch (ek) {
   case CandidKind::Reserved:
-    // _ : <t> ~> null : reserved. The value is still read and checked.
+    // _ : <t> ~> null : reserved. The value is still read and checked, as
+    // part of this value: decode() already counts it, if it takes no bytes
     if (wk == CandidKind::Reserved) return St::Ok;
-    return skip(w);
+    return decode_(w, m_w, w, nullptr);
 
   case CandidKind::Empty:
     if (wk == CandidKind::Empty)
@@ -596,13 +597,19 @@ St Decoder::decode_vec(int w, const CandidTypeGraph &g, int e,
     return st;
   }
 
-  if (out) out->items.reserve(size_t(std::min<uint64_t>(len, left() + 1)));
+  // Elements that take no bytes all decode to the same value: keep the
+  // first, and only check the others, which counts them against the budget
+  bool repeat = m_w.is_zero_width(wi);
+  if (out && !repeat)
+    out->items.reserve(size_t(std::min<uint64_t>(len, left() + 1)));
   for (uint64_t k = 0; k < len; ++k) {
+    bool keep = out && (!repeat || k == 0);
     CandidValue item;
-    St st = decode(wi, g, ei, out ? &item : nullptr);
+    St st = decode(wi, g, ei, keep ? &item : nullptr);
     if (st != St::Ok) return st;
-    if (out) out->items.push_back(std::move(item));
+    if (keep) out->items.push_back(std::move(item));
   }
+  if (out && repeat && len > 0) out->repeat = size_t(len);
   return St::Ok;
 }
 

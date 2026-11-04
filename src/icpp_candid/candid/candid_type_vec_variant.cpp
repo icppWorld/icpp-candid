@@ -193,8 +193,8 @@ int CandidTypeVecVariant::graph_type(CandidTypeGraph &g) {
 void CandidTypeVecVariant::bind(const CandidValue &v) {
   m_labels.clear();
   if (m_p_labels) m_p_labels->clear();
-  for (const CandidValue &element : v.items)
-    bind_push_back(element);
+  for (size_t k = 0; k < v.vec_size(); ++k)
+    bind_push_back(v.at(k));
 }
 
 void CandidTypeVecVariant::bind_push_back(const CandidValue &e) {

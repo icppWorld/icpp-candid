@@ -110,7 +110,7 @@ void CandidTypeVecOf::bind(const CandidValue &v) {
   for (size_t i = 0; i < n; ++i) {
     std::shared_ptr<CandidTypeRoot> p = root_ptr(m_make_element());
     if (v.packed) p->bind(v.packed_element(i));
-    else p->bind(v.items[i]);
+    else p->bind(v.at(i));
     if (m_element_done) m_element_done();
   }
 }
