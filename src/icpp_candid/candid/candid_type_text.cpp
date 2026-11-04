@@ -62,36 +62,3 @@ void CandidTypeText::encode_M() {
     m_M.append_byte((std::byte)c);
   }
 }
-
-// Decode the values, starting at & updating offset
-bool CandidTypeText::decode_M(CandidDeserialize &de, VecBytes &B,
-                              __uint128_t &offset, std::string &parse_error) {
-
-  // get size of text - leb128(|utf8(t)|)
-  __uint128_t offset_start = offset;
-  __uint128_t numbytes;
-  parse_error = "";
-  __uint128_t numBytes_text;
-  if (B.parse_uleb128(offset, numBytes_text, numbytes, parse_error)) {
-    std::string to_be_parsed = "Size of text- leb128(|utf8(t)|)";
-    CandidAssert::trap_with_parse_error(offset_start, offset, to_be_parsed,
-                                        parse_error);
-  }
-
-  std::vector<std::byte> data_bytes;
-  if (B.parse_bytes(offset, data_bytes, numBytes_text, numbytes, parse_error)) {
-    std::string to_be_parsed = "Data bytes for Text";
-    CandidAssert::trap_with_parse_error(offset_start, offset, to_be_parsed,
-                                        parse_error);
-  }
-
-  m_v = "";
-  for (size_t i = 0; i < numBytes_text; ++i) {
-    m_v.append(VecBytes::byte_to_char(data_bytes[i]));
-  }
-
-  // Fill the user's data placeholder, if a pointer was provided
-  if (m_pv) *m_pv = m_v;
-
-  return false;
-}

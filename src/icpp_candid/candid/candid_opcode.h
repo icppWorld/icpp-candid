@@ -20,16 +20,6 @@ public:
   bool is_constype(const int &t);
   bool is_reftype(const int &t);
 
-  std::shared_ptr<CandidTypeRoot> candid_type_from_opcode(int opcode);
-
-  std::shared_ptr<CandidTypeRoot>
-  candid_type_vec_from_opcode(int content_opcode,
-                              CandidTypeTable *p_content_type_table);
-
-  std::shared_ptr<CandidTypeRoot>
-  candid_type_opt_from_opcode(int content_opcode,
-                              CandidTypeTable *p_content_type_table);
-
   std::string name_from_opcode(int opcode);
 
   // Primitive Types

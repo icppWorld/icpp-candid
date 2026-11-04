@@ -1,5 +1,9 @@
 // Candid deserialization class
 // https://github.com/dfinity/candid/blob/master/spec/Candid.md#parameters-and-results
+//
+// Decodes a message at the types of the CandidType objects in a CandidArgs,
+// with CandidDecoder, and fills their bound C++ variables. Traps when the
+// message is not valid Candid, or does not decode at those types.
 
 #pragma once
 
@@ -7,7 +11,6 @@
 #include <vector>
 
 #include "candid_args.h"
-#include "candid_type_table.h"
 
 class CandidDeserialize {
 public:
@@ -19,43 +22,18 @@ public:
   CandidArgs get_A() { return m_A; }
   std::string get_hex_string_wire() { return m_hex_string_wire; }
   VecBytes get_B() { return m_B; }
-  std::vector<CandidTypeTable> &get_typetables_wire() {
-    return m_typetables_wire;
-  }
-  // The type table at a type index from the wire. Traps when the index is not
-  // in the type table section, so an index from the wire is never used unchecked
-  CandidTypeTable &typetable_wire(int datatype);
 
   // Limits for a message from an untrusted caller, so that it cannot make the
   // decoder recurse or loop without end, at the canister's cost.
-  // The nesting depth: each level of record, variant, vec or opt of those uses
-  // about 3 KiB of stack, and must trap before the stack runs out. icpp-pro
-  // links canisters with a 1 MiB stack; wasm-ld's default 64 KiB fits ~20.
+  // The nesting depth of values, which bounds the decoder's recursion.
   static constexpr int MAX_NESTING_DEPTH = 128;
-  // The values in a message that take no bytes on the wire: vec elements and
-  // records of only null, reserved or such records. Their count is not bounded
-  // by the message size, and shared record types can make it grow
-  // exponentially with the nesting depth
+  // The values in a message that take no bytes on the wire: null, reserved and
+  // records of only those. Their count is not bounded by the message size, and
+  // shared record types can make it grow exponentially with the nesting depth
   static constexpr __uint128_t MAX_ZERO_WIDTH_VALUES = 1000000;
-  void enter_nested();
-  void leave_nested() { --m_nesting_depth; }
-  // Counts n values that took no bytes against MAX_ZERO_WIDTH_VALUES, e.g. the
-  // elements of a vec declaring more elements than the bytes left
-  void charge_zero_width_values(__uint128_t n);
-  // Traps when n more values that take no bytes would exceed the budget,
-  // without counting them: for values that count themselves when decoded
-  void require_zero_width_values(__uint128_t n);
-  // Whether a type on the wire is zero width, per type table index:
-  // -1 not known yet, 0 no, 1 yes
-  // Whether a value of this type on the wire takes zero bytes: null, reserved,
-  // or a record of only those. Cached per type table index, so a deep chain of
-  // shared record types is walked once
-  bool is_zero_width(int datatype_wire);
 
   int assert_candid(const std::string &candid_expected,
                     const bool &assert_value);
-
-  int get_opcode_from_datatype_on_wire(int datatype);
 
 private:
   void deserialize();
@@ -63,35 +41,7 @@ private:
   // The vector with placeholders for the expected arguments
   CandidArgs m_A;
 
-  // The deserialized type tables found on wire
-  std::vector<CandidTypeTable> m_typetables_wire;
-  int m_nesting_depth{0};
-  __uint128_t m_zero_width_values{0};
-  std::vector<int8_t> m_zero_width_cache;
-
-  // The deserialized args found on wire
-  std::vector<int> m_args_datatypes_wire;
-  std::vector<int> m_args_opcodes_wire;
-  std::vector<int> m_args_content_datatypes_wire;
-  std::vector<int> m_args_content_opcodes_wire;
-  std::vector<__uint128_t> m_args_datatypes_offset_start_wire;
-  std::vector<__uint128_t> m_args_datatypes_offset_end_wire;
-
   // The byte stream to be deserialized
   std::string m_hex_string_wire;
   VecBytes m_B;
-};
-
-// Counts one level of nesting while a composite value is decoded
-class CandidNestingGuard {
-public:
-  explicit CandidNestingGuard(CandidDeserialize &de) : m_de(de) {
-    m_de.enter_nested();
-  }
-  ~CandidNestingGuard() { m_de.leave_nested(); }
-  CandidNestingGuard(const CandidNestingGuard &) = delete;
-  CandidNestingGuard &operator=(const CandidNestingGuard &) = delete;
-
-private:
-  CandidDeserialize &m_de;
 };

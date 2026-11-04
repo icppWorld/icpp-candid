@@ -95,9 +95,6 @@ class CandidTypeOptVariant;
 class CandidTypeRecord;
 class CandidTypeVariant;
 
-// The Candid Type Table class
-class CandidTypeTable;
-
 // The (De)Serialization classes
 class CandidDeserialize;
 class CandidSerialize;

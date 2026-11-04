@@ -41,19 +41,12 @@ public:
   // Destructor
   ~CandidTypeVecVariant();
 
-  bool decode_M(CandidDeserialize &de, VecBytes &B, __uint128_t &offset,
-                std::string &parse_error);
-
-  void push_back_value(CandidTypeRoot &value);
-
   CandidTypeVariant get_v() { return m_v_template; }
   CandidTypeRoot *get_pv() { return m_pv; }
   std::shared_ptr<CandidTypeRoot> get_pvs() { return m_pvs; }
 
   std::vector<std::string> get_labels() { return m_labels; }
   std::vector<std::string> *get_p_labels() { return m_p_labels; }
-
-  bool decode_T(VecBytes &B, __uint128_t &offset, std::string &parse_error);
 
 protected:
   void set_pv(CandidTypeRoot *p_v) { m_pv = p_v; }

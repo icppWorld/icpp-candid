@@ -33,10 +33,8 @@ inline void assign(const CandidValue &v, bool &out) { out = v.b; }
 template <typename T>
 inline std::enable_if_t<std::is_integral_v<T> && !std::is_same_v<T, bool>>
 assign(const CandidValue &v, T &out) {
-  if constexpr (std::is_signed_v<T>)
-    out = static_cast<T>(v.i);
-  else
-    out = static_cast<T>(v.u);
+  if constexpr (std::is_signed_v<T>) out = static_cast<T>(v.i);
+  else out = static_cast<T>(v.u);
 }
 
 inline void assign(const CandidValue &v, float &out) {
@@ -70,13 +68,10 @@ inline void assign(const CandidValue &v, std::string &out) {
   }
 }
 
-template <typename T>
-void assign(const CandidValue &v, std::vector<T> &out);
-template <typename T>
-void assign(const CandidValue &v, std::optional<T> &out);
+template <typename T> void assign(const CandidValue &v, std::vector<T> &out);
+template <typename T> void assign(const CandidValue &v, std::optional<T> &out);
 
-template <typename T>
-void assign(const CandidValue &v, std::vector<T> &out) {
+template <typename T> void assign(const CandidValue &v, std::vector<T> &out) {
   size_t n = v.vec_size();
   out.clear();
   if constexpr (std::is_arithmetic_v<T> && !std::is_same_v<T, bool>) {
@@ -99,8 +94,7 @@ void assign(const CandidValue &v, std::vector<T> &out) {
   }
 }
 
-template <typename T>
-void assign(const CandidValue &v, std::optional<T> &out) {
+template <typename T> void assign(const CandidValue &v, std::optional<T> &out) {
   if (v.items.empty()) {
     out = std::nullopt;
     return;
@@ -115,17 +109,15 @@ template <typename T>
 void push_back(const CandidValue &e, std::vector<T> &v, std::vector<T> *pv) {
   T x{};
   assign(e, x);
-  if (pv)
-    pv->push_back(std::move(x));
-  else
-    v.push_back(std::move(x));
+  if (pv) pv->push_back(std::move(x));
+  else v.push_back(std::move(x));
 }
 
 } // namespace candid_bind
 
 // The bind methods of a class with members m_v and m_pv
 #define CANDID_BIND_VALUE                                                      \
-  void bind(const CandidValue &v) {                                           \
+  void bind(const CandidValue &v) {                                            \
     candid_bind::assign(v, m_v);                                               \
     if (m_pv) *m_pv = m_v;                                                     \
   }
@@ -133,6 +125,6 @@ void push_back(const CandidValue &e, std::vector<T> &v, std::vector<T> *pv) {
 // ... and of a vec class, whose elements CandidTypeVecRecord appends one by one
 #define CANDID_BIND_VEC                                                        \
   CANDID_BIND_VALUE                                                            \
-  void bind_push_back(const CandidValue &e) {                                 \
+  void bind_push_back(const CandidValue &e) {                                  \
     candid_bind::push_back(e, m_v, m_pv);                                      \
   }

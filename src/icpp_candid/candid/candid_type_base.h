@@ -29,9 +29,6 @@ public:
   // Virtual methods to be implemented by VecRecord
   virtual void create_dummy_record_encode();
 
-  // Virtual methods to be implemented by all CandidTypes
-  virtual bool decode_M(CandidDeserialize &de, VecBytes &B, __uint128_t &offset,
-                        std::string &parse_error);
   virtual void encode_M();
 
   std::optional<bool> get_is_internal() { return m_is_internal; }
@@ -57,9 +54,6 @@ public:
   VecBytes get_M() { return m_M; }
   uint64_t get_v_size() { return m_v_size; }
 
-  // Virtual method to be implemented by all CandidTypeVecXXX to push_back a value into the internal std::vector<T>
-  virtual void push_back_value(CandidTypeRoot &value);
-
   // Record: The field data
   std::vector<uint32_t> get_field_ids() { return m_field_ids; }
   std::vector<std::string> get_field_names() { return m_field_names; }
@@ -75,25 +69,6 @@ public:
     return m_field_ptrs;
   }
 
-  std::vector<uint32_t> get_field_ids_wire() { return m_field_ids_wire; }
-  std::vector<int> get_field_datatypes_wire() { return m_field_datatypes_wire; }
-  std::vector<int> get_field_opcodes_wire() { return m_field_opcodes_wire; }
-  std::vector<int> get_field_content_datatypes_wire() {
-    return m_field_content_datatypes_wire;
-  }
-  std::vector<int> get_field_content_opcodes_wire() {
-    return m_field_content_opcodes_wire;
-  }
-  std::vector<std::shared_ptr<CandidTypeRoot>> get_field_ptrs_wire() {
-    return m_field_ptrs_wire;
-  }
-
-  virtual void set_fields_wire(std::shared_ptr<CandidTypeRoot> p_from_wire);
-
-  // Binds a decoder to its type table on the wire. Implemented by VecOf, which
-  // needs it before decode_M. Returns false for the other types.
-  virtual bool bind_wire(CandidDeserialize &de, int datatype_wire);
-
   // Decoding, with CandidDecoder:
   // The type a value of this type is decoded at, added to g: a primitive
   // opcode, or a node of g. The classes of a primitive type, and the vec and
@@ -106,12 +81,6 @@ public:
   virtual void bind_push_back(const CandidValue &e);
 
   uint32_t idl_hash(const std::string &s);
-
-  // Methods used by instances created during deserialization of bytes from wire
-  void trap_if_wrong_type_on_wire(const std::string &type_on_wire);
-  virtual bool decode_T(VecBytes &B, __uint128_t &offset,
-                        std::string &parse_error);
-  virtual void finish_decode_T(CandidDeserialize &de);
 
   template <typename T, typename U> bool in_range(U value);
 
@@ -142,15 +111,6 @@ protected:
   // Sort the field data by field id (hash), as the Candid spec requires for
   // the fields of a record and of a variant in the type table
   void sort_fields_by_id();
-
-  // To help with decoding checks in decode_M
-  // The deserialized fields (of a record) found on wire (decode_T)
-  std::vector<uint32_t> m_field_ids_wire;
-  std::vector<int> m_field_datatypes_wire;
-  std::vector<int> m_field_opcodes_wire;
-  std::vector<int> m_field_content_datatypes_wire;
-  std::vector<int> m_field_content_opcodes_wire;
-  std::vector<std::shared_ptr<CandidTypeRoot>> m_field_ptrs_wire;
 
   // The encoded byte vector for the Type Table
   VecBytes m_T;

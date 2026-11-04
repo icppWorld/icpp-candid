@@ -135,17 +135,12 @@ void CandidTypeFunc::encode_M() {
     m_M.append_byte((std::byte)c);
 }
 
-bool CandidTypeFunc::decode_M(CandidDeserialize &de, VecBytes &B,
-                              __uint128_t &offset, std::string &parse_error) {
-  ICPP_HOOKS::trap("ERROR: decoding a CandidTypeFunc is not supported - " +
-                   std::string(__func__));
-  return true;
-}
-
 int CandidTypeFunc::graph_type(CandidTypeGraph &g) {
   std::vector<int> args, rets;
-  for (auto &p : m_arg_ptrs) args.push_back(p->graph_type(g));
-  for (auto &p : m_ret_ptrs) rets.push_back(p->graph_type(g));
+  for (auto &p : m_arg_ptrs)
+    args.push_back(p->graph_type(g));
+  for (auto &p : m_ret_ptrs)
+    rets.push_back(p->graph_type(g));
   return g.func(std::move(args), std::move(rets), m_annotations);
 }
 

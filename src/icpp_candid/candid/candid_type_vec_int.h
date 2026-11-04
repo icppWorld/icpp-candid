@@ -21,13 +21,8 @@ public:
   // Destructor
   ~CandidTypeVecInt();
 
-  bool decode_M(CandidDeserialize &de, VecBytes &B, __uint128_t &offset,
-                std::string &parse_error);
   std::vector<__int128_t> get_v() { return m_v; }
   std::vector<__int128_t> *get_pv() { return m_pv; }
-  bool decode_T(VecBytes &B, __uint128_t &offset, std::string &parse_error);
-
-  void push_back_value(CandidTypeRoot &value);
 
 protected:
   void set_pv(std::vector<__int128_t> *v) { m_pv = v; }

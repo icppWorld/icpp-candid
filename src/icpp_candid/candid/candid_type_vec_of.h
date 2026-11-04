@@ -40,12 +40,6 @@ public:
   // Destructor
   ~CandidTypeVecOf();
 
-  bool decode_M(CandidDeserialize &de, VecBytes &B, __uint128_t &offset,
-                std::string &parse_error);
-
-  // Binds this decoder to the vec's type table on the wire
-  bool bind_wire(CandidDeserialize &de, int datatype_wire);
-
 protected:
   void set_datatype();
   void set_content_type();

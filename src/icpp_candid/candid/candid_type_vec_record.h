@@ -29,15 +29,10 @@ public:
   // Destructor
   ~CandidTypeVecRecord();
 
-  bool decode_M(CandidDeserialize &de, VecBytes &B, __uint128_t &offset,
-                std::string &parse_error);
-
   CandidTypeRecord get_v() { return m_v; }
   CandidTypeRoot *get_pv() { return m_pv; }
   std::shared_ptr<CandidTypeRoot> get_pvs() { return m_pvs; }
   std::shared_ptr<CandidTypeRecord> get_pr() { return m_pr; }
-
-  bool decode_T(VecBytes &B, __uint128_t &offset, std::string &parse_error);
 
 protected:
   void set_pv(CandidTypeRoot *p_v) { m_pv = p_v; }

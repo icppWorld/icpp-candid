@@ -23,12 +23,8 @@ public:
   // Destructor
   ~CandidTypeOptFloat64();
 
-  bool decode_M(CandidDeserialize &de, VecBytes &B, __uint128_t &offset,
-                std::string &parse_error);
   std::optional<double> get_v() { return m_v; }
   std::optional<double> *get_pv() { return m_pv; }
-
-  bool decode_T(VecBytes &B, __uint128_t &offset, std::string &parse_error);
 
 protected:
   void set_pv(std::optional<double> *v) { m_pv = v; }

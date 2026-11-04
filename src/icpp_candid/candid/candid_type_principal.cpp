@@ -110,53 +110,6 @@ void CandidTypePrincipal::encode_M() {
                    m_v_bytes.vec().size());
 }
 
-// Decode the values, starting at & updating offset
-bool CandidTypePrincipal::decode_M(CandidDeserialize &de, VecBytes &B,
-                                   __uint128_t &offset,
-                                   std::string &parse_error) {
-
-  // Get the unused opaque reference: i8(0)
-  // Verify that the value is 1. This is the convention
-  __uint128_t offset_start = offset;
-  parse_error = "";
-  uint8_t ref_r;
-  if (B.parse_int_fixed_width(offset, ref_r, parse_error)) {
-    std::string to_be_parsed = "Unused opaque reference.";
-    CandidAssert::trap_with_parse_error(offset_start, offset, to_be_parsed,
-                                        parse_error);
-  }
-  if (ref_r != 1) {
-    ICPP_HOOKS::trap(
-        "Principal Error: Found a value different that 1 for the reference. Opaque reference not supported.");
-  }
-
-  // Get the length
-  __uint128_t numbytes;
-  parse_error = "";
-  __uint128_t numBytes_principal;
-  if (B.parse_uleb128(offset, numBytes_principal, numbytes, parse_error)) {
-    std::string to_be_parsed = "Size of data bytes for principal";
-    CandidAssert::trap_with_parse_error(offset_start, offset, to_be_parsed,
-                                        parse_error);
-  }
-
-  // Get the encoded principal bytes as uint8_t
-  std::vector<uint8_t> data_bytes;
-  if (B.parse_bytes(offset, data_bytes, numBytes_principal, numbytes,
-                    parse_error)) {
-    std::string to_be_parsed = "Data bytes for principal";
-    CandidAssert::trap_with_parse_error(offset_start, offset, to_be_parsed,
-                                        parse_error);
-  }
-
-  m_v = string_from_bytes(data_bytes);
-
-  // Fill the user's data placeholder, if a pointer was provided
-  if (m_pv) *m_pv = m_v;
-
-  return false;
-}
-
 // convert string representation of principal into bytes
 void CandidTypePrincipal::bytes_from_string() {
   // spec: https://internetcomputer.org/docs/current/references/id-encoding-spec

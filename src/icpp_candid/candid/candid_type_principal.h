@@ -40,11 +40,6 @@ public:
   // Destructor
   ~CandidTypePrincipal();
 
-  bool decode_T(VecBytes &B, __uint128_t &offset, std::string &parse_error) {
-    return false; // type table for Primitives is empty
-  }
-  bool decode_M(CandidDeserialize &de, VecBytes &B, __uint128_t &offset,
-                std::string &parse_error);
   std::string get_v() { return m_v; }
   std::string *get_pv() { return m_pv; }
   const VecBytes &get_v_bytes() const { return m_v_bytes; }

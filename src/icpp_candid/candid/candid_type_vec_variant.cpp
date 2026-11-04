@@ -71,36 +71,6 @@ CandidTypeVecVariant::CandidTypeVecVariant(
 
 CandidTypeVecVariant::~CandidTypeVecVariant() {}
 
-void CandidTypeVecVariant::push_back_value(CandidTypeRoot &value) {
-  auto &derived_value = static_cast<CandidTypeVariant &>(value);
-  std::string label = derived_value.get_label();
-
-  // If label is empty, the variant was decoded internally without named fields.
-  // Use the selected_field_id to look up the field name in our template.
-  if (label.empty()) {
-    uint32_t selected_id = derived_value.get_selected_field_id();
-    if (selected_id != 0) {
-      // Look up in our template variant
-      auto template_field_ids = m_v_template.get_field_ids();
-      auto template_field_names = m_v_template.get_v();
-      for (size_t i = 0; i < template_field_ids.size(); ++i) {
-        if (template_field_ids[i] == selected_id) {
-          label = template_field_names[i];
-          break;
-        }
-      }
-    }
-  }
-
-  if (m_p_labels) {
-    // We're deserializing with a pointer to user's vector
-    m_p_labels->push_back(label);
-  } else {
-    // We're serializing or deserializing without pointer
-    m_labels.push_back(label);
-  }
-}
-
 void CandidTypeVecVariant::set_content_type() {
   m_content_opcode = CandidOpcode().Variant;
   m_content_hex = OpcodeHex().Variant;
@@ -189,68 +159,6 @@ void CandidTypeVecVariant::encode_M() {
   }
 }
 
-// Decode the values, starting at & updating offset
-bool CandidTypeVecVariant::decode_M(CandidDeserialize &de, VecBytes &B,
-                                    __uint128_t &offset,
-                                    std::string &parse_error) {
-  CandidNestingGuard nesting_guard(de);
-  std::string debug_hex_string;
-  if (CANDID_DESERIALIZE_DEBUG_PRINT) {
-    ICPP_HOOKS::debug_print("+++++");
-    ICPP_HOOKS::debug_print("Entered CandidTypeVecVariant::decode_M");
-    debug_hex_string = B.as_hex_string();
-  }
-
-  // get size of vec - leb128(N)
-  __uint128_t offset_start = offset;
-  __uint128_t numbytes;
-  parse_error = "";
-  __uint128_t size_vec_wire;
-  if (B.parse_uleb128(offset, size_vec_wire, numbytes, parse_error)) {
-    std::string to_be_parsed = "Size of vec- leb128(N)";
-    CandidAssert::trap_with_parse_error(offset_start, offset, to_be_parsed,
-                                        parse_error);
-  }
-  if (CANDID_DESERIALIZE_DEBUG_PRINT) {
-    std::string msg;
-    msg.append("Size of CandidTypeVecVariant on wire = " +
-               ICPP_HOOKS::to_string_128(size_vec_wire));
-    ICPP_HOOKS::debug_print(msg);
-  }
-
-  m_labels.clear();
-  if (m_p_labels) m_p_labels->clear();
-
-  // Each element is decoded by the variant itself, bound to the variant's type
-  // table on the wire. So the case is matched by its id (hash), the wire may
-  // have more cases than expected, in any order, and a payload is read. For an
-  // additional vec on the wire, m_pvs is the variant from the wire.
-  CandidTypeVariant *p_variant = dynamic_cast<CandidTypeVariant *>(m_pvs.get());
-  if (!p_variant) {
-    ICPP_HOOKS::trap("ERROR: m_pvs is not pointing to a CandidTypeVariant - " +
-                     std::string(__func__));
-  }
-
-  // Loop over the vector size just read from the wire
-  for (size_t i = 0; i < size_vec_wire; ++i) {
-    offset_start = offset;
-    parse_error = "";
-    if (p_variant->decode_M(de, B, offset, parse_error)) {
-      std::string to_be_parsed = "VecVariant: Value for CandidTypeVariant";
-      CandidAssert::trap_with_parse_error(offset_start, offset, to_be_parsed,
-                                          parse_error);
-    }
-    push_back_value(*p_variant);
-
-    if (CANDID_DESERIALIZE_DEBUG_PRINT) {
-      ICPP_HOOKS::debug_print("Decoded vec element " + std::to_string(i) +
-                              " as label '" + p_variant->get_label() + "'");
-    }
-  }
-
-  return false;
-}
-
 // Initialize things
 void CandidTypeVecVariant::initialize() {
   set_datatype();
@@ -266,34 +174,6 @@ void CandidTypeVecVariant::set_datatype() {
   m_datatype_textual = OpcodeTextual().Vec;
 }
 
-// Decode the type table, starting at & updating offset
-bool CandidTypeVecVariant::decode_T(VecBytes &B, __uint128_t &offset,
-                                    std::string &parse_error) {
-  if (CANDID_DESERIALIZE_DEBUG_PRINT) {
-    ICPP_HOOKS::debug_print("+++++");
-    ICPP_HOOKS::debug_print("Entered CandidTypeVecVariant::decode_T");
-    ICPP_HOOKS::debug_print(
-        "Start deserialization of a VecVariant's Type Table");
-    ICPP_HOOKS::debug_print("offset = " + ICPP_HOOKS::to_string_128(offset));
-  }
-
-  __uint128_t len = B.size() - offset;
-
-  // The opcode for content type, which is a type table index for a Variant
-  __uint128_t offset_start = offset;
-  parse_error = "";
-  __int128_t content_type;
-  __uint128_t numbytes;
-  if (B.parse_sleb128(offset, content_type, numbytes, parse_error)) {
-    std::string to_be_parsed = "Type table: a Vec's content type";
-    CandidAssert::trap_with_parse_error(offset_start, offset, to_be_parsed,
-                                        parse_error);
-  }
-
-  m_content_opcode = int(content_type);
-  return false;
-}
-
 // For vecs, we set the Opcode, but note that it is not used during serialization.
 // At serialization time, we use the index in the overall type table.
 //
@@ -305,22 +185,22 @@ void CandidTypeVecVariant::encode_I() {
 }
 
 int CandidTypeVecVariant::graph_type(CandidTypeGraph &g) {
-  CandidTypeRoot &t = m_pv ? *m_pv : static_cast<CandidTypeRoot &>(m_v_template);
+  CandidTypeRoot &t =
+      m_pv ? *m_pv : static_cast<CandidTypeRoot &>(m_v_template);
   return g.vec(t.graph_type(g));
 }
 
 void CandidTypeVecVariant::bind(const CandidValue &v) {
   m_labels.clear();
   if (m_p_labels) m_p_labels->clear();
-  for (const CandidValue &element : v.items) bind_push_back(element);
+  for (const CandidValue &element : v.items)
+    bind_push_back(element);
 }
 
 void CandidTypeVecVariant::bind_push_back(const CandidValue &e) {
   CandidTypeVariant &t =
       m_pv ? *static_cast<CandidTypeVariant *>(m_pv) : m_v_template;
   t.bind(e);
-  if (m_p_labels)
-    m_p_labels->push_back(t.get_label());
-  else
-    m_labels.push_back(t.get_label());
+  if (m_p_labels) m_p_labels->push_back(t.get_label());
+  else m_labels.push_back(t.get_label());
 }

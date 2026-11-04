@@ -19,11 +19,6 @@ public:
   // Destructor
   ~CandidTypeNat32();
 
-  bool decode_T(VecBytes &B, __uint128_t &offset, std::string &parse_error) {
-    return false; // type table for Primitives is empty
-  }
-  bool decode_M(CandidDeserialize &de, VecBytes &B, __uint128_t &offset,
-                std::string &parse_error);
   uint32_t get_v() { return m_v; }
   uint32_t *get_pv() { return m_pv; }
 

@@ -116,108 +116,6 @@ void CandidTypeVecOf::encode_M() {
   }
 }
 
-bool CandidTypeVecOf::bind_wire(CandidDeserialize &de, int datatype_wire) {
-  if (datatype_wire < 0 ||
-      datatype_wire >= int(de.get_typetables_wire().size())) {
-    ICPP_HOOKS::trap("ERROR: CandidTypeVecOf - the vec on the wire has no "
-                     "type table");
-  }
-  m_content_datatype_wire =
-      de.typetable_wire(datatype_wire).get_content_datatype();
-  return true;
-}
-
-bool CandidTypeVecOf::decode_M(CandidDeserialize &de, VecBytes &B,
-                               __uint128_t &offset, std::string &parse_error) {
-  CandidNestingGuard nesting_guard(de);
-  if (!m_make_element) {
-    ICPP_HOOKS::trap(
-        "ERROR: CandidTypeVecOf - decoding needs the make_element constructor");
-  }
-  if (m_content_datatype_wire == CANDID_UNDEF) {
-    ICPP_HOOKS::trap("ERROR: CandidTypeVecOf - not bound to the wire. A "
-                     "CandidTypeVecOf can be an argument, a record field, a "
-                     "variant case or a vec element");
-  }
-
-  // get size of vec - leb128(N)
-  __uint128_t offset_start = offset;
-  __uint128_t numbytes;
-  parse_error = "";
-  __uint128_t size_vec_wire;
-  if (B.parse_uleb128(offset, size_vec_wire, numbytes, parse_error)) {
-    std::string to_be_parsed = "Size of vec- leb128(N)";
-    CandidAssert::trap_with_parse_error(offset_start, offset, to_be_parsed,
-                                        parse_error);
-  }
-  // An element takes at least one byte, unless its type on the wire is zero
-  // width (null, reserved, or a record of only those). Refuse a size that
-  // cannot fit, before decoding any element. Zero width elements are not
-  // bounded by the message size, so they count against a budget per message:
-  // a null or reserved here, a record as it is decoded.
-  if (size_vec_wire > 0 && de.is_zero_width(m_content_datatype_wire)) {
-    if (m_content_datatype_wire < 0) {
-      de.charge_zero_width_values(size_vec_wire);
-    } else {
-      de.require_zero_width_values(size_vec_wire);
-    }
-  } else if (size_vec_wire > B.size() - offset) {
-    ICPP_HOOKS::trap("ERROR: CandidTypeVecOf - the size of the vec on the "
-                     "wire, " +
-                     ICPP_HOOKS::to_string_128(size_vec_wire) +
-                     ", is larger than the bytes left");
-  }
-
-  CandidOpcode candidOpcode;
-  for (__uint128_t i = 0; i < size_vec_wire; ++i) {
-    std::shared_ptr<CandidTypeRoot> p = root_ptr(m_make_element());
-    int opcode_expected = p->get_datatype_opcode();
-
-    if (m_content_datatype_wire >= 0) {
-      // A <comptype> element: bind it to its type table on the wire
-      CandidTypeTable &type_table = de.typetable_wire(m_content_datatype_wire);
-      int opcode_wire = type_table.get_opcode();
-      if (opcode_wire != opcode_expected) {
-        ICPP_HOOKS::trap(
-            "ERROR: CandidTypeVecOf - Wrong type on wire for a "
-            "vec element.\n- Opcode on wire = " +
-            std::to_string(opcode_wire) + " (" +
-            candidOpcode.name_from_opcode(opcode_wire) +
-            ")\n- Opcode expected = " + std::to_string(opcode_expected) + " (" +
-            candidOpcode.name_from_opcode(opcode_expected) + ")");
-      }
-      if (opcode_expected == candidOpcode.Record ||
-          opcode_expected == candidOpcode.Variant) {
-        p->set_fields_wire(type_table.get_p_wire());
-      } else if (!p->bind_wire(de, m_content_datatype_wire)) {
-        ICPP_HOOKS::trap(
-            "ERROR: CandidTypeVecOf - an element of type " +
-            p->get_datatype_textual() +
-            " is not supported. Use a record, a variant or a CandidTypeVecOf "
-            "as the element, e.g. wrap an opt in a record");
-      }
-    } else if (m_content_datatype_wire != opcode_expected) {
-      ICPP_HOOKS::trap(
-          "ERROR: CandidTypeVecOf - Wrong type on wire for a vec element.\n- "
-          "Opcode on wire = " +
-          std::to_string(m_content_datatype_wire) + " (" +
-          candidOpcode.name_from_opcode(m_content_datatype_wire) +
-          ")\n- Opcode expected = " + std::to_string(opcode_expected) + " (" +
-          candidOpcode.name_from_opcode(opcode_expected) + ")");
-    }
-
-    offset_start = offset;
-    parse_error = "";
-    if (p->decode_M(de, B, offset, parse_error)) {
-      std::string to_be_parsed = "VecOf: Value for a vec element";
-      CandidAssert::trap_with_parse_error(offset_start, offset, to_be_parsed,
-                                          parse_error);
-    }
-    if (m_element_done) m_element_done();
-  }
-  return false;
-}
-
 int CandidTypeVecOf::graph_type(CandidTypeGraph &g) {
   return g.vec(m_p_element_type->graph_type(g));
 }
@@ -230,10 +128,8 @@ void CandidTypeVecOf::bind(const CandidValue &v) {
   size_t n = v.vec_size();
   for (size_t i = 0; i < n; ++i) {
     std::shared_ptr<CandidTypeRoot> p = root_ptr(m_make_element());
-    if (v.packed)
-      p->bind(v.packed_element(i));
-    else
-      p->bind(v.items[i]);
+    if (v.packed) p->bind(v.packed_element(i));
+    else p->bind(v.items[i]);
     if (m_element_done) m_element_done();
   }
 }
