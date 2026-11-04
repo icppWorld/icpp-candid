@@ -9,6 +9,10 @@
 
 class CandidTypeVariant : public CandidTypeBase<CandidTypeVariant> {
 public:
+  // Decoding, with CandidDecoder: see CandidTypeRoot
+  int graph_type(CandidTypeGraph &g);
+  void bind(const CandidValue &v);
+
   // Constructors
   // clang-format off
   // docs start: demo_candid_type_variant
@@ -27,13 +31,6 @@ public:
   void append(uint32_t field_id, CandidType field);
   void append(std::string field_name, CandidType field);
   void append(CandidType field);
-
-  bool decode_T(VecBytes &B, __uint128_t &offset, std::string &parse_error);
-  bool decode_M(CandidDeserialize &de, VecBytes &B, __uint128_t &offset,
-                std::string &parse_error);
-
-  void set_fields_wire(std::shared_ptr<CandidTypeRoot> p_from_wire);
-  void finish_decode_T(CandidDeserialize &de);
 
   std::string get_label() { return m_label; }
   uint32_t get_selected_field_id() { return m_selected_field_id; }
@@ -58,15 +55,4 @@ protected:
 
   // Pointer to the label passed in by caller during deserialization
   std::string *m_p_label{nullptr};
-
-  // For each case on the wire, the index of the expected case it matches:
-  // -2 for no match. Built for all cases at once, not per decoded value
-  std::vector<int> m_expected_for_wire;
-
-  void select_decoder_or_trap(CandidDeserialize &de, size_t i, size_t j,
-                              std::shared_ptr<CandidTypeRoot> &decoder,
-                              std::string &decoder_name);
-
-  std::shared_ptr<CandidTypeRoot>
-  build_decoder_wire_for_additional_opt_field(CandidDeserialize &de, int j);
 };

@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "candid_bind.h"
 #include <cstring>
 
 #include "candid_type_bool.h"
@@ -9,6 +10,8 @@
 
 class CandidTypeOptBool : public CandidTypeBase<CandidTypeOptBool> {
 public:
+  CANDID_BIND_VALUE
+
   // Constructors
   CandidTypeOptBool();
   // clang-format off
@@ -20,12 +23,8 @@ public:
   // Destructor
   ~CandidTypeOptBool();
 
-  bool decode_M(CandidDeserialize &de, VecBytes &B, __uint128_t &offset,
-                std::string &parse_error);
   std::optional<bool> get_v() { return m_v; }
   std::optional<bool> *get_pv() { return m_pv; }
-
-  bool decode_T(VecBytes &B, __uint128_t &offset, std::string &parse_error);
 
 protected:
   void set_pv(std::optional<bool> *v) { m_pv = v; }

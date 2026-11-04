@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "candid_bind.h"
 #include <cstring>
 
 #include "candid_type_int64.h"
@@ -9,6 +10,8 @@
 
 class CandidTypeVecInt64 : public CandidTypeBase<CandidTypeVecInt64> {
 public:
+  CANDID_BIND_VEC
+
   // Constructors
   CandidTypeVecInt64();
   CandidTypeVecInt64(const std::vector<int64_t> v);
@@ -18,14 +21,8 @@ public:
   // Destructor
   ~CandidTypeVecInt64();
 
-  bool decode_M(CandidDeserialize &de, VecBytes &B, __uint128_t &offset,
-                std::string &parse_error);
   std::vector<int64_t> get_v() { return m_v; }
   std::vector<int64_t> *get_pv() { return m_pv; }
-
-  bool decode_T(VecBytes &B, __uint128_t &offset, std::string &parse_error);
-
-  void push_back_value(CandidTypeRoot &value);
 
 protected:
   void set_pv(std::vector<int64_t> *v) { m_pv = v; }

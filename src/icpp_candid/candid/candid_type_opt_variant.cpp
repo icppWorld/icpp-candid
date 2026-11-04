@@ -1,4 +1,5 @@
 // The class for the Candid Type: opt
+#include <algorithm>
 #include "candid_debug_config.h"
 
 #include "candid_type.h"
@@ -101,65 +102,6 @@ void CandidTypeOptVariant::encode_M() {
   m_M.append(m_v.get_M());
 }
 
-// Decode the values, starting at & updating offset
-bool CandidTypeOptVariant::decode_M(CandidDeserialize &de, VecBytes &B,
-                                    __uint128_t &offset,
-                                    std::string &parse_error) {
-  CandidNestingGuard nesting_guard(de);
-  // https://github.com/dfinity/candid/blob/master/spec/Candid.md#memory
-  // M(null : opt <datatype>) = i8(0)
-  // M(?v   : opt <datatype>) = i8(1) M(v : <datatype>)
-
-  std::string debug_hex_string;
-  if (CANDID_DESERIALIZE_DEBUG_PRINT) {
-    ICPP_HOOKS::debug_print("+++++");
-    ICPP_HOOKS::debug_print("Entered CandidTypeOptVariant::decode_M");
-    debug_hex_string = B.as_hex_string();
-  }
-
-  // get tag of opt - i8(0)
-  // this will also work if there is a null on the wire.
-  __uint128_t offset_start = offset;
-  parse_error = "";
-  uint8_t tag;
-  if (B.parse_int_fixed_width(offset, tag, parse_error)) {
-    std::string to_be_parsed = "Opt tag.";
-    CandidAssert::trap_with_parse_error(offset_start, offset, to_be_parsed,
-                                        parse_error);
-  }
-  if (CANDID_DESERIALIZE_DEBUG_PRINT) {
-    B.debug_print_as_hex_string(debug_hex_string, offset_start, offset);
-    ICPP_HOOKS::debug_print("tag = " + std::to_string(tag));
-  }
-  if (tag == 1) {
-    // Found it on the wire.
-    // Call the CandidTypeVariant's decoder
-    if (m_p_has_value) {
-      *m_p_has_value = true;
-    }
-    offset_start = offset;
-    parse_error = "";
-    if (m_pv) {
-      if (CANDID_DESERIALIZE_DEBUG_PRINT) {
-        B.debug_print_as_hex_string(debug_hex_string, offset_start, offset);
-        ICPP_HOOKS::debug_print("Calling m_pv->decode_M");
-      }
-      if (m_pv->decode_M(de, B, offset, parse_error)) {
-        std::string to_be_parsed =
-            "Values (decoding M) for CandidTypeVariant of CandidTypeOptVariant ";
-        CandidAssert::trap_with_parse_error(offset_start, offset, to_be_parsed,
-                                            parse_error);
-      }
-    } else {
-      ICPP_HOOKS::trap("ERROR: m_pv in opt variant is a nullptr.");
-    }
-  } else if (tag != 0) {
-    ICPP_HOOKS::trap(
-        "ERROR: tag in opt variant coming from wire is not 0 or 1");
-  }
-  return false;
-}
-
 //------------
 // Initialize things
 void CandidTypeOptVariant::initialize() {
@@ -189,27 +131,6 @@ void CandidTypeOptVariant::encode_T() {
                            .add_or_replace_type_table(m_type_table_index, m_T);
 }
 
-// To decode the type table on the wire, starting at & updating offset
-bool CandidTypeOptVariant::decode_T(VecBytes &B, __uint128_t &offset,
-                                    std::string &parse_error) {
-  __uint128_t len = B.size() - offset;
-
-  __uint128_t offset_start = offset;
-  parse_error = "";
-  __int128_t content_type; // type-table index of the Variant
-  __uint128_t numbytes;
-  if (B.parse_sleb128(offset, content_type, numbytes, parse_error)) {
-    std::string to_be_parsed =
-        "Type table: a OptVariant's content type (the Variant's type table index)";
-    CandidAssert::trap_with_parse_error(offset_start, offset, to_be_parsed,
-                                        parse_error);
-  }
-  assert(content_type >= 0);
-  m_content_datatype =
-      CandidAssert::type_index_or_trap(content_type, "content type");
-  return false;
-}
-
 // For opts, we set the Opcode, but note that it is not used during serialization.
 // At serialization time, we use the index in the overall type table.
 //
@@ -218,4 +139,15 @@ bool CandidTypeOptVariant::decode_T(VecBytes &B, __uint128_t &offset,
 // For <constype>: the negative Opcode
 void CandidTypeOptVariant::encode_I() {
   m_I.append_byte((std::byte)m_datatype_hex);
+}
+
+int CandidTypeOptVariant::graph_type(CandidTypeGraph &g) {
+  CandidTypeRoot *p = m_pv ? m_pv : (m_pvs ? m_pvs.get() : &m_v);
+  return g.opt(p->graph_type(g));
+}
+
+void CandidTypeOptVariant::bind(const CandidValue &v) {
+  bool has_value = !v.items.empty();
+  if (m_p_has_value) *m_p_has_value = has_value;
+  if (has_value && m_pv) m_pv->bind(v.items[0]);
 }

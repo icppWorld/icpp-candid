@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "candid_bind.h"
 #include <cstring>
 
 #include "candid_type_nat32.h"
@@ -9,6 +10,8 @@
 
 class CandidTypeOptNat32 : public CandidTypeBase<CandidTypeOptNat32> {
 public:
+  CANDID_BIND_VALUE
+
   // Constructors
   CandidTypeOptNat32();
   // clang-format off
@@ -20,12 +23,8 @@ public:
   // Destructor
   ~CandidTypeOptNat32();
 
-  bool decode_M(CandidDeserialize &de, VecBytes &B, __uint128_t &offset,
-                std::string &parse_error);
   std::optional<uint32_t> get_v() { return m_v; }
   std::optional<uint32_t> *get_pv() { return m_pv; }
-
-  bool decode_T(VecBytes &B, __uint128_t &offset, std::string &parse_error);
 
 protected:
   void set_pv(std::optional<uint32_t> *v) { m_pv = v; }

@@ -51,20 +51,3 @@ void CandidTypeNat8::encode_M() {
   // M(n : nat<N>)   = i<N>(n)    (Litte Endian)
   m_M.append_int_fixed_width(m_v);
 }
-
-// Decode the values, starting at & updating offset
-bool CandidTypeNat8::decode_M(CandidDeserialize &de, VecBytes &B,
-                              __uint128_t &offset, std::string &parse_error) {
-  __uint128_t offset_start = offset;
-  parse_error = "";
-  if (B.parse_int_fixed_width(offset, m_v, parse_error)) {
-    std::string to_be_parsed = "Value for CandidTypeNat8";
-    CandidAssert::trap_with_parse_error(offset_start, offset, to_be_parsed,
-                                        parse_error);
-  }
-
-  // Fill the user's data placeholder, if a pointer was provided
-  if (m_pv) *m_pv = m_v;
-
-  return false;
-}

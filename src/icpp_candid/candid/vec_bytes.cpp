@@ -7,6 +7,7 @@
 #include <cstring>
 
 #include <algorithm>
+#include <iterator>
 // #include <bit> // for std::endian (no longer used)
 #include <string>
 

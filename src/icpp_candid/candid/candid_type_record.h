@@ -10,6 +10,10 @@
 
 class CandidTypeRecord : public CandidTypeBase<CandidTypeRecord> {
 public:
+  // Decoding, with CandidDecoder: see CandidTypeRoot
+  int graph_type(CandidTypeGraph &g);
+  void bind(const CandidValue &v);
+
   // Constructors
   // docs start: demo_candid_type_record
   CandidTypeRecord();
@@ -26,14 +30,8 @@ public:
   // Destructor
   ~CandidTypeRecord();
 
-  bool decode_T(VecBytes &B, __uint128_t &offset, std::string &parse_error);
-  bool decode_M(CandidDeserialize &de, VecBytes &B, __uint128_t &offset,
-                std::string &parse_error);
   std::vector<std::string> get_v() { return m_field_names; }
   std::vector<std::string> *get_pv() { return &m_field_names; }
-
-  void set_fields_wire(std::shared_ptr<CandidTypeRoot> p_from_wire);
-  void finish_decode_T(CandidDeserialize &de);
 
 protected:
   void _append(uint32_t field_id, std::string field_name, CandidType field);
@@ -42,15 +40,6 @@ protected:
   void encode_T();
   void encode_I();
   void encode_M();
-
-  void select_decoder_or_trap(CandidDeserialize &de, size_t i, size_t j,
-                              std::shared_ptr<CandidTypeRoot> &decoder,
-                              std::string &decoder_name);
-
-  std::shared_ptr<CandidTypeRoot>
-  build_decoder_wire_for_additional_field(CandidDeserialize &de, int j);
-
-  bool is_optional_field(size_t i);
 
   // The fields added with append_optional, by id (hash), with their p_on_wire
   std::map<uint32_t, bool *> m_optional_fields;

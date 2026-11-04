@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "candid_bind.h"
 #include <cstring>
 
 #include "candid_type_int8.h"
@@ -9,6 +10,8 @@
 
 class CandidTypeVecInt8 : public CandidTypeBase<CandidTypeVecInt8> {
 public:
+  CANDID_BIND_VEC
+
   // Constructors
   CandidTypeVecInt8();
   CandidTypeVecInt8(const std::vector<int8_t> v);
@@ -18,14 +21,8 @@ public:
   // Destructor
   ~CandidTypeVecInt8();
 
-  bool decode_M(CandidDeserialize &de, VecBytes &B, __uint128_t &offset,
-                std::string &parse_error);
   std::vector<int8_t> get_v() { return m_v; }
   std::vector<int8_t> *get_pv() { return m_pv; }
-
-  bool decode_T(VecBytes &B, __uint128_t &offset, std::string &parse_error);
-
-  void push_back_value(CandidTypeRoot &value);
 
 protected:
   void set_pv(std::vector<int8_t> *v) { m_pv = v; }

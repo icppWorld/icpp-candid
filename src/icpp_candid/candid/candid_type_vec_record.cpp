@@ -1,4 +1,5 @@
 // The class for the Candid Type: vec : record
+#include <algorithm>
 #include "candid_type.h"
 #include "candid_type_visitors.h"
 
@@ -197,101 +198,6 @@ void CandidTypeVecRecord::encode_M() {
   }
 }
 
-// Decode the values, starting at & updating offset
-bool CandidTypeVecRecord::decode_M(CandidDeserialize &de, VecBytes &B,
-                                   __uint128_t &offset,
-                                   std::string &parse_error) {
-  CandidNestingGuard nesting_guard(de);
-  std::string debug_hex_string;
-  if (CANDID_DESERIALIZE_DEBUG_PRINT) {
-    ICPP_HOOKS::debug_print("+++++");
-    ICPP_HOOKS::debug_print("Entered CandidTypeVecRecord::decode_M");
-    debug_hex_string = B.as_hex_string();
-  }
-
-  // get size of vec - leb128(N)
-  __uint128_t offset_start = offset;
-  __uint128_t numbytes;
-  parse_error = "";
-  __uint128_t size_vec_wire;
-  if (B.parse_uleb128(offset, size_vec_wire, numbytes, parse_error)) {
-    std::string to_be_parsed = "Size of vec- leb128(N)";
-    CandidAssert::trap_with_parse_error(offset_start, offset, to_be_parsed,
-                                        parse_error);
-  }
-  if (CANDID_DESERIALIZE_DEBUG_PRINT) {
-    std::string msg;
-    msg.append("Size of CandidTypeVecRecord on wire = " +
-               ICPP_HOOKS::to_string_128(size_vec_wire));
-    ICPP_HOOKS::debug_print(msg);
-  }
-
-  // A record that takes bytes on the wire takes at least one, so a size larger
-  // than the bytes left can only be met by zero width records: refuse it when
-  // they would exceed the budget per message. Each record that takes no bytes
-  // counts itself against that budget as it is decoded.
-  if (size_vec_wire > B.size() - offset) {
-    de.require_zero_width_values(size_vec_wire);
-  }
-
-  // Loop over the vector size just read from the wire
-  for (__uint128_t i = 0; i < size_vec_wire; ++i) {
-    if (CANDID_DESERIALIZE_DEBUG_PRINT) {
-      std::string msg;
-      msg.append(
-          "Start reading data by calling record's decode_M for vec index " +
-          ICPP_HOOKS::to_string_128(i));
-      ICPP_HOOKS::debug_print(msg);
-    }
-    offset_start = offset;
-    parse_error = "";
-    if (m_pvs->decode_M(de, B, offset, parse_error)) {
-      std::string to_be_parsed = "VecRecord: Value for CandidTypeRecord";
-      CandidAssert::trap_with_parse_error(offset_start, offset, to_be_parsed,
-                                          parse_error);
-    }
-
-    if (m_pv) {
-      // Now map the Record fields read from the wire onto the passed in vectors
-      // Note: We only support a VecRecord that can be transposed into a Record of Vecs
-      // Copied once per element: a getter returns a copy of the vector
-      const auto field_ptrs_wire = m_pvs->get_field_ptrs();
-      const auto field_ptrs_vec = m_pv->get_field_ptrs();
-      for (size_t j = 0; j < field_ptrs_wire.size(); ++j) {
-
-        // The wire's fields must be the expected ones, each of the vec's
-        // element type: push_back_value casts the value to that type
-        if (j >= field_ptrs_vec.size()) {
-          ICPP_HOOKS::trap("ERROR: VecRecord: the record on the wire has more "
-                           "fields than the expected record");
-        }
-
-        // The CandidTypeXXX just decoded from the wire
-        auto &c_field_wire = *field_ptrs_wire[j];
-
-        // The user-provided CandidTypeVecXXX to fill with that value
-        auto &c_field_vec = *field_ptrs_vec[j];
-
-        if (c_field_wire.get_datatype_opcode() !=
-            c_field_vec.get_content_opcode()) {
-          ICPP_HOOKS::trap("ERROR: VecRecord: a field on the wire is not of "
-                           "the expected type");
-        }
-
-        // Use the push_back_value directly
-        c_field_vec.push_back_value(c_field_wire);
-      }
-    }
-  }
-
-  // if (m_pv) {
-  //   // For consistency, also copy the data stored in m_pv to m_v
-  //   m_v = *m_pv;
-  // }
-
-  return false;
-}
-
 // ---------
 // Initialize things
 void CandidTypeVecRecord::initialize() {
@@ -308,34 +214,6 @@ void CandidTypeVecRecord::set_datatype() {
   m_datatype_textual = OpcodeTextual().Vec;
 }
 
-// Decode the type table, starting at & updating offset
-bool CandidTypeVecRecord::decode_T(VecBytes &B, __uint128_t &offset,
-                                   std::string &parse_error) {
-  if (CANDID_DESERIALIZE_DEBUG_PRINT) {
-    ICPP_HOOKS::debug_print("+++++");
-    ICPP_HOOKS::debug_print("Entered CandidTypeVecRecord::decode_T");
-    ICPP_HOOKS::debug_print(
-        "Start deserialization of a VecRecords' Type Table");
-    ICPP_HOOKS::debug_print("offset = " + ICPP_HOOKS::to_string_128(offset));
-  }
-
-  __uint128_t len = B.size() - offset;
-
-  // The opcode for content type, which is a type table index for a Record
-  __uint128_t offset_start = offset;
-  parse_error = "";
-  __int128_t content_type;
-  __uint128_t numbytes;
-  if (B.parse_sleb128(offset, content_type, numbytes, parse_error)) {
-    std::string to_be_parsed = "Type table: a Vec's content type";
-    CandidAssert::trap_with_parse_error(offset_start, offset, to_be_parsed,
-                                        parse_error);
-  }
-
-  m_content_opcode = int(content_type);
-  return false;
-}
-
 // For vecs, we set the Opcode, but note that it is not used during serialization.
 // At serialization time, we use the index in the overall type table.
 //
@@ -344,4 +222,45 @@ bool CandidTypeVecRecord::decode_T(VecBytes &B, __uint128_t &offset,
 // For <constype>: the negative Opcode
 void CandidTypeVecRecord::encode_I() {
   m_I.append_byte((std::byte)m_datatype_hex);
+}
+
+// The record whose fields are the columns: vecs, one per field of the
+// elements
+static CandidTypeRoot &columns(CandidTypeRoot *pv, CandidTypeRecord &v) {
+  return pv ? *pv : static_cast<CandidTypeRoot &>(v);
+}
+
+int CandidTypeVecRecord::graph_type(CandidTypeGraph &g) {
+  CandidTypeRoot &r = columns(m_pv, m_v);
+  const auto ids = r.get_field_ids();
+  const auto ptrs = r.get_field_ptrs();
+  std::vector<CandidGraphField> fields;
+  for (size_t i = 0; i < ids.size(); ++i) {
+    int t = ptrs[i]->graph_type(g);
+    if (g.kind(t) != CandidKind::Vec) {
+      ICPP_HOOKS::trap("ERROR: CandidTypeVecRecord - each field of the record "
+                       "must be a vec, the column of that field");
+    }
+    CandidGraphField f;
+    f.id = ids[i];
+    f.type = g.node(t).inner;
+    fields.push_back(f);
+  }
+  return g.vec(g.record(std::move(fields)));
+}
+
+void CandidTypeVecRecord::bind(const CandidValue &v) {
+  if (!m_pv) return;
+  const auto ids = m_pv->get_field_ids();
+  const auto ptrs = m_pv->get_field_ptrs();
+  for (size_t k = 0; k < v.vec_size(); ++k) {
+    const CandidValue &element = v.at(k);
+    for (size_t i = 0; i < ids.size(); ++i) {
+      const CandidValue *f = element.field(ids[i]);
+      if (!f)
+        ICPP_HOOKS::trap("ERROR: CandidTypeVecRecord - no value for field " +
+                         std::to_string(ids[i]));
+      ptrs[i]->bind_push_back(*f);
+    }
+  }
 }

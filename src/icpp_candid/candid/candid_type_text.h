@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "candid_bind.h"
 #include <cstring>
 
 #include "candid_type_base.h"
@@ -9,6 +10,8 @@
 
 class CandidTypeText : public CandidTypeBase<CandidTypeText> {
 public:
+  CANDID_BIND_VALUE
+
   // Constructors
   CandidTypeText();
   CandidTypeText(const char *c);
@@ -19,11 +22,6 @@ public:
   // Destructor
   ~CandidTypeText();
 
-  bool decode_T(VecBytes &B, __uint128_t &offset, std::string &parse_error) {
-    return false; // type table for Primitives is empty
-  }
-  bool decode_M(CandidDeserialize &de, VecBytes &B, __uint128_t &offset,
-                std::string &parse_error);
   std::string get_v() { return m_v; }
   std::string *get_pv() { return m_pv; }
 

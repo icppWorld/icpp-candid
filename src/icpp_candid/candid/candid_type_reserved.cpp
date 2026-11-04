@@ -32,11 +32,3 @@ void CandidTypeReserved::encode_M() {
   // To be ignored
   m_M.clear();
 }
-
-// Decode the values, starting at & updating offset
-bool CandidTypeReserved::decode_M(CandidDeserialize &de, VecBytes &B,
-                                  __uint128_t &offset,
-                                  std::string &parse_error) {
-  // To be ignored
-  return false;
-}

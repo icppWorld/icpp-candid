@@ -32,10 +32,3 @@ void CandidTypeEmpty::encode_M() {
   // NB: M(_ : empty) just ignore
   // ICPP_HOOKS::trap("ERROR - CandidTypeEmpty cannot have a value to encode.");
 }
-
-// Decode the values, starting at & updating offset
-bool CandidTypeEmpty::decode_M(CandidDeserialize &de, VecBytes &B,
-                               __uint128_t &offset, std::string &parse_error) {
-  ICPP_HOOKS::trap("ERROR - CandidTypeEmpty cannot have a value to decode.");
-  return false;
-}

@@ -52,30 +52,11 @@ void CandidTypeRoot::sort_fields_by_id() {
   }
 }
 
-void CandidTypeRoot::trap_if_wrong_type_on_wire(
-    const std::string &type_on_wire) {
-  if (type_on_wire != m_datatype_textual) {
-    std::string msg;
-    msg.append("ERROR: wrong Candid type on wire.\n");
-    msg.append("       Candid type on wire  = " + type_on_wire + "\n");
-    msg.append("       Expected Candid type = " + m_datatype_textual);
-    ICPP_HOOKS::trap(msg);
-  };
-}
-
 // Virtual method to be implemented by all derived classes
 CandidType CandidTypeRoot::toCandidType() {
   ICPP_HOOKS::trap("ERROR: toCandidType not implemented for " +
                    m_datatype_textual);
   return CandidTypeBool{false}; // Need to return something
-}
-
-// Virtual method to be implemented by the <comptype> CandidTypes
-// Non <comptype> should not call this method.
-bool CandidTypeRoot::decode_T(VecBytes &B, __uint128_t &offset,
-                              std::string &parse_error) {
-  ICPP_HOOKS::trap("ERROR: decode_T not implemented for " + m_datatype_textual);
-  return true;
 }
 
 void CandidTypeRoot::set_content_type() {
@@ -89,32 +70,28 @@ void CandidTypeRoot::create_dummy_record_encode() {
                    m_datatype_textual);
 }
 
-// Virtual method to be implemented by all CandidTypeVecXXX to push_back a value into the internal std::vector<T>
-void CandidTypeRoot::push_back_value(CandidTypeRoot &value) {
-  ICPP_HOOKS::trap("ERROR: set_content_type not implemented for " +
-                   m_datatype_textual);
+int CandidTypeRoot::graph_type(CandidTypeGraph &g) {
+  CandidOpcode op;
+  CandidKind k;
+  if (CandidTypeGraph::prim_kind(m_datatype_opcode, k))
+    return m_datatype_opcode;
+  if (CandidTypeGraph::prim_kind(m_content_opcode, k)) {
+    if (m_datatype_opcode == op.Vec) return g.vec(m_content_opcode);
+    if (m_datatype_opcode == op.Opt) return g.opt(m_content_opcode);
+  }
+  ICPP_HOOKS::trap("ERROR: decoding a " + m_datatype_textual +
+                   " of this kind is not supported");
+  return 0;
 }
 
-// Virtual method to be implemented by all CandidTypes to support deserialization
-bool CandidTypeRoot::decode_M(CandidDeserialize &de, VecBytes &B,
-                              __uint128_t &offset, std::string &parse_error) {
-  ICPP_HOOKS::trap("ERROR: decode_M not implemented for " + m_datatype_textual);
-  return true;
+void CandidTypeRoot::bind(const CandidValue &v) {
+  ICPP_HOOKS::trap("ERROR: decoding a " + m_datatype_textual +
+                   " of this kind is not supported");
 }
 
-// Virtual method to be implemented by Record (and perhaps other constypes)  to support deserialization
-void CandidTypeRoot::set_fields_wire(
-    std::shared_ptr<CandidTypeRoot> p_from_wire) {
-  ICPP_HOOKS::trap("ERROR: set_fields_wire not implemented for " +
-                   m_datatype_textual);
-}
-
-bool CandidTypeRoot::bind_wire(CandidDeserialize &de, int datatype_wire) {
-  return false;
-}
-
-void CandidTypeRoot::finish_decode_T(CandidDeserialize &de) {
-  ICPP_HOOKS::trap("ERROR: finish_decode_T not implemented for " +
+void CandidTypeRoot::bind_push_back(const CandidValue &e) {
+  ICPP_HOOKS::trap("ERROR: a CandidTypeVecRecord field must be a vec of a "
+                   "primitive type, not a " +
                    m_datatype_textual);
 }
 
@@ -204,4 +181,6 @@ template class CandidTypeBase<CandidTypeVecText>;
 template class CandidTypeBase<CandidTypeVecVariant>;
 template class CandidTypeBase<CandidTypeVecBlob>;
 template class CandidTypeBase<CandidTypeVecOf>;
+template class CandidTypeBase<CandidTypeOptOf>;
+template class CandidTypeBase<CandidTypeService>;
 template class CandidTypeBase<CandidTypeFunc>;

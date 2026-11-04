@@ -2,11 +2,14 @@
 
 #pragma once
 
+#include "candid_bind.h"
 #include "candid_type_base.h"
 #include "vec_bytes.h"
 
 class CandidTypeInt16 : public CandidTypeBase<CandidTypeInt16> {
 public:
+  CANDID_BIND_VALUE
+
   // Constructors
   CandidTypeInt16();
   // docs start: demo_candid_type_int16
@@ -16,11 +19,6 @@ public:
   // Destructor
   ~CandidTypeInt16();
 
-  bool decode_T(VecBytes &B, __uint128_t &offset, std::string &parse_error) {
-    return false; // type table for Primitives is empty
-  }
-  bool decode_M(CandidDeserialize &de, VecBytes &B, __uint128_t &offset,
-                std::string &parse_error);
   int16_t get_v() { return m_v; }
   int16_t *get_pv() { return m_pv; }
 

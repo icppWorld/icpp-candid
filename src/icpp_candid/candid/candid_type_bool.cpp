@@ -50,27 +50,3 @@ void CandidTypeBool::encode_M() {
   // M(b : bool)     = i8(if b then 1 else 0)
   m_M.append_uleb128(m_v);
 }
-
-// Decode the values, starting at & updating offset
-bool CandidTypeBool::decode_M(CandidDeserialize &de, VecBytes &B,
-                              __uint128_t &offset, std::string &parse_error) {
-  __uint128_t offset_start = offset;
-  __uint128_t numbytes;
-  parse_error = "";
-  __uint128_t iv{0};
-  if (B.parse_uleb128(offset, iv, numbytes, parse_error)) {
-    std::string to_be_parsed = "Value for CandidTypeBool";
-    CandidAssert::trap_with_parse_error(offset_start, offset, to_be_parsed,
-                                        parse_error);
-  }
-  if (iv == 0) {
-    m_v = false;
-  } else {
-    m_v = true;
-  }
-
-  // Fill the user's data placeholder, if a pointer was provided
-  if (m_pv) *m_pv = m_v;
-
-  return false;
-}

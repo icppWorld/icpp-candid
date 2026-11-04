@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "candid_bind.h"
 #include <cstring>
 #include <memory>
 
@@ -10,6 +11,11 @@
 
 class CandidTypeVecBlob : public CandidTypeBase<CandidTypeVecBlob> {
 public:
+  // Decoding, with CandidDecoder: see CandidTypeRoot
+  int graph_type(CandidTypeGraph &g);
+
+  CANDID_BIND_VEC
+
   // Constructors
   CandidTypeVecBlob();
   CandidTypeVecBlob(const std::vector<std::vector<uint8_t>> v);
@@ -19,14 +25,8 @@ public:
   // Destructor
   ~CandidTypeVecBlob();
 
-  bool decode_M(CandidDeserialize &de, VecBytes &B, __uint128_t &offset,
-                std::string &parse_error);
   std::vector<std::vector<uint8_t>> get_v() { return m_v; }
   std::vector<std::vector<uint8_t>> *get_pv() { return m_pv; }
-
-  bool decode_T(VecBytes &B, __uint128_t &offset, std::string &parse_error);
-
-  void push_back_value(CandidTypeRoot &value);
 
 protected:
   void set_pv(std::vector<std::vector<uint8_t>> *v) { m_pv = v; }

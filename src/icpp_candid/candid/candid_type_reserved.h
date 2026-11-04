@@ -1,22 +1,20 @@
 // The class for the Primitive Candid Type: reserved
 #pragma once
 
+#include "candid_bind.h"
 #include "candid_type_base.h"
 #include "vec_bytes.h"
 
 class CandidTypeReserved : public CandidTypeBase<CandidTypeReserved> {
 public:
+  CANDID_BIND_VALUE
+
   // Constructors
   CandidTypeReserved();
 
   // Destructor
   ~CandidTypeReserved();
 
-  bool decode_T(VecBytes &B, __uint128_t &offset, std::string &parse_error) {
-    return false; // type table for Primitives is empty
-  }
-  bool decode_M(CandidDeserialize &de, VecBytes &B, __uint128_t &offset,
-                std::string &parse_error);
   std::string get_v() { return m_v; }
   std::string *get_pv() { return m_pv; }
 

@@ -63,6 +63,8 @@ class CandidTypeVecRecord;
 class CandidTypeVecVariant;
 class CandidTypeVecBlob;
 class CandidTypeVecOf;
+class CandidTypeOptOf;
+class CandidTypeService;
 class CandidTypeFunc;
 // These types are not used for vecs
 // class CandidTypeVecNull;
@@ -95,9 +97,6 @@ class CandidTypeOptVariant;
 class CandidTypeRecord;
 class CandidTypeVariant;
 
-// The Candid Type Table class
-class CandidTypeTable;
-
 // The (De)Serialization classes
 class CandidDeserialize;
 class CandidSerialize;
@@ -123,4 +122,5 @@ using CandidType = std::variant<
     CandidTypeOptNat64, CandidTypeOptInt8, CandidTypeOptInt16,
     CandidTypeOptInt32, CandidTypeOptInt64, CandidTypeOptText,
     CandidTypeOptPrincipal, CandidTypeOptRecord, CandidTypeOptVariant,
-    CandidTypeOptVec, CandidTypeRecord, CandidTypeVariant, CandidTypeVecOf>;
+    CandidTypeOptVec, CandidTypeRecord, CandidTypeVariant, CandidTypeVecOf,
+    CandidTypeOptOf, CandidTypeService>;

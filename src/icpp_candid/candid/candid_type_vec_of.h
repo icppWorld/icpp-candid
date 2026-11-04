@@ -26,6 +26,10 @@
 
 class CandidTypeVecOf : public CandidTypeBase<CandidTypeVecOf> {
 public:
+  // Decoding, with CandidDecoder: see CandidTypeRoot
+  int graph_type(CandidTypeGraph &g);
+  void bind(const CandidValue &v);
+
   // Encode
   CandidTypeVecOf(CandidType element_type, std::vector<CandidType> elements);
 
@@ -35,12 +39,6 @@ public:
 
   // Destructor
   ~CandidTypeVecOf();
-
-  bool decode_M(CandidDeserialize &de, VecBytes &B, __uint128_t &offset,
-                std::string &parse_error);
-
-  // Binds this decoder to the vec's type table on the wire
-  bool bind_wire(CandidDeserialize &de, int datatype_wire);
 
 protected:
   void set_datatype();
