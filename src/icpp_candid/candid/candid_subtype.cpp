@@ -115,7 +115,7 @@ bool CandidSubtype::sub_(const CandidTypeGraph &g1, int t1,
       const CandidGraphField *f1 = find_field(fs1, f2.id);
       if (f1) {
         if (!sub(g1, f1->type, g2, f2.type)) return false;
-      } else if (!g2.is_null_like(f2.type)) {
+      } else if (!g2.is_null_like(f2.type) && !f2.optional) {
         return false;
       }
     }

@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "candid_bind.h"
 #include <cstring>
 
 #include "candid_type_null.h"
@@ -9,6 +10,8 @@
 
 class CandidTypeOptNull : public CandidTypeBase<CandidTypeOptNull> {
 public:
+  CANDID_BIND_VALUE
+
   // Constructors
   // CandidTypeOptNull();
   // clang-format off

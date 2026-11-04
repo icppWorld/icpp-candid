@@ -9,6 +9,10 @@
 
 class CandidTypeVariant : public CandidTypeBase<CandidTypeVariant> {
 public:
+  // Decoding, with CandidDecoder: see CandidTypeRoot
+  int graph_type(CandidTypeGraph &g);
+  void bind(const CandidValue &v);
+
   // Constructors
   // clang-format off
   // docs start: demo_candid_type_variant

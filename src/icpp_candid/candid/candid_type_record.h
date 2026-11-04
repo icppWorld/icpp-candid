@@ -10,6 +10,10 @@
 
 class CandidTypeRecord : public CandidTypeBase<CandidTypeRecord> {
 public:
+  // Decoding, with CandidDecoder: see CandidTypeRoot
+  int graph_type(CandidTypeGraph &g);
+  void bind(const CandidValue &v);
+
   // Constructors
   // docs start: demo_candid_type_record
   CandidTypeRecord();

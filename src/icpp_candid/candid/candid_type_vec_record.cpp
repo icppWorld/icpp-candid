@@ -1,4 +1,5 @@
 // The class for the Candid Type: vec : record
+#include <algorithm>
 #include "candid_type.h"
 #include "candid_type_visitors.h"
 
@@ -344,4 +345,41 @@ bool CandidTypeVecRecord::decode_T(VecBytes &B, __uint128_t &offset,
 // For <constype>: the negative Opcode
 void CandidTypeVecRecord::encode_I() {
   m_I.append_byte((std::byte)m_datatype_hex);
+}
+
+// The record whose fields are the columns: vecs, one per field of the
+// elements
+static CandidTypeRoot &columns(CandidTypeRoot *pv, CandidTypeRecord &v) {
+  return pv ? *pv : static_cast<CandidTypeRoot &>(v);
+}
+
+int CandidTypeVecRecord::graph_type(CandidTypeGraph &g) {
+  CandidTypeRoot &r = columns(m_pv, m_v);
+  const auto ids = r.get_field_ids();
+  const auto ptrs = r.get_field_ptrs();
+  std::vector<CandidGraphField> fields;
+  for (size_t i = 0; i < ids.size(); ++i) {
+    int t = ptrs[i]->graph_type(g);
+    if (g.kind(t) != CandidKind::Vec) {
+      ICPP_HOOKS::trap("ERROR: CandidTypeVecRecord - each field of the record "
+                       "must be a vec, the column of that field");
+    }
+    CandidGraphField f;
+    f.id = ids[i];
+    f.type = g.node(t).inner;
+    fields.push_back(f);
+  }
+  return g.vec(g.record(std::move(fields)));
+}
+
+void CandidTypeVecRecord::bind(const CandidValue &v) {
+  if (!m_pv) return;
+  const auto ids = m_pv->get_field_ids();
+  const auto ptrs = m_pv->get_field_ptrs();
+  for (const CandidValue &element : v.items) {
+    for (size_t i = 0; i < ids.size(); ++i) {
+      auto it = std::find(element.ids.begin(), element.ids.end(), ids[i]);
+      ptrs[i]->bind_push_back(element.items.at(size_t(it - element.ids.begin())));
+    }
+  }
 }

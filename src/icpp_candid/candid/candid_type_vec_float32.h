@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "candid_bind.h"
 #include <cstring>
 
 #include "candid_type_float32.h"
@@ -9,6 +10,8 @@
 
 class CandidTypeVecFloat32 : public CandidTypeBase<CandidTypeVecFloat32> {
 public:
+  CANDID_BIND_VEC
+
   // Constructors
   CandidTypeVecFloat32();
   CandidTypeVecFloat32(const std::vector<float> v);

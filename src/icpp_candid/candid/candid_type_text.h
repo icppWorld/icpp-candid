@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "candid_bind.h"
 #include <cstring>
 
 #include "candid_type_base.h"
@@ -9,6 +10,8 @@
 
 class CandidTypeText : public CandidTypeBase<CandidTypeText> {
 public:
+  CANDID_BIND_VALUE
+
   // Constructors
   CandidTypeText();
   CandidTypeText(const char *c);

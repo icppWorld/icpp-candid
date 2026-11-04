@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "candid_bind.h"
 #include <cstring>
 
 #include "candid_type_bool.h"
@@ -9,6 +10,8 @@
 
 class CandidTypeVecBool : public CandidTypeBase<CandidTypeVecBool> {
 public:
+  CANDID_BIND_VEC
+
   // Constructors
   CandidTypeVecBool();
   CandidTypeVecBool(const std::vector<bool> v);

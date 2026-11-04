@@ -1,4 +1,5 @@
 // The class for the Candid Type: opt
+#include <algorithm>
 #include "candid_debug_config.h"
 
 #include "candid_type.h"
@@ -218,4 +219,15 @@ bool CandidTypeOptVariant::decode_T(VecBytes &B, __uint128_t &offset,
 // For <constype>: the negative Opcode
 void CandidTypeOptVariant::encode_I() {
   m_I.append_byte((std::byte)m_datatype_hex);
+}
+
+int CandidTypeOptVariant::graph_type(CandidTypeGraph &g) {
+  CandidTypeRoot *p = m_pv ? m_pv : (m_pvs ? m_pvs.get() : &m_v);
+  return g.opt(p->graph_type(g));
+}
+
+void CandidTypeOptVariant::bind(const CandidValue &v) {
+  bool has_value = !v.items.empty();
+  if (m_p_has_value) *m_p_has_value = has_value;
+  if (has_value && m_pv) m_pv->bind(v.items[0]);
 }

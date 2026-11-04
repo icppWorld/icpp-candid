@@ -9,6 +9,10 @@
 
 class CandidTypeOptRecord : public CandidTypeBase<CandidTypeOptRecord> {
 public:
+  // Decoding, with CandidDecoder: see CandidTypeRoot
+  int graph_type(CandidTypeGraph &g);
+  void bind(const CandidValue &v);
+
   // Constructors
   CandidTypeOptRecord();
   // clang-format off

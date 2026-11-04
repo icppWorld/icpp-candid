@@ -2,11 +2,14 @@
 
 #pragma once
 
+#include "candid_bind.h"
 #include "candid_type_base.h"
 #include "vec_bytes.h"
 
 class CandidTypeBool : public CandidTypeBase<CandidTypeBool> {
 public:
+  CANDID_BIND_VALUE
+
   // Constructors
   CandidTypeBool();
   // docs start: demo_candid_type_bool

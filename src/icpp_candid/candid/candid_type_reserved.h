@@ -1,11 +1,14 @@
 // The class for the Primitive Candid Type: reserved
 #pragma once
 
+#include "candid_bind.h"
 #include "candid_type_base.h"
 #include "vec_bytes.h"
 
 class CandidTypeReserved : public CandidTypeBase<CandidTypeReserved> {
 public:
+  CANDID_BIND_VALUE
+
   // Constructors
   CandidTypeReserved();
 

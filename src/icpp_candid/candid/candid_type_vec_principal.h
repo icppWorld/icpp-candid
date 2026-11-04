@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "candid_bind.h"
 #include <cstring>
 
 #include "candid_type_principal.h"
@@ -9,6 +10,8 @@
 
 class CandidTypeVecPrincipal : public CandidTypeBase<CandidTypeVecPrincipal> {
 public:
+  CANDID_BIND_VEC
+
   // Constructors
   CandidTypeVecPrincipal();
   CandidTypeVecPrincipal(const std::vector<std::string> v);

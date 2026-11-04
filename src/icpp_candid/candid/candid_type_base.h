@@ -9,6 +9,8 @@
 
 #include "candid_constants.h"
 #include "icpp_hooks.h"
+#include "candid_type_graph.h"
+#include "candid_value.h"
 #include "vec_bytes.h"
 
 // non-templated base class
@@ -91,6 +93,17 @@ public:
   // Binds a decoder to its type table on the wire. Implemented by VecOf, which
   // needs it before decode_M. Returns false for the other types.
   virtual bool bind_wire(CandidDeserialize &de, int datatype_wire);
+
+  // Decoding, with CandidDecoder:
+  // The type a value of this type is decoded at, added to g: a primitive
+  // opcode, or a node of g. The classes of a primitive type, and the vec and
+  // opt of one, get it from their opcodes; the others override it.
+  virtual int graph_type(CandidTypeGraph &g);
+  // Fills the bound C++ variable(s) with a decoded value of graph_type()
+  virtual void bind(const CandidValue &v);
+  // For a vec: appends one decoded element (the columns of a
+  // CandidTypeVecRecord)
+  virtual void bind_push_back(const CandidValue &e);
 
   uint32_t idl_hash(const std::string &s);
 

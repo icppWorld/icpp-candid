@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "candid_bind.h"
 #include <algorithm>
 #include <array>
 #include <cassert>
@@ -13,6 +14,8 @@
 
 class CandidTypePrincipal : public CandidTypeBase<CandidTypePrincipal> {
 public:
+  CANDID_BIND_VALUE
+
   // Constructors
   CandidTypePrincipal();
   CandidTypePrincipal(const char *c);

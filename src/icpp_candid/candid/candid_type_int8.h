@@ -2,11 +2,14 @@
 
 #pragma once
 
+#include "candid_bind.h"
 #include "candid_type_base.h"
 #include "vec_bytes.h"
 
 class CandidTypeInt8 : public CandidTypeBase<CandidTypeInt8> {
 public:
+  CANDID_BIND_VALUE
+
   // Constructors
   CandidTypeInt8();
   // docs start: demo_candid_type_int8

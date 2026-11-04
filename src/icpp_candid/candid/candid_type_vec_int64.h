@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "candid_bind.h"
 #include <cstring>
 
 #include "candid_type_int64.h"
@@ -9,6 +10,8 @@
 
 class CandidTypeVecInt64 : public CandidTypeBase<CandidTypeVecInt64> {
 public:
+  CANDID_BIND_VEC
+
   // Constructors
   CandidTypeVecInt64();
   CandidTypeVecInt64(const std::vector<int64_t> v);

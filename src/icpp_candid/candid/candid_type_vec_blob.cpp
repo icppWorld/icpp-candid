@@ -1,4 +1,5 @@
 // The class for the Candid Type: vec blob (vec vec nat8)
+#include <algorithm>
 #include "candid_type.h"
 
 #include "candid_serialize_type_table_registry.h"
@@ -169,4 +170,8 @@ bool CandidTypeVecBlob::decode_T(VecBytes &B, __uint128_t &offset,
 // For <constype>: the negative Opcode
 void CandidTypeVecBlob::encode_I() {
   m_I.append_byte((std::byte)m_datatype_hex);
+}
+
+int CandidTypeVecBlob::graph_type(CandidTypeGraph &g) {
+  return g.vec(g.vec(CandidTypeGraph::prim(CandidKind::Nat8)));
 }

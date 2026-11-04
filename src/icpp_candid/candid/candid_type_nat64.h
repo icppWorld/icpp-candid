@@ -2,11 +2,14 @@
 
 #pragma once
 
+#include "candid_bind.h"
 #include "candid_type_base.h"
 #include "vec_bytes.h"
 
 class CandidTypeNat64 : public CandidTypeBase<CandidTypeNat64> {
 public:
+  CANDID_BIND_VALUE
+
   // Constructors
   CandidTypeNat64();
   // docs start: demo_candid_type_nat64

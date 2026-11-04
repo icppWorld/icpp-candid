@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "candid_bind.h"
 #include <cstring>
 
 #include "candid_type_nat.h"
@@ -9,6 +10,8 @@
 
 class CandidTypeVecNat : public CandidTypeBase<CandidTypeVecNat> {
 public:
+  CANDID_BIND_VEC
+
   // Constructors
   CandidTypeVecNat();
   CandidTypeVecNat(const std::vector<__uint128_t> v);

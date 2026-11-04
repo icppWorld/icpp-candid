@@ -1,4 +1,5 @@
 // The class for the Candid Type: vec variant (unit variants only)
+#include <algorithm>
 #include "candid_type.h"
 
 #include "candid_serialize_type_table_registry.h"
@@ -301,4 +302,25 @@ bool CandidTypeVecVariant::decode_T(VecBytes &B, __uint128_t &offset,
 // For <constype>: the negative Opcode
 void CandidTypeVecVariant::encode_I() {
   m_I.append_byte((std::byte)m_datatype_hex);
+}
+
+int CandidTypeVecVariant::graph_type(CandidTypeGraph &g) {
+  CandidTypeRoot &t = m_pv ? *m_pv : static_cast<CandidTypeRoot &>(m_v_template);
+  return g.vec(t.graph_type(g));
+}
+
+void CandidTypeVecVariant::bind(const CandidValue &v) {
+  m_labels.clear();
+  if (m_p_labels) m_p_labels->clear();
+  for (const CandidValue &element : v.items) bind_push_back(element);
+}
+
+void CandidTypeVecVariant::bind_push_back(const CandidValue &e) {
+  CandidTypeVariant &t =
+      m_pv ? *static_cast<CandidTypeVariant *>(m_pv) : m_v_template;
+  t.bind(e);
+  if (m_p_labels)
+    m_p_labels->push_back(t.get_label());
+  else
+    m_labels.push_back(t.get_label());
 }

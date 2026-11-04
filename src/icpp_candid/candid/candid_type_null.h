@@ -2,10 +2,13 @@
 
 #pragma once
 
+#include "candid_bind.h"
 #include "candid_type_base.h"
 
 class CandidTypeNull : public CandidTypeBase<CandidTypeNull> {
 public:
+  CANDID_BIND_VALUE
+
   // Constructors
   CandidTypeNull();
 

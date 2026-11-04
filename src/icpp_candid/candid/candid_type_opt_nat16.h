@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "candid_bind.h"
 #include <cstring>
 
 #include "candid_type_nat16.h"
@@ -9,6 +10,8 @@
 
 class CandidTypeOptNat16 : public CandidTypeBase<CandidTypeOptNat16> {
 public:
+  CANDID_BIND_VALUE
+
   // Constructors
   CandidTypeOptNat16();
   // clang-format off

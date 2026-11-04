@@ -620,7 +620,12 @@ St Decoder::decode_record(int w, const CandidTypeGraph &g, int e,
   // Both are sorted by id: walk them together
   size_t j = 0;
   auto missing = [&](size_t idx) -> St {
-    // A field only in the expected type must be null, opt or reserved
+    // A field only in the expected type must be null, opt or reserved, or be
+    // marked optional
+    if (efs[idx].optional) {
+      if (out) out->items[idx].absent = true;
+      return St::Ok;
+    }
     if (!g.is_null_like(efs[idx].type))
       return mismatch("Record field " + std::to_string(efs[idx].id) +
                       " is missing");

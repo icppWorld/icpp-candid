@@ -925,3 +925,28 @@ void CandidTypeVariant::set_fields_wire(
     }
   }
 }
+
+int CandidTypeVariant::graph_type(CandidTypeGraph &g) {
+  std::vector<CandidGraphField> fields;
+  for (size_t i = 0; i < m_field_ids.size(); ++i) {
+    CandidGraphField f;
+    f.id = m_field_ids[i];
+    f.type = m_field_ptrs[i]->graph_type(g);
+    fields.push_back(f);
+  }
+  return g.variant(std::move(fields));
+}
+
+void CandidTypeVariant::bind(const CandidValue &v) {
+  uint32_t id = v.ids.at(0);
+  auto it = std::find(m_field_ids.begin(), m_field_ids.end(), id);
+  if (it == m_field_ids.end()) {
+    ICPP_HOOKS::trap("ERROR: CandidTypeVariant - no case with id " +
+                     std::to_string(id));
+  }
+  size_t i = size_t(it - m_field_ids.begin());
+  m_label = m_field_names[i];
+  m_selected_field_id = id;
+  if (m_p_label) *m_p_label = m_label;
+  m_field_ptrs[i]->bind(v.items.at(0));
+}

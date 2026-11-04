@@ -1,4 +1,5 @@
 // The class for the Candid Type: vec of any element type
+#include <algorithm>
 #include "candid_type.h"
 #include "candid_type_all_includes.h"
 
@@ -215,4 +216,24 @@ bool CandidTypeVecOf::decode_M(CandidDeserialize &de, VecBytes &B,
     if (m_element_done) m_element_done();
   }
   return false;
+}
+
+int CandidTypeVecOf::graph_type(CandidTypeGraph &g) {
+  return g.vec(m_p_element_type->graph_type(g));
+}
+
+void CandidTypeVecOf::bind(const CandidValue &v) {
+  if (!m_make_element) {
+    ICPP_HOOKS::trap(
+        "ERROR: CandidTypeVecOf - decoding needs the make_element constructor");
+  }
+  size_t n = v.vec_size();
+  for (size_t i = 0; i < n; ++i) {
+    std::shared_ptr<CandidTypeRoot> p = root_ptr(m_make_element());
+    if (v.packed)
+      p->bind(v.packed_element(i));
+    else
+      p->bind(v.items[i]);
+    if (m_element_done) m_element_done();
+  }
 }

@@ -45,6 +45,8 @@ struct CandidValue {
   CandidKind elem_kind{CandidKind::Null}; // for a packed vec
   std::vector<uint32_t> ids;
   std::vector<CandidValue> items;
+  // A record field marked optional in the expected type, not in the message
+  bool absent{false};
 
   // The number of elements of a vec, packed or not
   size_t vec_size() const;

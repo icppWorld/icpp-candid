@@ -12,6 +12,11 @@
 
 class CandidTypeVecVariant : public CandidTypeBase<CandidTypeVecVariant> {
 public:
+  // Decoding, with CandidDecoder: see CandidTypeRoot
+  int graph_type(CandidTypeGraph &g);
+  void bind(const CandidValue &v);
+  void bind_push_back(const CandidValue &e);
+
   // Constructors
 
   // Default constructor

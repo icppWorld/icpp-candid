@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "candid_bind.h"
 #include <cstring>
 
 #include "candid_type_float64.h"
@@ -9,6 +10,8 @@
 
 class CandidTypeOptFloat64 : public CandidTypeBase<CandidTypeOptFloat64> {
 public:
+  CANDID_BIND_VALUE
+
   // Constructors
   CandidTypeOptFloat64();
   // clang-format off

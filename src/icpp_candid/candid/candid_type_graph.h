@@ -57,6 +57,9 @@ constexpr uint8_t CANDID_FUNC_COMPOSITE_QUERY = 3;
 struct CandidGraphField {
   uint32_t id{0};
   int type{-1};
+  // An expected record field that may be absent, whatever its type: a field
+  // the typed API added with CandidTypeRecord::append_optional
+  bool optional{false};
 };
 
 struct CandidGraphMethod {

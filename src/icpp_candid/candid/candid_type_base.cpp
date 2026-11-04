@@ -113,6 +113,29 @@ bool CandidTypeRoot::bind_wire(CandidDeserialize &de, int datatype_wire) {
   return false;
 }
 
+int CandidTypeRoot::graph_type(CandidTypeGraph &g) {
+  CandidOpcode op;
+  CandidKind k;
+  if (CandidTypeGraph::prim_kind(m_datatype_opcode, k)) return m_datatype_opcode;
+  if (CandidTypeGraph::prim_kind(m_content_opcode, k)) {
+    if (m_datatype_opcode == op.Vec) return g.vec(m_content_opcode);
+    if (m_datatype_opcode == op.Opt) return g.opt(m_content_opcode);
+  }
+  ICPP_HOOKS::trap("ERROR: decoding a " + m_datatype_textual +
+                   " of this kind is not supported");
+  return 0;
+}
+
+void CandidTypeRoot::bind(const CandidValue &v) {
+  ICPP_HOOKS::trap("ERROR: decoding a " + m_datatype_textual +
+                   " of this kind is not supported");
+}
+
+void CandidTypeRoot::bind_push_back(const CandidValue &e) {
+  ICPP_HOOKS::trap("ERROR: a CandidTypeVecRecord field must be a vec of a "
+                   "primitive type, not a " + m_datatype_textual);
+}
+
 void CandidTypeRoot::finish_decode_T(CandidDeserialize &de) {
   ICPP_HOOKS::trap("ERROR: finish_decode_T not implemented for " +
                    m_datatype_textual);

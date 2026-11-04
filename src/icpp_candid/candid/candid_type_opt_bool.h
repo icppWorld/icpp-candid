@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "candid_bind.h"
 #include <cstring>
 
 #include "candid_type_bool.h"
@@ -9,6 +10,8 @@
 
 class CandidTypeOptBool : public CandidTypeBase<CandidTypeOptBool> {
 public:
+  CANDID_BIND_VALUE
+
   // Constructors
   CandidTypeOptBool();
   // clang-format off

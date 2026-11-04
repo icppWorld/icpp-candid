@@ -1,4 +1,5 @@
 // The class for the Candid Type: func - a reference to a method of a canister
+#include <algorithm>
 #include "candid_type.h"
 
 #include "candid_serialize_type_table_registry.h"
@@ -31,6 +32,14 @@ CandidTypeFunc::CandidTypeFunc() : CandidTypeBase() {
 CandidTypeFunc::CandidTypeFunc(const CandidTypePrincipal &canister,
                                const std::string &method)
     : CandidTypeBase(), m_canister(canister), m_method(method) {
+  set_datatype();
+  encode_T();
+  encode_I();
+  encode_M();
+}
+
+CandidTypeFunc::CandidTypeFunc(std::string *p_canister, std::string *p_method)
+    : CandidTypeBase(), m_p_canister(p_canister), m_p_method(p_method) {
   set_datatype();
   encode_T();
   encode_I();
@@ -131,4 +140,19 @@ bool CandidTypeFunc::decode_M(CandidDeserialize &de, VecBytes &B,
   ICPP_HOOKS::trap("ERROR: decoding a CandidTypeFunc is not supported - " +
                    std::string(__func__));
   return true;
+}
+
+int CandidTypeFunc::graph_type(CandidTypeGraph &g) {
+  std::vector<int> args, rets;
+  for (auto &p : m_arg_ptrs) args.push_back(p->graph_type(g));
+  for (auto &p : m_ret_ptrs) rets.push_back(p->graph_type(g));
+  return g.func(std::move(args), std::move(rets), m_annotations);
+}
+
+void CandidTypeFunc::bind(const CandidValue &v) {
+  std::string canister = CandidPrincipalText::encode(v.bytes);
+  m_canister = CandidTypePrincipal(canister);
+  m_method = v.text;
+  if (m_p_canister) *m_p_canister = canister;
+  if (m_p_method) *m_p_method = m_method;
 }

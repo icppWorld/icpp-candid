@@ -60,13 +60,6 @@ public:
 private:
   void deserialize();
 
-  void select_decoder_or_trap(size_t i, size_t j,
-                              std::shared_ptr<CandidTypeRoot> &decoder,
-                              std::string &decoder_name);
-
-  std::shared_ptr<CandidTypeRoot>
-  build_decoder_wire_for_additional_opt_arg(int j);
-
   // The vector with placeholders for the expected arguments
   CandidArgs m_A;
 

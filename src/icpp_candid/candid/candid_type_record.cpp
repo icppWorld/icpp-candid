@@ -906,3 +906,32 @@ void CandidTypeRecord::set_fields_wire(
     }
   }
 }
+
+int CandidTypeRecord::graph_type(CandidTypeGraph &g) {
+  std::vector<CandidGraphField> fields;
+  for (size_t i = 0; i < m_field_ids.size(); ++i) {
+    CandidGraphField f;
+    f.id = m_field_ids[i];
+    f.type = m_field_ptrs[i]->graph_type(g);
+    f.optional = m_optional_fields.count(f.id) > 0;
+    fields.push_back(f);
+  }
+  return g.record(std::move(fields));
+}
+
+void CandidTypeRecord::bind(const CandidValue &v) {
+  for (size_t i = 0; i < m_field_ids.size(); ++i) {
+    auto it = std::find(v.ids.begin(), v.ids.end(), m_field_ids[i]);
+    if (it == v.ids.end()) {
+      ICPP_HOOKS::trap("ERROR: CandidTypeRecord - no value for field " +
+                       m_field_names[i]);
+    }
+    const CandidValue &fv = v.items[size_t(it - v.ids.begin())];
+    auto opt = m_optional_fields.find(m_field_ids[i]);
+    if (opt != m_optional_fields.end() && opt->second) {
+      *opt->second = !fv.absent;
+    }
+    // A field added with append_optional, not on the wire, is left as is
+    if (!fv.absent) m_field_ptrs[i]->bind(fv);
+  }
+}
