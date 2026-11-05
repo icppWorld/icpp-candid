@@ -2,7 +2,6 @@
 #include "candid_type.h"
 #include "candid_type_all_includes.h"
 
-
 #include "candid_opcode.h"
 #include "candid_type_of.h"
 #include "candid_type_opt_of.h"
@@ -66,12 +65,14 @@ void CandidTypeOptOf::encode_I() { m_I.append_byte((std::byte)m_datatype_hex); }
 // M(?v   : opt <datatype>) = i8(1) M(v : <datatype>)
 void CandidTypeOptOf::encode_M() {
   m_M.clear();
+  m_has_M = true;
   if (!m_p_value) {
     m_M.append_int_fixed_width(uint8_t{0});
     return;
   }
   m_M.append_int_fixed_width(uint8_t{1});
   m_M.append(m_p_value->get_M());
+  m_has_M = m_p_value->has_M();
 }
 
 int CandidTypeOptOf::graph_type(CandidTypeGraph &g) {

@@ -178,6 +178,7 @@ void CandidTypeVariant::encode_M() {
   // https://github.com/dfinity/candid/blob/master/spec/Candid.md#memory
   // M(kv   : variant {<fieldtype>*}) = leb128(i) M(kv : <fieldtype>*[i])
   m_M.clear();
+  m_has_M = true;
 
   for (size_t i = 0; i < m_field_names.size(); ++i) {
     if (m_field_names[i] == m_label) {
@@ -187,6 +188,7 @@ void CandidTypeVariant::encode_M() {
       // encode the variant's value
       // The get_M method is in the CandidTypeBase class
       if (m_field_ptrs[i]) {
+        m_has_M = m_field_ptrs[i]->has_M();
         VecBytes M = m_field_ptrs[i]->get_M();
         for (std::byte b : M.vec()) {
           m_M.append_byte(b);

@@ -65,8 +65,8 @@ std::vector<int> children(const CandidGraphNode &n) {
 class TableBuilder {
 public:
   TableBuilder(const CandidTypeGraph &g, const CandidDecodeLimits &limits)
-      : m_g(g), m_limits(limits), m_named(g.size(), false),
-        m_key(g.size(), -1), m_idx(g.size(), -1), m_walked(g.size(), false) {
+      : m_g(g), m_limits(limits), m_named(g.size(), false), m_key(g.size(), -1),
+        m_idx(g.size(), -1), m_walked(g.size(), false) {
     for (size_t i = 0; i < g.size(); ++i)
       m_named[i] = g.is_named(int(i));
   }
@@ -97,9 +97,9 @@ public:
 private:
   const CandidTypeGraph &m_g;
   const CandidDecodeLimits &m_limits;
-  std::vector<bool> m_named; // named by reserve(), or to break a cycle
-  std::vector<int> m_key;    // the interned structure of each node
-  std::vector<int> m_idx;    // the type table index of each node
+  std::vector<bool> m_named;  // named by reserve(), or to break a cycle
+  std::vector<int> m_key;     // the interned structure of each node
+  std::vector<int> m_idx;     // the type table index of each node
   std::vector<bool> m_walked; // compute_keys has been to it
   std::map<std::vector<int64_t>, int> m_keys;
   std::map<int, int> m_by_key; // structure -> index, of unnamed nodes

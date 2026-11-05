@@ -62,6 +62,7 @@ void CandidTypeVecOf::encode_I() { m_I.append_byte((std::byte)m_datatype_hex); }
 // M(v^N : vec <datatype>) = leb128(N) M(v : <datatype>)^N
 void CandidTypeVecOf::encode_M() {
   m_M.clear();
+  m_has_M = true;
   m_M.append_uleb128(__uint128_t(m_elements.size()));
   for (size_t i = 0; i < m_elements.size(); ++i) {
     if (!same_type(m_elements[i], m_p_element_type)) {
@@ -70,6 +71,7 @@ void CandidTypeVecOf::encode_M() {
                        ") does not have the element type (" +
                        m_p_element_type->get_datatype_textual() + ")");
     }
+    if (!m_elements[i]->has_M()) m_has_M = false;
     VecBytes M = m_elements[i]->get_M();
     for (std::byte b : M.vec()) {
       m_M.append_byte(b);

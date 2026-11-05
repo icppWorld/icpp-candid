@@ -4,7 +4,6 @@
 
 #include "candid_type.h"
 
-
 #include "candid_assert.h"
 #include "candid_opcode.h"
 #include "candid_type_base.h"
@@ -61,52 +60,68 @@ CandidTypeOptVec::CandidTypeOptVec(CandidTypeVecText *p_v, bool *has_value)
 // These constructors are only for encoding. They keep a copy of the vec as
 // its own class, which graph_type() needs: a CandidTypeRoot copy of it knows
 // only its opcodes, not the type of a record's fields.
-CandidTypeOptVec::CandidTypeOptVec(const CandidTypeVecBool v) : CandidTypeBase() {
+CandidTypeOptVec::CandidTypeOptVec(const CandidTypeVecBool v)
+    : CandidTypeBase() {
   by_value(std::make_shared<CandidTypeVecBool>(v));
 }
-CandidTypeOptVec::CandidTypeOptVec(const CandidTypeVecFloat32 v) : CandidTypeBase() {
+CandidTypeOptVec::CandidTypeOptVec(const CandidTypeVecFloat32 v)
+    : CandidTypeBase() {
   by_value(std::make_shared<CandidTypeVecFloat32>(v));
 }
-CandidTypeOptVec::CandidTypeOptVec(const CandidTypeVecFloat64 v) : CandidTypeBase() {
+CandidTypeOptVec::CandidTypeOptVec(const CandidTypeVecFloat64 v)
+    : CandidTypeBase() {
   by_value(std::make_shared<CandidTypeVecFloat64>(v));
 }
-CandidTypeOptVec::CandidTypeOptVec(const CandidTypeVecInt v) : CandidTypeBase() {
+CandidTypeOptVec::CandidTypeOptVec(const CandidTypeVecInt v)
+    : CandidTypeBase() {
   by_value(std::make_shared<CandidTypeVecInt>(v));
 }
-CandidTypeOptVec::CandidTypeOptVec(const CandidTypeVecInt8 v) : CandidTypeBase() {
+CandidTypeOptVec::CandidTypeOptVec(const CandidTypeVecInt8 v)
+    : CandidTypeBase() {
   by_value(std::make_shared<CandidTypeVecInt8>(v));
 }
-CandidTypeOptVec::CandidTypeOptVec(const CandidTypeVecInt16 v) : CandidTypeBase() {
+CandidTypeOptVec::CandidTypeOptVec(const CandidTypeVecInt16 v)
+    : CandidTypeBase() {
   by_value(std::make_shared<CandidTypeVecInt16>(v));
 }
-CandidTypeOptVec::CandidTypeOptVec(const CandidTypeVecInt32 v) : CandidTypeBase() {
+CandidTypeOptVec::CandidTypeOptVec(const CandidTypeVecInt32 v)
+    : CandidTypeBase() {
   by_value(std::make_shared<CandidTypeVecInt32>(v));
 }
-CandidTypeOptVec::CandidTypeOptVec(const CandidTypeVecInt64 v) : CandidTypeBase() {
+CandidTypeOptVec::CandidTypeOptVec(const CandidTypeVecInt64 v)
+    : CandidTypeBase() {
   by_value(std::make_shared<CandidTypeVecInt64>(v));
 }
-CandidTypeOptVec::CandidTypeOptVec(const CandidTypeVecNat v) : CandidTypeBase() {
+CandidTypeOptVec::CandidTypeOptVec(const CandidTypeVecNat v)
+    : CandidTypeBase() {
   by_value(std::make_shared<CandidTypeVecNat>(v));
 }
-CandidTypeOptVec::CandidTypeOptVec(const CandidTypeVecNat8 v) : CandidTypeBase() {
+CandidTypeOptVec::CandidTypeOptVec(const CandidTypeVecNat8 v)
+    : CandidTypeBase() {
   by_value(std::make_shared<CandidTypeVecNat8>(v));
 }
-CandidTypeOptVec::CandidTypeOptVec(const CandidTypeVecNat16 v) : CandidTypeBase() {
+CandidTypeOptVec::CandidTypeOptVec(const CandidTypeVecNat16 v)
+    : CandidTypeBase() {
   by_value(std::make_shared<CandidTypeVecNat16>(v));
 }
-CandidTypeOptVec::CandidTypeOptVec(const CandidTypeVecNat32 v) : CandidTypeBase() {
+CandidTypeOptVec::CandidTypeOptVec(const CandidTypeVecNat32 v)
+    : CandidTypeBase() {
   by_value(std::make_shared<CandidTypeVecNat32>(v));
 }
-CandidTypeOptVec::CandidTypeOptVec(const CandidTypeVecNat64 v) : CandidTypeBase() {
+CandidTypeOptVec::CandidTypeOptVec(const CandidTypeVecNat64 v)
+    : CandidTypeBase() {
   by_value(std::make_shared<CandidTypeVecNat64>(v));
 }
-CandidTypeOptVec::CandidTypeOptVec(const CandidTypeVecPrincipal v) : CandidTypeBase() {
+CandidTypeOptVec::CandidTypeOptVec(const CandidTypeVecPrincipal v)
+    : CandidTypeBase() {
   by_value(std::make_shared<CandidTypeVecPrincipal>(v));
 }
-CandidTypeOptVec::CandidTypeOptVec(const CandidTypeVecRecord v) : CandidTypeBase() {
+CandidTypeOptVec::CandidTypeOptVec(const CandidTypeVecRecord v)
+    : CandidTypeBase() {
   by_value(std::make_shared<CandidTypeVecRecord>(v));
 }
-CandidTypeOptVec::CandidTypeOptVec(const CandidTypeVecText v) : CandidTypeBase() {
+CandidTypeOptVec::CandidTypeOptVec(const CandidTypeVecText v)
+    : CandidTypeBase() {
   by_value(std::make_shared<CandidTypeVecText>(v));
 }
 

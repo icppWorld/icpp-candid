@@ -80,4 +80,6 @@
 // #include "candid_type_opt_empty.h"
 // #include "candid_type_opt_reserved.h"
 
+#include "candid_type_value.h"
+
 #include "candid_args.h"

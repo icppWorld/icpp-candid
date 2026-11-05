@@ -66,7 +66,6 @@ protected:
   CandidTypeRoot *m_pv{nullptr};
   std::shared_ptr<CandidTypeRoot> m_pvs{nullptr};
 
-
   void initialize();
   void set_datatype();
   void encode_I();

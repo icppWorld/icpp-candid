@@ -3,7 +3,6 @@
 #include "candid_type.h"
 #include "candid_type_all_includes.h"
 
-
 #include "candid_opcode.h"
 #include "candid_principal_text.h"
 #include "candid_type_service.h"

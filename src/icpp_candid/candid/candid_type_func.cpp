@@ -3,7 +3,6 @@
 #include "candid_type.h"
 #include "candid_type_all_includes.h"
 
-
 #include "candid_assert.h"
 #include "candid_opcode.h"
 #include "candid_type_func.h"
@@ -44,17 +43,11 @@ void CandidTypeFunc::append_ret(CandidType ret_type) {
   m_ret_ptrs.push_back(root_ptr(ret_type));
 }
 
-void CandidTypeFunc::set_query() {
-  m_annotations = {1};
-}
+void CandidTypeFunc::set_query() { m_annotations = {1}; }
 
-void CandidTypeFunc::set_oneway() {
-  m_annotations = {2};
-}
+void CandidTypeFunc::set_oneway() { m_annotations = {2}; }
 
-void CandidTypeFunc::set_composite_query() {
-  m_annotations = {3};
-}
+void CandidTypeFunc::set_composite_query() { m_annotations = {3}; }
 
 void CandidTypeFunc::set_datatype() {
   m_datatype_opcode = CandidOpcode().Func;

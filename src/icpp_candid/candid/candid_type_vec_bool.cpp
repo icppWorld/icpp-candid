@@ -1,7 +1,6 @@
 // The class for the Candid Type: vec
 #include "candid_type.h"
 
-
 #include "candid_assert.h"
 #include "candid_opcode.h"
 #include "candid_type_bool.h"

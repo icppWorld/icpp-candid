@@ -15,8 +15,9 @@ CandidSerializeTypeTableRegistry::~CandidSerializeTypeTableRegistry() = default;
 
 void CandidSerializeTypeTableRegistry::clear() {}
 
-size_t CandidSerializeTypeTableRegistry::add_or_replace_type_table(
-    size_t, const VecBytes &) {
+size_t
+CandidSerializeTypeTableRegistry::add_or_replace_type_table(size_t,
+                                                            const VecBytes &) {
   return static_cast<size_t>(-1);
 }
 

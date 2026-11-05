@@ -54,6 +54,9 @@ public:
   __uint128_t get_type_table_index() { return static_cast<size_t>(-1); }
   VecBytes get_I() { return m_I; }
   VecBytes get_M() { return m_M; }
+  // False if get_M() is not this object's value: a CandidTypeValue that only
+  // gives a type or receives a decoded value, or anything that holds one
+  bool has_M() const { return m_has_M; }
   uint64_t get_v_size() { return m_v_size; }
 
   // Record: The field data
@@ -119,6 +122,7 @@ protected:
 
   // The encoded byte vector for the value
   VecBytes m_M;
+  bool m_has_M{true};
 
   // flag set when the instance is created internally, to decode wire
   std::optional<bool> m_is_internal;
