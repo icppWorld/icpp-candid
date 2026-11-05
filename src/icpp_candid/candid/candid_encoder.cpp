@@ -185,9 +185,9 @@ private:
   }
 
   void push_child(std::vector<int64_t> &sig, int c) const {
-    if (!CandidTypeGraph::is_node(c)) {
+    if (primitive(c) != 0) {
       sig.push_back(0);
-      sig.push_back(c);
+      sig.push_back(primitive(c));
     } else if (m_named[size_t(c)]) {
       sig.push_back(1);
       sig.push_back(c);
@@ -238,8 +238,16 @@ private:
     return it->second;
   }
 
+  // A node of a primitive kind: the decoder's empty, in place of a record
+  // that can only contain itself (CandidTypeGraph::replace_empty_records).
+  // It gets no entry; it is referred to by its opcode, as in Rust.
+  int primitive(int t) const {
+    return CandidTypeGraph::is_node(t) ? CandidTypeGraph::prim(m_g.kind(t)) : t;
+  }
+
   int ref(int t) const {
-    return CandidTypeGraph::is_node(t) ? m_idx[size_t(t)] : t;
+    int p = primitive(t);
+    return p != 0 ? p : m_idx[size_t(t)];
   }
 
   // Gives t its index, or the index of an equal type seen before. A new
@@ -253,7 +261,9 @@ private:
     };
     std::vector<Frame> stack;
     auto visit = [&](int n) -> bool {
-      if (!CandidTypeGraph::is_node(n) || m_idx[size_t(n)] != -1) return true;
+      if (!CandidTypeGraph::is_node(n) || m_idx[size_t(n)] != -1 ||
+          primitive(n) != 0)
+        return true;
       auto it = m_by_key.find(m_key[size_t(n)]);
       if (it != m_by_key.end()) {
         m_idx[size_t(n)] = it->second;
@@ -458,16 +468,29 @@ private:
       return true;
     }
     if (v.repeat) {
-      if (!m_g.is_zero_width(inner))
-        return fail("Only a vec of values that take no bytes can repeat");
+      // One element, repeat times. The decoder makes these for elements that
+      // took no bytes on the wire it read, and they may take bytes at this
+      // type (null read as an opt). The element is checked once, and counts
+      // repeat times what it counts once, at least 1, as the decoder counts
+      // the elements it read: so the budget also bounds the bytes written.
       if (v.items.size() != 1)
         return fail("A repeating vec holds its one element");
       write_leb(m_out, v.repeat);
-      // The element takes no bytes: checked once, counted repeat times
       size_t before = m_zero_width;
+      size_t start = m_out.size();
       if (!write(inner, v.items[0])) return false;
+      size_t one = std::max<size_t>(m_zero_width - before, 1);
       m_zero_width = before;
-      return count_zero_width(v.repeat);
+      if (v.repeat > (m_limits.max_zero_width_values - m_zero_width) / one)
+        return fail("More than " +
+                    std::to_string(m_limits.max_zero_width_values) +
+                    " values that take no bytes");
+      m_zero_width += v.repeat * one;
+      size_t end = m_out.size();
+      for (size_t k = 1; k < v.repeat && end > start; ++k)
+        m_out.insert(m_out.end(), m_out.begin() + std::ptrdiff_t(start),
+                     m_out.begin() + std::ptrdiff_t(end));
+      return true;
     }
     write_leb(m_out, v.items.size());
     for (const auto &item : v.items)
