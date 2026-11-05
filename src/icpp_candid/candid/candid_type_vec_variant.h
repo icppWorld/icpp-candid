@@ -66,13 +66,9 @@ protected:
   CandidTypeRoot *m_pv{nullptr};
   std::shared_ptr<CandidTypeRoot> m_pvs{nullptr};
 
-  // For encoding: a shared pointer to a dummy variant
-  std::shared_ptr<CandidTypeVariant> m_pv_dummy{nullptr};
-  void create_dummy_variant_encode();
 
   void initialize();
   void set_datatype();
-  void encode_T();
   void encode_I();
 
   // Helper to find label index in the template variant

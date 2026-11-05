@@ -81,8 +81,8 @@ protected:
   std::shared_ptr<CandidTypeRoot> m_pvs{nullptr};
 
   void initialize();
+  void by_value(std::shared_ptr<CandidTypeRoot> p_v);
   void set_datatype();
-  void encode_T();
   void encode_I();
 
   // During   serialization: set to true during construction

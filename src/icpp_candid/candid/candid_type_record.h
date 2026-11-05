@@ -37,7 +37,6 @@ protected:
   void _append(uint32_t field_id, std::string field_name, CandidType field);
 
   void set_datatype();
-  void encode_T();
   void encode_I();
   void encode_M();
 

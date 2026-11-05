@@ -26,7 +26,6 @@ CandidTypeInt16::~CandidTypeInt16() {}
 void CandidTypeInt16::initialize(const int16_t &v) {
   m_v = v;
   set_datatype();
-  encode_T();
   encode_I();
   encode_M();
 }

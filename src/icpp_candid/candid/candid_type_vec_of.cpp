@@ -3,7 +3,6 @@
 #include "candid_type.h"
 #include "candid_type_all_includes.h"
 
-#include "candid_serialize_type_table_registry.h"
 #include "candid_deserialize.h"
 
 #include "candid_debug_config.h"
@@ -42,7 +41,6 @@ CandidTypeVecOf::~CandidTypeVecOf() {}
 void CandidTypeVecOf::initialize() {
   set_datatype();
   set_content_type();
-  encode_T();
   encode_I();
   encode_M();
 }
@@ -57,24 +55,6 @@ void CandidTypeVecOf::set_content_type() {
   m_content_opcode = m_p_element_type->get_datatype_opcode();
   m_content_hex = m_p_element_type->get_datatype_hex();
   m_content_textual = m_p_element_type->get_datatype_textual();
-}
-
-// T(vec <datatype>) = sleb128(-19) I(<datatype>)
-void CandidTypeVecOf::encode_T() {
-  m_T.clear();
-  m_T.append_byte((std::byte)m_datatype_hex);
-  if (m_p_element_type->get_T().size() > 0) {
-    // A <comptype>: the index of its type table
-    m_T.append_sleb128(__int128_t(m_p_element_type->get_type_table_index()));
-  } else {
-    // A <primtype>: its opcode
-    VecBytes I = m_p_element_type->get_I();
-    for (std::byte b : I.vec()) {
-      m_T.append_byte(b);
-    }
-  }
-  m_type_table_index = CandidSerializeTypeTableRegistry::get_instance()
-                           .add_or_replace_type_table(m_type_table_index, m_T);
 }
 
 void CandidTypeVecOf::encode_I() { m_I.append_byte((std::byte)m_datatype_hex); }

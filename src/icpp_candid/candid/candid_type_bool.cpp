@@ -25,7 +25,6 @@ CandidTypeBool::~CandidTypeBool() {}
 void CandidTypeBool::initialize(const bool &v) {
   m_v = v;
   set_datatype();
-  encode_T();
   encode_I();
   encode_M();
 }

@@ -48,8 +48,10 @@ public:
     m_content_datatype = content_datatype;
   }
 
-  VecBytes get_T() { return m_T; }
-  __uint128_t get_type_table_index() { return m_type_table_index; }
+  // Deprecated, since 7.1.0rc2 builds the type table at serialize time:
+  // get_T() is empty, get_type_table_index() is size_t(-1)
+  VecBytes get_T() { return VecBytes(); }
+  __uint128_t get_type_table_index() { return static_cast<size_t>(-1); }
   VecBytes get_I() { return m_I; }
   VecBytes get_M() { return m_M; }
   uint64_t get_v_size() { return m_v_size; }
@@ -111,16 +113,6 @@ protected:
   // Sort the field data by field id (hash), as the Candid spec requires for
   // the fields of a record and of a variant in the type table
   void sort_fields_by_id();
-
-  // The encoded byte vector for the Type Table
-  VecBytes m_T;
-
-  // The unique type table index into the registry,
-  // As maintained by the CandidSerializeTypeTableRegistry singleton
-  // Note: setting it to -1 is ok, because it relies on defined unsigned
-  //       integer underflow behavior. It will be set to to maximum
-  //       representable value of size_t.
-  size_t m_type_table_index{static_cast<size_t>(-1)};
 
   // The encoded byte vector for the Candid Type
   VecBytes m_I;
