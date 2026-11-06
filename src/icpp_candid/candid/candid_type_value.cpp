@@ -12,14 +12,10 @@ CandidTypeValue::CandidTypeValue(const CandidTypeGraph &g, int t,
                                  const CandidValue &v)
     : CandidTypeBase(), m_v(v) {
   initialize(g, t);
-  if (!m_has_M) {
-    std::string err;
-    std::vector<uint8_t> out;
-    CandidEncoder::encode_value(g, t, v, out, err);
+  if (!m_has_M)
     ICPP_HOOKS::trap("ERROR: CandidTypeValue - the value does not fit the "
                      "type " +
-                     g.to_string(t) + ": " + err);
-  }
+                     g.to_string(t) + ": " + m_err);
 }
 
 CandidTypeValue::CandidTypeValue(const CandidTypeGraph &g, int t,
@@ -87,8 +83,8 @@ void CandidTypeValue::encode_I() { m_I.append_byte((std::byte)m_datatype_hex); }
 void CandidTypeValue::encode_M() {
   m_M.clear();
   std::vector<uint8_t> out;
-  std::string err;
-  m_has_M = CandidEncoder::encode_value(*m_g, m_t, m_v, out, err);
+  m_err.clear();
+  m_has_M = CandidEncoder::encode_value(*m_g, m_t, m_v, out, m_err);
   if (m_has_M) m_M.append_bytes(out.data(), uint32_t(out.size()));
 }
 
@@ -96,8 +92,12 @@ int CandidTypeValue::graph_type(CandidTypeGraph &g) {
   return g.import(*m_g, m_t);
 }
 
+// A decoded value is not encoded again: a value the decoder holds compactly
+// (a vec of one repeated element) can take many more bytes than the message
+// it came from. To send it, build a new CandidTypeValue with it.
 void CandidTypeValue::bind(const CandidValue &v) {
   m_v = v;
   if (m_p_v) *m_p_v = v;
-  encode_M();
+  m_M.clear();
+  m_has_M = false;
 }

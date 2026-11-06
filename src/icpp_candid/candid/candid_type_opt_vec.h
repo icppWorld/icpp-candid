@@ -3,6 +3,8 @@
 #pragma once
 
 #include <cstring>
+#include <memory>
+#include <type_traits>
 
 #include "candid_type.h"
 #include "candid_type_base.h"
@@ -54,6 +56,16 @@ public:
 
   // Internal: During deserialization for an expected argument
   CandidTypeOptVec(CandidTypeRoot *v, bool *has_value);
+
+  // Any other vec class, by value: CandidTypeVecBlob, CandidTypeVecVariant,
+  // CandidTypeVecOf. A template, so the vec keeps its own class instead of
+  // being sliced to a CandidTypeRoot, which cannot describe its type.
+  template <class T,
+            class = std::enable_if_t<std::is_base_of_v<CandidTypeRoot, T> &&
+                                     !std::is_same_v<T, CandidTypeRoot>>>
+  CandidTypeOptVec(const T &v) : CandidTypeBase() {
+    by_value(std::make_shared<T>(v));
+  }
 
   // Internal: During serialization
   CandidTypeOptVec(const CandidTypeRoot v);

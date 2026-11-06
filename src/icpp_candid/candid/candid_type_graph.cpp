@@ -193,7 +193,8 @@ static bool same_(const CandidTypeGraph &g1, int t1, const CandidTypeGraph &g2,
         return false;
     return true;
   default:
-    return false;
+    // A node of a primitive kind, e.g. the decoder's empty: the kind decides.
+    return k != CandidKind::Future;
   }
 }
 

@@ -78,7 +78,8 @@ public:
         err = "An argument type is not in the type graph";
         return false;
       }
-    name_cycles(args);
+    reach(args);
+    name_cycles();
     for (int n : m_reached)
       compute_keys(n);
     for (int a : args)
@@ -105,11 +106,53 @@ private:
   std::map<int, int> m_by_key; // structure -> index, of unnamed nodes
   std::vector<std::vector<uint8_t>> m_entries;
   std::vector<int> m_reached; // the nodes reachable from the arguments
+  std::vector<int> m_pre;     // the same, in the order they are met
+
+  // The nodes reachable from the arguments: in m_pre in the order a depth
+  // first walk meets them, and in m_reached in the order it leaves them
+  void reach(const std::vector<int> &args) {
+    std::vector<bool> seen(m_g.size(), false);
+    struct Frame {
+      int node;
+      std::vector<int> kids;
+      size_t next;
+    };
+    std::vector<Frame> stack;
+    for (int a : args) {
+      if (!CandidTypeGraph::is_node(a) || seen[size_t(a)]) continue;
+      seen[size_t(a)] = true;
+      m_pre.push_back(a);
+      stack.push_back({a, children(m_g.node(a)), 0});
+      while (!stack.empty()) {
+        Frame &f = stack.back();
+        if (f.next == f.kids.size()) {
+          m_reached.push_back(f.node);
+          stack.pop_back();
+          continue;
+        }
+        int c = f.kids[f.next++];
+        if (!CandidTypeGraph::is_node(c) || seen[size_t(c)]) continue;
+        seen[size_t(c)] = true;
+        m_pre.push_back(c);
+        stack.push_back({c, children(m_g.node(c)), 0});
+      }
+    }
+  }
 
   // A cycle that passes through no named node has no name to stop at: the
-  // node the cycle returns to is treated as named. The walk is depth first
-  // in table order, so the choice is the same every time.
-  void name_cycles(const std::vector<int> &args) {
+  // node the cycle returns to is treated as named. A depth first walk sees
+  // the cycles that close on its path, not those that close through a node
+  // it has already left, so it walks again, over the nodes not named yet,
+  // until a walk names none: then every cycle passes through a named node.
+  // The walks go in table order, so the choice is the same every time.
+  void name_cycles() {
+    while (name_cycles_once()) {
+    }
+  }
+
+  // One walk over the unnamed nodes; true if it named one
+  bool name_cycles_once() {
+    bool named_one = false;
     std::vector<uint8_t> state(m_g.size(), 0); // 0 new, 1 on stack, 2 done
     std::vector<size_t> pos(m_g.size(), 0);
     struct Frame {
@@ -119,13 +162,15 @@ private:
     };
     std::vector<Frame> stack;
     std::vector<long> last_named; // per stack position
-    for (int a : args) {
-      if (!CandidTypeGraph::is_node(a) || state[size_t(a)]) continue;
+    auto unnamed = [&](int n) {
+      return CandidTypeGraph::is_node(n) && !m_named[size_t(n)];
+    };
+    for (int a : m_pre) {
+      if (!unnamed(a) || state[size_t(a)]) continue;
       auto push = [&](int n) {
         state[size_t(n)] = 1;
         pos[size_t(n)] = stack.size();
-        long below = last_named.empty() ? -1 : last_named.back();
-        last_named.push_back(m_named[size_t(n)] ? long(stack.size()) : below);
+        last_named.push_back(last_named.empty() ? -1 : last_named.back());
         stack.push_back({n, children(m_g.node(n)), 0});
       };
       push(a);
@@ -133,25 +178,26 @@ private:
         Frame &f = stack.back();
         if (f.next == f.kids.size()) {
           state[size_t(f.node)] = 2;
-          m_reached.push_back(f.node);
           stack.pop_back();
           last_named.pop_back();
           continue;
         }
         int c = f.kids[f.next++];
-        if (!CandidTypeGraph::is_node(c)) continue;
+        if (!unnamed(c)) continue;
         if (state[size_t(c)] == 0) {
           push(c);
         } else if (state[size_t(c)] == 1) {
           size_t p = pos[size_t(c)];
           if (last_named.back() < long(p)) {
             m_named[size_t(c)] = true;
+            named_one = true;
             for (size_t i = p; i < last_named.size(); ++i)
               last_named[i] = std::max(last_named[i], long(p));
           }
         }
       }
     }
+    return named_one;
   }
 
   // The structure of t: its kind, ids, names and annotations, and its
@@ -470,26 +516,32 @@ private:
     if (v.repeat) {
       // One element, repeat times. The decoder makes these for elements that
       // took no bytes on the wire it read, and they may take bytes at this
-      // type (null read as an opt). The element is checked once, and counts
-      // repeat times what it counts once, at least 1, as the decoder counts
-      // the elements it read: so the budget also bounds the bytes written.
+      // type (null read as an opt, a record{} read as a record of opts). The
+      // element is checked and written once, then copied. Each copy counts
+      // against the budget what the element counts once, and at least the
+      // bytes it takes, so a few bytes of value cannot make a large message
       if (v.items.size() != 1)
         return fail("A repeating vec holds its one element");
       write_leb(m_out, v.repeat);
       size_t before = m_zero_width;
       size_t start = m_out.size();
       if (!write(inner, v.items[0])) return false;
-      size_t one = std::max<size_t>(m_zero_width - before, 1);
+      size_t bytes = m_out.size() - start;
+      size_t one = std::max({m_zero_width - before, bytes, size_t(1)});
       m_zero_width = before;
       if (v.repeat > (m_limits.max_zero_width_values - m_zero_width) / one)
-        return fail("More than " +
+        return fail("A repeating vec of " + std::to_string(v.repeat) +
+                    " elements is over the budget of " +
                     std::to_string(m_limits.max_zero_width_values) +
                     " values that take no bytes");
       m_zero_width += v.repeat * one;
-      size_t end = m_out.size();
-      for (size_t k = 1; k < v.repeat && end > start; ++k)
-        m_out.insert(m_out.end(), m_out.begin() + std::ptrdiff_t(start),
-                     m_out.begin() + std::ptrdiff_t(end));
+      if (bytes > 0) {
+        std::vector<uint8_t> element(m_out.begin() + std::ptrdiff_t(start),
+                                     m_out.end());
+        m_out.reserve(m_out.size() + (v.repeat - 1) * bytes);
+        for (size_t k = 1; k < v.repeat; ++k)
+          m_out.insert(m_out.end(), element.begin(), element.end());
+      }
       return true;
     }
     write_leb(m_out, v.items.size());

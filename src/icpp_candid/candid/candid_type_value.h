@@ -24,6 +24,7 @@
 // Decode: give where the value goes:
 //   CandidValue v;
 //   ic_api.from_wire(CandidTypeValue{g, list, &v});
+// The decoded value is in v; to send it, build a new CandidTypeValue with it.
 //
 // Only the type, as the content of a CandidTypeOptOf or a CandidTypeVecOf:
 //   CandidTypeOptOf{CandidTypeValue{g, list}}
@@ -67,6 +68,7 @@ protected:
   int m_t{0};
   CandidValue m_v;
   CandidValue *m_p_v{nullptr};
+  std::string m_err; // why the value does not encode, if it does not
 
 private:
   void initialize(const CandidTypeGraph &g, int t);

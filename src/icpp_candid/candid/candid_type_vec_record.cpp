@@ -86,6 +86,7 @@ void CandidTypeVecRecord::encode_M() {
     size_vec = __uint128_t(m_v.get_field_ptrs()[0]->get_v_size());
   }
   m_M.append_uleb128(size_vec);
+  m_has_M = m_v.has_M();
 
   // encoded vec values - M(v : <datatype>)^N
   auto field_ptrs = m_v.get_field_ptrs();
