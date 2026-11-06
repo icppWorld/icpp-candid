@@ -182,6 +182,59 @@ bool CandidBigInt::to_i64(int64_t &v) const {
   return true;
 }
 
+bool CandidBigInt::bit(size_t k) const {
+  size_t limb = k / 32;
+  return limb < m_limbs.size() && ((m_limbs[limb] >> (k % 32)) & 1u) != 0;
+}
+
+size_t CandidBigInt::bit_length() const {
+  if (m_limbs.empty()) return 0;
+  size_t n = (m_limbs.size() - 1) * 32;
+  for (uint32_t top = m_limbs.back(); top != 0; top >>= 1)
+    ++n;
+  return n;
+}
+
+// The 7-bit groups of the magnitude's bits, least significant first. With
+// invert, the bits are inverted: the two's complement of a negative number is
+// the inverted bits of |x| - 1. Unsigned (LEB128), the last group is the one
+// with no bits above it; signed (SLEB128), it must also carry the sign in its
+// bit 6, so the bits above it all repeat that sign.
+void CandidBigInt::write_groups(std::vector<uint8_t> &out, bool sleb,
+                                bool invert) const {
+  size_t len = bit_length();
+  for (size_t i = 0;; ++i) {
+    uint8_t group = 0;
+    for (size_t j = 0; j < 7; ++j)
+      if (bit(7 * i + j) != invert) group |= uint8_t(1u << j);
+    bool sign_ok = !sleb || (((group & 0x40) != 0) == invert);
+    bool done = 7 * (i + 1) >= len && sign_ok;
+    out.push_back(done ? group : uint8_t(group | 0x80));
+    if (done) return;
+  }
+}
+
+bool CandidBigInt::to_leb128(std::vector<uint8_t> &out) const {
+  if (m_neg) return false;
+  write_groups(out, false, false);
+  return true;
+}
+
+void CandidBigInt::to_sleb128(std::vector<uint8_t> &out) const {
+  if (!m_neg) {
+    write_groups(out, true, false);
+    return;
+  }
+  // |x| - 1, a magnitude of at least 0
+  CandidBigInt m = *this;
+  m.m_neg = false;
+  for (auto &l : m.m_limbs) {
+    if (l-- != 0) break;
+  }
+  m.normalize();
+  m.write_groups(out, true, true);
+}
+
 std::string CandidBigInt::to_string() const {
   if (m_limbs.empty()) return "0";
   CandidBigInt t = *this;

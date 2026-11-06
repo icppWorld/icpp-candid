@@ -36,7 +36,6 @@ void CandidTypeFloat32::initialize(const float &v) {
   }
   m_v = v;
   set_datatype();
-  encode_T();
   encode_I();
   encode_M();
 }

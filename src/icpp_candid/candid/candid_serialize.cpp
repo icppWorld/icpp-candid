@@ -4,8 +4,11 @@
 #include <variant>
 
 #include "candid_assert.h"
+#include "candid_debug_config.h"
+#include "candid_decoder.h"
+#include "candid_encoder.h"
+#include "icpp_hooks.h"
 #include "candid_serialize.h"
-#include "candid_serialize_type_table_registry.h"
 #include "candid_type.h"
 #include "candid_type_all_includes.h"
 
@@ -28,49 +31,24 @@ void CandidSerialize::serialize() {
   // M(kv* : <datatype>*)                 values of argument list
 
   m_B.clear();
-  CandidSerializeTypeTableRegistry::get_instance().prune();
-  std::vector<CandidSerializeTypeTableEntry> unique_type_tables =
-      CandidSerializeTypeTableRegistry::get_instance().get_unique_type_tables();
 
-  // -------------------------------------------------------------------------------------
-  // i8('D') i8('I') i8('D') i8('L')      magic number
-  m_B.append_didl();
-
-  // -------------------------------------------------------------------------------------
-  // T*(<comptype>*)                      type definition table
-  // Write the unique TypeTables of the comptypes:
-  // (-) Constructed Types (opt, vec, record, variant)
-  // (-) Reference Types (func, service)
-
-  // Append the number of unique type tables
-  m_B.append_uleb128(__uint128_t(unique_type_tables.size()));
-
-  // Append the type tables
-  for (const CandidSerializeTypeTableEntry &entry : unique_type_tables) {
-    const VecBytes &T = entry.type_table_vec_bytes;
-    for (std::byte b : T.vec()) {
-      m_B.append_byte(b);
-    }
+  // The magic number, the type table and the argument types: built once,
+  // from the types of the arguments, by the encoder
+  CandidTypeGraph g;
+  std::vector<int> types;
+  for (const auto &p_c : m_A.m_args_ptrs) {
+    if (!p_c->has_M())
+      ICPP_HOOKS::trap("ERROR: cannot serialize an argument without a value: "
+                       "a CandidTypeValue made with only a type, or for "
+                       "decoding, holds no value that fits its type");
+    types.push_back(p_c->graph_type(g));
   }
-
-  // -------------------------------------------------------------------------------------
-  // I*(<datatype>*)                      types of the argument list
-  m_B.append_uleb128(__uint128_t(m_A.m_args_ptrs.size()));
-
-  for (size_t i = 0; i < m_A.m_args_ptrs.size(); ++i) {
-    VecBytes T = m_A.m_args_ptrs[i]->get_T();
-    if (T.size() > 0) {
-      // For <comptypes>, we use the index into the type table we defined above
-      __uint128_t type_table_index = m_A.m_args_ptrs[i]->get_type_table_index();
-      m_B.append_sleb128(__int128_t(type_table_index));
-    } else {
-      // For <primtypes>, use the Opcode, already stored
-      VecBytes I = m_A.m_args_ptrs[i]->get_I();
-      for (std::byte b : I.vec()) {
-        m_B.append_byte(b);
-      }
-    }
-  }
+  std::vector<uint8_t> header;
+  std::string err;
+  if (!CandidEncoder::encode_header(g, types, header, err))
+    ICPP_HOOKS::trap("ERROR: cannot serialize the argument types: " + err);
+  for (uint8_t b : header)
+    m_B.append_byte(std::byte(b));
 
   // -------------------------------------------------------------------------------------
   // M(kv* : <datatype>*)                 values of argument list
@@ -79,6 +57,16 @@ void CandidSerialize::serialize() {
     for (std::byte b : M.vec()) {
       m_B.append_byte(b);
     }
+  }
+
+  if constexpr (CANDID_SERIALIZE_SELF_CHECK) {
+    const std::vector<uint8_t> &bytes = m_B.vec_uint8_t();
+    std::vector<CandidValue> values;
+    if (!CandidDecoder::decode(bytes.data(), bytes.size(), g, types, values,
+                               err))
+      ICPP_HOOKS::trap("ERROR: CandidSerialize wrote a message that does not "
+                       "decode at its own types: " +
+                       err + "\n" + m_B.as_hex_string());
   }
 
   // Append R

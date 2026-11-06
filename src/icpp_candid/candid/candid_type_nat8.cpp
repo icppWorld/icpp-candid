@@ -26,7 +26,6 @@ CandidTypeNat8::~CandidTypeNat8() {}
 void CandidTypeNat8::initialize(const uint8_t &v) {
   m_v = v;
   set_datatype();
-  encode_T();
   encode_I();
   encode_M();
 }

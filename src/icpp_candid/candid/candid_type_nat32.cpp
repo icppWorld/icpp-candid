@@ -26,7 +26,6 @@ CandidTypeNat32::~CandidTypeNat32() {}
 void CandidTypeNat32::initialize(const uint32_t &v) {
   m_v = v;
   set_datatype();
-  encode_T();
   encode_I();
   encode_M();
 }

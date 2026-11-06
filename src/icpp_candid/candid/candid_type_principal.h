@@ -48,7 +48,6 @@ protected:
   void set_pv(std::string *v);
   void initialize(const std::string &v);
   void set_datatype();
-  void encode_T() { m_T.clear(); } // type table for Primitives is empty
   void encode_I();
   void encode_M();
   void bytes_from_string();

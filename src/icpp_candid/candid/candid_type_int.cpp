@@ -25,7 +25,6 @@ CandidTypeInt::~CandidTypeInt() {}
 void CandidTypeInt::initialize(const __int128_t &v) {
   m_v = v;
   set_datatype();
-  encode_T();
   encode_I();
   encode_M();
 }

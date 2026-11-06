@@ -35,7 +35,6 @@ void CandidTypeFloat64::initialize(const double &v) {
   }
   m_v = v;
   set_datatype();
-  encode_T();
   encode_I();
   encode_M();
 }

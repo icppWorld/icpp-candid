@@ -4,13 +4,13 @@
 
 #include "candid_type.h"
 
-#include "candid_serialize_type_table_registry.h"
-
 #include "candid_assert.h"
 #include "candid_opcode.h"
 #include "candid_type_base.h"
 #include "candid_deserialize.h"
 #include "candid_type_opt_vec.h"
+#include "candid_type_all_includes.h"
+#include "candid_type_of.h"
 
 #include <cassert>
 
@@ -57,40 +57,73 @@ CandidTypeOptVec::CandidTypeOptVec(CandidTypeVecRecord *p_v, bool *has_value)
 CandidTypeOptVec::CandidTypeOptVec(CandidTypeVecText *p_v, bool *has_value)
     : CandidTypeOptVec(static_cast<CandidTypeRoot *>(p_v), has_value) {}
 
-// These constructors are only for encoding
-// Delegate constructors to root level
+// These constructors are only for encoding. They keep a copy of the vec as
+// its own class, which graph_type() needs: a CandidTypeRoot copy of it knows
+// only its opcodes, not the type of a record's fields.
 CandidTypeOptVec::CandidTypeOptVec(const CandidTypeVecBool v)
-    : CandidTypeOptVec(static_cast<CandidTypeRoot>(v)) {}
+    : CandidTypeBase() {
+  by_value(std::make_shared<CandidTypeVecBool>(v));
+}
 CandidTypeOptVec::CandidTypeOptVec(const CandidTypeVecFloat32 v)
-    : CandidTypeOptVec(static_cast<CandidTypeRoot>(v)) {}
+    : CandidTypeBase() {
+  by_value(std::make_shared<CandidTypeVecFloat32>(v));
+}
 CandidTypeOptVec::CandidTypeOptVec(const CandidTypeVecFloat64 v)
-    : CandidTypeOptVec(static_cast<CandidTypeRoot>(v)) {}
+    : CandidTypeBase() {
+  by_value(std::make_shared<CandidTypeVecFloat64>(v));
+}
 CandidTypeOptVec::CandidTypeOptVec(const CandidTypeVecInt v)
-    : CandidTypeOptVec(static_cast<CandidTypeRoot>(v)) {}
+    : CandidTypeBase() {
+  by_value(std::make_shared<CandidTypeVecInt>(v));
+}
 CandidTypeOptVec::CandidTypeOptVec(const CandidTypeVecInt8 v)
-    : CandidTypeOptVec(static_cast<CandidTypeRoot>(v)) {}
+    : CandidTypeBase() {
+  by_value(std::make_shared<CandidTypeVecInt8>(v));
+}
 CandidTypeOptVec::CandidTypeOptVec(const CandidTypeVecInt16 v)
-    : CandidTypeOptVec(static_cast<CandidTypeRoot>(v)) {}
+    : CandidTypeBase() {
+  by_value(std::make_shared<CandidTypeVecInt16>(v));
+}
 CandidTypeOptVec::CandidTypeOptVec(const CandidTypeVecInt32 v)
-    : CandidTypeOptVec(static_cast<CandidTypeRoot>(v)) {}
+    : CandidTypeBase() {
+  by_value(std::make_shared<CandidTypeVecInt32>(v));
+}
 CandidTypeOptVec::CandidTypeOptVec(const CandidTypeVecInt64 v)
-    : CandidTypeOptVec(static_cast<CandidTypeRoot>(v)) {}
+    : CandidTypeBase() {
+  by_value(std::make_shared<CandidTypeVecInt64>(v));
+}
 CandidTypeOptVec::CandidTypeOptVec(const CandidTypeVecNat v)
-    : CandidTypeOptVec(static_cast<CandidTypeRoot>(v)) {}
+    : CandidTypeBase() {
+  by_value(std::make_shared<CandidTypeVecNat>(v));
+}
 CandidTypeOptVec::CandidTypeOptVec(const CandidTypeVecNat8 v)
-    : CandidTypeOptVec(static_cast<CandidTypeRoot>(v)) {}
+    : CandidTypeBase() {
+  by_value(std::make_shared<CandidTypeVecNat8>(v));
+}
 CandidTypeOptVec::CandidTypeOptVec(const CandidTypeVecNat16 v)
-    : CandidTypeOptVec(static_cast<CandidTypeRoot>(v)) {}
+    : CandidTypeBase() {
+  by_value(std::make_shared<CandidTypeVecNat16>(v));
+}
 CandidTypeOptVec::CandidTypeOptVec(const CandidTypeVecNat32 v)
-    : CandidTypeOptVec(static_cast<CandidTypeRoot>(v)) {}
+    : CandidTypeBase() {
+  by_value(std::make_shared<CandidTypeVecNat32>(v));
+}
 CandidTypeOptVec::CandidTypeOptVec(const CandidTypeVecNat64 v)
-    : CandidTypeOptVec(static_cast<CandidTypeRoot>(v)) {}
+    : CandidTypeBase() {
+  by_value(std::make_shared<CandidTypeVecNat64>(v));
+}
 CandidTypeOptVec::CandidTypeOptVec(const CandidTypeVecPrincipal v)
-    : CandidTypeOptVec(static_cast<CandidTypeRoot>(v)) {}
+    : CandidTypeBase() {
+  by_value(std::make_shared<CandidTypeVecPrincipal>(v));
+}
 CandidTypeOptVec::CandidTypeOptVec(const CandidTypeVecRecord v)
-    : CandidTypeOptVec(static_cast<CandidTypeRoot>(v)) {}
+    : CandidTypeBase() {
+  by_value(std::make_shared<CandidTypeVecRecord>(v));
+}
 CandidTypeOptVec::CandidTypeOptVec(const CandidTypeVecText v)
-    : CandidTypeOptVec(static_cast<CandidTypeRoot>(v)) {}
+    : CandidTypeBase() {
+  by_value(std::make_shared<CandidTypeVecText>(v));
+}
 
 // Internal: During deserialization for an expected argument
 CandidTypeOptVec::CandidTypeOptVec(CandidTypeRoot *p_v_root, bool *has_value)
@@ -99,6 +132,13 @@ CandidTypeOptVec::CandidTypeOptVec(CandidTypeRoot *p_v_root, bool *has_value)
   m_p_has_value = has_value; // Set to true when found on wire
   set_pv(p_v_root);
   set_v(*p_v_root);
+  m_pvs = candid_type_of::root_ptr(p_v_root->toCandidType());
+  initialize();
+}
+
+void CandidTypeOptVec::by_value(std::shared_ptr<CandidTypeRoot> p_v) {
+  m_pvs = p_v;
+  set_v(*p_v);
   initialize();
 }
 
@@ -134,6 +174,7 @@ void CandidTypeOptVec::encode_M() {
 
   m_M.append_int_fixed_width(uint8_t{1});
   m_M.append(m_v.get_M());
+  m_has_M = m_v.has_M();
 }
 
 //------------
@@ -141,7 +182,6 @@ void CandidTypeOptVec::encode_M() {
 void CandidTypeOptVec::initialize() {
   set_datatype();
   set_content_type();
-  encode_T();
   encode_I();
   encode_M();
 }
@@ -150,19 +190,6 @@ void CandidTypeOptVec::set_datatype() {
   m_datatype_opcode = CandidOpcode().Opt;
   m_datatype_hex = OpcodeHex().Opt;
   m_datatype_textual = OpcodeTextual().Opt;
-}
-
-// build the type table encoding
-void CandidTypeOptVec::encode_T() {
-  m_T.append_byte((std::byte)m_datatype_hex);
-
-  // The type-table-index of the Vec that is Optional
-  __uint128_t m_content_datatype = m_v.get_type_table_index();
-  m_T.append_sleb128(__int128_t(m_content_datatype));
-
-  // Update the type table registry
-  m_type_table_index = CandidSerializeTypeTableRegistry::get_instance()
-                           .add_or_replace_type_table(m_type_table_index, m_T);
 }
 
 // For opts, we set the Opcode, but note that it is not used during serialization.
@@ -176,7 +203,9 @@ void CandidTypeOptVec::encode_I() {
 }
 
 int CandidTypeOptVec::graph_type(CandidTypeGraph &g) {
-  CandidTypeRoot *p = m_pv ? m_pv : (m_pvs ? m_pvs.get() : &m_v);
+  // The type comes from this object's own copy, never from the caller's
+  // pointer: that one may be gone by the time a message is serialized.
+  CandidTypeRoot *p = m_pvs ? m_pvs.get() : &m_v;
   return g.opt(p->graph_type(g));
 }
 

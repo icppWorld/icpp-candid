@@ -3,7 +3,6 @@
 #include "candid_debug_config.h"
 #include "candid_assert.h"
 #include "candid_opcode.h"
-#include "candid_serialize_type_table_registry.h"
 #include "candid_deserialize.h"
 #include "candid_type.h"
 #include "candid_type_all_includes.h"
@@ -48,7 +47,6 @@ CandidTypeVariant::~CandidTypeVariant() {}
 
 void CandidTypeVariant::initialize() {
   set_datatype();
-  encode_T();
   encode_I();
   encode_M();
 }
@@ -162,41 +160,7 @@ void CandidTypeVariant::_append(uint32_t field_id, std::string field_name,
 
   sort_fields_by_id();
 
-  encode_T();
   encode_M();
-}
-
-// (re-)build the type table encoding
-void CandidTypeVariant::encode_T() {
-  m_T.clear();
-
-  m_T.append_byte((std::byte)m_datatype_hex);
-  m_T.append_uleb128(__uint128_t(m_field_ptrs.size()));
-  for (size_t i = 0; i < m_field_ptrs.size(); ++i) {
-    // id or hash of the variant field, append without packing into a fixed width
-    m_T.append_uleb128(__uint128_t(m_field_ids[i]));
-
-    // type table or the data type of the record field
-    if (m_field_ptrs[i]) {
-      VecBytes T = m_field_ptrs[i]->get_T();
-      if (T.size() > 0) {
-        // For <comptypes>, we use the index into the type table we defined above
-        __uint128_t type_table_index = m_field_ptrs[i]->get_type_table_index();
-        m_T.append_sleb128(__int128_t(type_table_index));
-      } else {
-        // For <primtypes>, use the Opcode, already stored
-        VecBytes I = m_field_ptrs[i]->get_I();
-        for (std::byte b : I.vec()) {
-          m_T.append_byte(b);
-        }
-      }
-    }
-  }
-
-  // Update the type table registry,
-  m_type_table_index = CandidSerializeTypeTableRegistry::get_instance()
-                           .add_or_replace_type_table(m_type_table_index, m_T);
-  ;
 }
 
 // For variants, we set the Opcode, but note that it is not used during serialization.
@@ -214,6 +178,7 @@ void CandidTypeVariant::encode_M() {
   // https://github.com/dfinity/candid/blob/master/spec/Candid.md#memory
   // M(kv   : variant {<fieldtype>*}) = leb128(i) M(kv : <fieldtype>*[i])
   m_M.clear();
+  m_has_M = true;
 
   for (size_t i = 0; i < m_field_names.size(); ++i) {
     if (m_field_names[i] == m_label) {
@@ -223,6 +188,7 @@ void CandidTypeVariant::encode_M() {
       // encode the variant's value
       // The get_M method is in the CandidTypeBase class
       if (m_field_ptrs[i]) {
+        m_has_M = m_field_ptrs[i]->has_M();
         VecBytes M = m_field_ptrs[i]->get_M();
         for (std::byte b : M.vec()) {
           m_M.append_byte(b);

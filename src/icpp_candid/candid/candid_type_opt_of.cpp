@@ -2,8 +2,6 @@
 #include "candid_type.h"
 #include "candid_type_all_includes.h"
 
-#include "candid_serialize_type_table_registry.h"
-
 #include "candid_opcode.h"
 #include "candid_type_of.h"
 #include "candid_type_opt_of.h"
@@ -45,7 +43,6 @@ CandidTypeOptOf::~CandidTypeOptOf() {}
 void CandidTypeOptOf::initialize() {
   set_datatype();
   set_content_type();
-  encode_T();
   encode_I();
   encode_M();
 }
@@ -62,33 +59,20 @@ void CandidTypeOptOf::set_content_type() {
   m_content_textual = m_p_content_type->get_datatype_textual();
 }
 
-// T(opt <datatype>) = sleb128(-18) I(<datatype>)
-void CandidTypeOptOf::encode_T() {
-  m_T.clear();
-  m_T.append_byte((std::byte)m_datatype_hex);
-  if (m_p_content_type->get_T().size() > 0) {
-    // A <comptype>: the index of its type table
-    m_T.append_sleb128(__int128_t(m_p_content_type->get_type_table_index()));
-  } else {
-    // A <primtype>: its opcode
-    m_T.append(m_p_content_type->get_I());
-  }
-  m_type_table_index = CandidSerializeTypeTableRegistry::get_instance()
-                           .add_or_replace_type_table(m_type_table_index, m_T);
-}
-
 void CandidTypeOptOf::encode_I() { m_I.append_byte((std::byte)m_datatype_hex); }
 
 // M(null : opt <datatype>) = i8(0)
 // M(?v   : opt <datatype>) = i8(1) M(v : <datatype>)
 void CandidTypeOptOf::encode_M() {
   m_M.clear();
+  m_has_M = true;
   if (!m_p_value) {
     m_M.append_int_fixed_width(uint8_t{0});
     return;
   }
   m_M.append_int_fixed_width(uint8_t{1});
   m_M.append(m_p_value->get_M());
+  m_has_M = m_p_value->has_M();
 }
 
 int CandidTypeOptOf::graph_type(CandidTypeGraph &g) {

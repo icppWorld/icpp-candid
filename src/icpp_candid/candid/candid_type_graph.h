@@ -60,11 +60,13 @@ struct CandidGraphField {
   // An expected record field that may be absent, whatever its type: a field
   // the typed API added with CandidTypeRecord::append_optional
   bool optional{false};
+  bool operator==(const CandidGraphField &) const = default;
 };
 
 struct CandidGraphMethod {
   std::string name;
   int type{-1}; // must refer to a func node
+  bool operator==(const CandidGraphMethod &) const = default;
 };
 
 struct CandidGraphNode {
@@ -76,6 +78,7 @@ struct CandidGraphNode {
   std::vector<uint8_t> modes;             // func: annotations, sorted
   std::vector<CandidGraphMethod> methods; // service: sorted by name
   bool defined{true};                     // false while reserved
+  bool operator==(const CandidGraphNode &) const = default;
 };
 
 class CandidTypeGraph {
@@ -98,6 +101,21 @@ public:
   int reserve();
   void define(int idx, CandidGraphNode n);
   int add(CandidGraphNode n);
+
+  // A node made by reserve() is named: the encoder gives it its own type
+  // table entry, as Rust does for a named type. A node made by add() is
+  // structural: equal ones share one entry.
+  bool is_named(int t) const { return t >= 0 && m_named[size_t(t)]; }
+
+  // Copies all of src into this graph and returns where t landed. Importing
+  // a graph with the same nodes again reuses the first copy, so one named
+  // type used twice stays one type.
+  int import(const CandidTypeGraph &src, int t);
+
+  // Two types are the same: equal kinds, ids, methods and annotations, all
+  // the way down. Coinductive, for recursive types.
+  static bool same(const CandidTypeGraph &ga, int a, const CandidTypeGraph &gb,
+                   int b);
 
   int opt(int inner);
   int vec(int inner);
@@ -134,6 +152,14 @@ public:
 
 private:
   std::vector<CandidGraphNode> m_nodes;
+  std::vector<bool> m_named; // per node, see is_named
+  // Graphs imported so far: their nodes, and where the first node landed
+  struct Import {
+    std::vector<CandidGraphNode> nodes;
+    std::vector<bool> named;
+    int offset;
+  };
+  std::vector<Import> m_imports;
   // Caches, of is_zero_width (-1 unknown, 0 no, 1 yes) and is_infinite_opt
   // (0 no, 1 yes, for every node at once)
   std::vector<int8_t> m_zero_width;
