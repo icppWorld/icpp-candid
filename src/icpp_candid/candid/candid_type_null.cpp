@@ -7,7 +7,6 @@
 
 CandidTypeNull::CandidTypeNull() {
   set_datatype();
-  encode_T();
   encode_I();
   encode_M();
 }

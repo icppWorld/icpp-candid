@@ -4,8 +4,6 @@
 
 #include "candid_type.h"
 
-#include "candid_serialize_type_table_registry.h"
-
 #include "candid_assert.h"
 #include "candid_opcode.h"
 #include "candid_type_base.h"
@@ -100,6 +98,7 @@ void CandidTypeOptVariant::encode_M() {
 
   m_M.append_int_fixed_width(uint8_t{1});
   m_M.append(m_v.get_M());
+  m_has_M = m_v.has_M();
 }
 
 //------------
@@ -107,7 +106,6 @@ void CandidTypeOptVariant::encode_M() {
 void CandidTypeOptVariant::initialize() {
   set_datatype();
   set_content_type();
-  encode_T();
   encode_I();
   encode_M();
 }
@@ -116,19 +114,6 @@ void CandidTypeOptVariant::set_datatype() {
   m_datatype_opcode = CandidOpcode().Opt;
   m_datatype_hex = OpcodeHex().Opt;
   m_datatype_textual = OpcodeTextual().Opt;
-}
-
-// build the type table encoding
-void CandidTypeOptVariant::encode_T() {
-  m_T.append_byte((std::byte)m_datatype_hex);
-
-  // The type-table-index of the Variant that is Optional
-  __uint128_t m_content_datatype = m_v.get_type_table_index();
-  m_T.append_sleb128(__int128_t(m_content_datatype));
-
-  // Update the type table registry
-  m_type_table_index = CandidSerializeTypeTableRegistry::get_instance()
-                           .add_or_replace_type_table(m_type_table_index, m_T);
 }
 
 // For opts, we set the Opcode, but note that it is not used during serialization.
@@ -142,7 +127,9 @@ void CandidTypeOptVariant::encode_I() {
 }
 
 int CandidTypeOptVariant::graph_type(CandidTypeGraph &g) {
-  CandidTypeRoot *p = m_pv ? m_pv : (m_pvs ? m_pvs.get() : &m_v);
+  // The type comes from this object's own copy, never from the caller's
+  // pointer: that one may be gone by the time a message is serialized.
+  CandidTypeRoot *p = m_pvs ? m_pvs.get() : &m_v;
   return g.opt(p->graph_type(g));
 }
 

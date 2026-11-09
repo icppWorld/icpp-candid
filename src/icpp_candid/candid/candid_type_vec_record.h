@@ -32,6 +32,7 @@ public:
   CandidTypeRecord get_v() { return m_v; }
   CandidTypeRoot *get_pv() { return m_pv; }
   std::shared_ptr<CandidTypeRoot> get_pvs() { return m_pvs; }
+  // Deprecated: nullptr since 7.1.0rc2, which has no dummy record
   std::shared_ptr<CandidTypeRecord> get_pr() { return m_pr; }
 
 protected:
@@ -47,10 +48,8 @@ protected:
 
   // a shared pointer to a dummy record
   std::shared_ptr<CandidTypeRecord> m_pr{nullptr};
-  void create_dummy_record_encode();
 
   void initialize();
   void set_datatype();
-  void encode_T();
   void encode_I();
 };

@@ -26,7 +26,6 @@ CandidTypeInt8::~CandidTypeInt8() {}
 void CandidTypeInt8::initialize(const int8_t &v) {
   m_v = v;
   set_datatype();
-  encode_T();
   encode_I();
   encode_M();
 }

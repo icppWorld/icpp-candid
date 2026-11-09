@@ -3,8 +3,6 @@
 #include "candid_type.h"
 #include "candid_type_all_includes.h"
 
-#include "candid_serialize_type_table_registry.h"
-
 #include "candid_opcode.h"
 #include "candid_principal_text.h"
 #include "candid_type_service.h"
@@ -13,7 +11,6 @@
 
 CandidTypeService::CandidTypeService() : CandidTypeBase() {
   set_datatype();
-  encode_T();
   encode_I();
   encode_M();
 }
@@ -21,7 +18,6 @@ CandidTypeService::CandidTypeService() : CandidTypeBase() {
 CandidTypeService::CandidTypeService(const CandidTypePrincipal &canister)
     : CandidTypeBase(), m_canister(canister) {
   set_datatype();
-  encode_T();
   encode_I();
   encode_M();
 }
@@ -29,7 +25,6 @@ CandidTypeService::CandidTypeService(const CandidTypePrincipal &canister)
 CandidTypeService::CandidTypeService(std::string *p_canister)
     : CandidTypeBase(), m_p_canister(p_canister) {
   set_datatype();
-  encode_T();
   encode_I();
   encode_M();
 }
@@ -46,33 +41,12 @@ void CandidTypeService::append_method(const std::string &name,
                      " is appended twice");
   }
   m_methods.insert(it, {name, std::make_shared<CandidTypeFunc>(method)});
-  encode_T();
 }
 
 void CandidTypeService::set_datatype() {
   m_datatype_opcode = CandidOpcode().Service;
   m_datatype_hex = OpcodeHex().Service;
   m_datatype_textual = OpcodeTextual().Service;
-}
-
-// (re-)build the type table encoding
-// https://github.com/dfinity/candid/blob/master/spec/Candid.md#types
-// T(service {<methtype>*}) = sleb128(-23) T*(<methtype>*)
-// T(<name>:<datatype>) = leb128(|utf8(<name>)|) i8*(utf8(<name>)) I(<datatype>)
-void CandidTypeService::encode_T() {
-  m_T.clear();
-  m_T.append_byte((std::byte)m_datatype_hex);
-  m_T.append_uleb128(__uint128_t(m_methods.size()));
-  for (const auto &[name, p_func] : m_methods) {
-    m_T.append_uleb128(__uint128_t(name.size()));
-    for (char c : name)
-      m_T.append_byte((std::byte)c);
-    m_T.append_sleb128(__int128_t(p_func->get_type_table_index()));
-  }
-
-  // Update the type table registry,
-  m_type_table_index = CandidSerializeTypeTableRegistry::get_instance()
-                           .add_or_replace_type_table(m_type_table_index, m_T);
 }
 
 // Encode the datatype

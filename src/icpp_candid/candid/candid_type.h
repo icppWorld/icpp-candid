@@ -96,6 +96,7 @@ class CandidTypeOptVariant;
 
 class CandidTypeRecord;
 class CandidTypeVariant;
+class CandidTypeValue;
 
 // The (De)Serialization classes
 class CandidDeserialize;
@@ -123,4 +124,4 @@ using CandidType = std::variant<
     CandidTypeOptInt32, CandidTypeOptInt64, CandidTypeOptText,
     CandidTypeOptPrincipal, CandidTypeOptRecord, CandidTypeOptVariant,
     CandidTypeOptVec, CandidTypeRecord, CandidTypeVariant, CandidTypeVecOf,
-    CandidTypeOptOf, CandidTypeService>;
+    CandidTypeOptOf, CandidTypeService, CandidTypeValue>;

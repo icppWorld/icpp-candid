@@ -26,7 +26,6 @@ CandidTypeInt64::~CandidTypeInt64() {}
 void CandidTypeInt64::initialize(const int64_t &v) {
   m_v = v;
   set_datatype();
-  encode_T();
   encode_I();
   encode_M();
 }

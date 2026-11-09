@@ -72,7 +72,6 @@ void CandidTypePrincipal::initialize(const std::string &v) {
   } else m_v = v;
   bytes_from_string();
   set_datatype();
-  encode_T();
   encode_I();
   encode_M();
 }

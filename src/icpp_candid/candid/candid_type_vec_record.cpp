@@ -3,7 +3,6 @@
 #include "candid_type.h"
 #include "candid_type_visitors.h"
 
-#include "candid_serialize_type_table_registry.h"
 #include "candid_deserialize.h"
 
 #include "candid_debug_config.h"
@@ -76,74 +75,6 @@ void CandidTypeVecRecord::set_content_type() {
   m_content_textual = OpcodeTextual().Record;
 }
 
-void CandidTypeVecRecord::create_dummy_record_encode() {
-  if (m_pr) {
-    ICPP_HOOKS::trap("ERROR: This method should be called only once - " +
-                     std::string(__func__));
-  }
-  // Use make_shared to create the dummy CandidTypeRecord and initialize the shared_ptr
-  m_pr = std::make_shared<CandidTypeRecord>();
-
-  // These fields are of type CandidTypeVecXXX
-  auto field_ptrs = m_v.get_field_ptrs();
-  auto field_names = m_v.get_field_names();
-  auto field_ids = m_v.get_field_ids();
-  CandidOpcode candidOpcode;
-  // Transpose the input of Record-of-Vecs to Vec-of-Records
-  // Just use the first entry in the vectors
-  size_t i = 0;
-  // Loop over all the vectors at index i=0 and encode a record
-  for (size_t j = 0; j < field_ptrs.size(); ++j) {
-    auto field_ptr = field_ptrs[j];
-    auto field_name = field_names[j];
-    auto field_id = field_ids[j];
-
-    // Check that we indeed have a CandidTypeVecXXX
-    auto field_opcode = field_ptr->get_datatype_opcode();
-    if (field_opcode != candidOpcode.Vec) {
-      std::string msg;
-      msg.append(
-          "ERROR: The field at index " + std::to_string(j) +
-          " for the CandidTypeRecord passed into a CandidTypeVecRecord is not a Vec.");
-      msg.append("\nInstead, the opcode = " + std::to_string(field_opcode) +
-                 " (" + candidOpcode.name_from_opcode(field_opcode) + ")");
-      ICPP_HOOKS::trap(msg);
-    }
-
-    auto content_opcode = field_ptr->get_content_opcode(); // debug only
-    CandidType c_field = field_ptr->toCandidType();
-
-    CandidType c_fields_vector_value_at_index_i =
-        std::visit(GetCandidTypeVecIndexVisitor(i), c_field);
-
-    if (field_name != "") {
-      m_pr->append(field_name, c_fields_vector_value_at_index_i);
-    } else {
-      m_pr->append(field_id, c_fields_vector_value_at_index_i);
-    }
-  }
-
-  // store it as m_pvs (root)
-  m_pvs = m_pr;
-}
-
-// build the type table encoding
-void CandidTypeVecRecord::encode_T() {
-  m_T.append_byte((std::byte)m_datatype_hex);
-
-  // Build a dummy Record which will also create a type-table of a dummy record in the registry
-  create_dummy_record_encode();
-
-  // Ok, so now we have a type-table in the registry for the Record
-  //     that we can reference from our Vec-of-Records type table
-  int c_record_type_table_index = m_pvs->get_type_table_index();
-  m_T.append_sleb128(__int128_t(c_record_type_table_index));
-
-  // Update the type table registry,
-  m_type_table_index = CandidSerializeTypeTableRegistry::get_instance()
-                           .add_or_replace_type_table(m_type_table_index, m_T);
-}
-
 void CandidTypeVecRecord::encode_M() {
   // https://github.com/dfinity/candid/blob/master/spec/Candid.md#memory
   // M(v^N  : vec <datatype>) = leb128(N) M(v : <datatype>)^N
@@ -155,6 +86,7 @@ void CandidTypeVecRecord::encode_M() {
     size_vec = __uint128_t(m_v.get_field_ptrs()[0]->get_v_size());
   }
   m_M.append_uleb128(size_vec);
+  m_has_M = m_v.has_M();
 
   // encoded vec values - M(v : <datatype>)^N
   auto field_ptrs = m_v.get_field_ptrs();
@@ -203,7 +135,6 @@ void CandidTypeVecRecord::encode_M() {
 void CandidTypeVecRecord::initialize() {
   set_datatype();
   set_content_type();
-  encode_T();
   encode_I();
   encode_M();
 }
@@ -224,14 +155,11 @@ void CandidTypeVecRecord::encode_I() {
   m_I.append_byte((std::byte)m_datatype_hex);
 }
 
-// The record whose fields are the columns: vecs, one per field of the
-// elements
-static CandidTypeRoot &columns(CandidTypeRoot *pv, CandidTypeRecord &v) {
-  return pv ? *pv : static_cast<CandidTypeRoot &>(v);
-}
-
+// m_v is the record whose fields are the columns: vecs, one per field of the
+// elements. The type comes from this object's own copy, never from the
+// caller's pointer: that one may be gone by the time a message is serialized.
 int CandidTypeVecRecord::graph_type(CandidTypeGraph &g) {
-  CandidTypeRoot &r = columns(m_pv, m_v);
+  CandidTypeRoot &r = m_v;
   const auto ids = r.get_field_ids();
   const auto ptrs = r.get_field_ptrs();
   std::vector<CandidGraphField> fields;

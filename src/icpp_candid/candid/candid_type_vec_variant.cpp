@@ -2,7 +2,6 @@
 #include <algorithm>
 #include "candid_type.h"
 
-#include "candid_serialize_type_table_registry.h"
 #include "candid_deserialize.h"
 
 #include "candid_debug_config.h"
@@ -95,42 +94,6 @@ std::string CandidTypeVecVariant::find_label_name(size_t index) {
   return ""; // Not found
 }
 
-void CandidTypeVecVariant::create_dummy_variant_encode() {
-  if (m_pv_dummy) {
-    ICPP_HOOKS::trap("ERROR: This method should be called only once - " +
-                     std::string(__func__));
-  }
-  // Create a fresh variant with the same fields, which will register it
-  m_pv_dummy = std::make_shared<CandidTypeVariant>();
-
-  // Copy the field structure from the template
-  auto field_names = m_v_template.get_v();
-  for (const auto &name : field_names) {
-    // For unit variants, append with null type
-    m_pv_dummy->append(name, CandidTypeNull{});
-  }
-
-  // Store as m_pvs for type table access
-  m_pvs = m_pv_dummy;
-}
-
-// build the type table encoding
-void CandidTypeVecVariant::encode_T() {
-  m_T.append_byte((std::byte)m_datatype_hex);
-
-  // Build a dummy Variant which will also create a type-table entry in the registry
-  create_dummy_variant_encode();
-
-  // Ok, so now we have a type-table in the registry for the Variant
-  //     that we can reference from our Vec-of-Variants type table
-  int variant_type_table_index = m_pvs->get_type_table_index();
-  m_T.append_sleb128(__int128_t(variant_type_table_index));
-
-  // Update the type table registry
-  m_type_table_index = CandidSerializeTypeTableRegistry::get_instance()
-                           .add_or_replace_type_table(m_type_table_index, m_T);
-}
-
 void CandidTypeVecVariant::encode_M() {
   // https://github.com/dfinity/candid/blob/master/spec/Candid.md#memory
   // M(v^N  : vec <datatype>) = leb128(N) M(v : <datatype>)^N
@@ -141,6 +104,7 @@ void CandidTypeVecVariant::encode_M() {
   m_M.append_uleb128(__uint128_t(m_labels.size()));
 
   // encoded vec values - for each label, encode its index
+  const auto ptrs = m_v_template.get_field_ptrs();
   for (const auto &label : m_labels) {
     int index = find_label_index(label);
     if (index < 0) {
@@ -153,6 +117,12 @@ void CandidTypeVecVariant::encode_M() {
       }
       ICPP_HOOKS::trap(msg);
     }
+    // Only the index is written: a case with a value would be cut short
+    if (size_t(index) >= ptrs.size() ||
+        ptrs[size_t(index)]->get_datatype_opcode() != CandidOpcode().Null)
+      ICPP_HOOKS::trap("ERROR: CandidTypeVecVariant encodes cases without a "
+                       "value only, and case '" +
+                       label + "' has one");
     // Encode variant index
     m_M.append_uleb128(__uint128_t(index));
     // No additional data for unit variants (null type)
@@ -163,7 +133,6 @@ void CandidTypeVecVariant::encode_M() {
 void CandidTypeVecVariant::initialize() {
   set_datatype();
   set_content_type();
-  encode_T();
   encode_I();
   encode_M();
 }
@@ -185,9 +154,9 @@ void CandidTypeVecVariant::encode_I() {
 }
 
 int CandidTypeVecVariant::graph_type(CandidTypeGraph &g) {
-  CandidTypeRoot &t =
-      m_pv ? *m_pv : static_cast<CandidTypeRoot &>(m_v_template);
-  return g.vec(t.graph_type(g));
+  // The type comes from this object's own copy, never from the caller's
+  // pointer: that one may be gone by the time a message is serialized.
+  return g.vec(m_v_template.graph_type(g));
 }
 
 void CandidTypeVecVariant::bind(const CandidValue &v) {

@@ -20,7 +20,6 @@ public:
 
 protected:
   void set_datatype();
-  void encode_T() { m_T.clear(); } // type table for Primitives is empty
   void encode_I();
   void encode_M();
   std::string m_v{"NULL_VALUE"};

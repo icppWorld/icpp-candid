@@ -26,7 +26,6 @@ CandidTypeNat16::~CandidTypeNat16() {}
 void CandidTypeNat16::initialize(const uint16_t &v) {
   m_v = v;
   set_datatype();
-  encode_T();
   encode_I();
   encode_M();
 }

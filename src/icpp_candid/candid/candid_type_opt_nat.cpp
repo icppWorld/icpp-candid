@@ -1,8 +1,6 @@
 // The class for the Candid Type: opt
 #include "candid_type.h"
 
-#include "candid_serialize_type_table_registry.h"
-
 #include "candid_assert.h"
 #include "candid_opcode.h"
 #include "candid_type_opt_nat.h"
@@ -61,7 +59,6 @@ void CandidTypeOptNat::encode_M() {
 void CandidTypeOptNat::initialize() {
   set_datatype();
   set_content_type();
-  encode_T();
   encode_I();
   encode_M();
 }
@@ -70,16 +67,6 @@ void CandidTypeOptNat::set_datatype() {
   m_datatype_opcode = CandidOpcode().Opt;
   m_datatype_hex = OpcodeHex().Opt;
   m_datatype_textual = OpcodeTextual().Opt;
-}
-
-// build the type table encoding
-void CandidTypeOptNat::encode_T() {
-  m_T.append_byte((std::byte)m_datatype_hex);
-  m_T.append_byte((std::byte)m_content_hex);
-
-  // Update the type table registry,
-  m_type_table_index = CandidSerializeTypeTableRegistry::get_instance()
-                           .add_or_replace_type_table(m_type_table_index, m_T);
 }
 
 // For opts, we set the Opcode, but note that it is not used during serialization.

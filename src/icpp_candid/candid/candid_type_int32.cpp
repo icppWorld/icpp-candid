@@ -26,7 +26,6 @@ CandidTypeInt32::~CandidTypeInt32() {}
 void CandidTypeInt32::initialize(const int32_t &v) {
   m_v = v;
   set_datatype();
-  encode_T();
   encode_I();
   encode_M();
 }

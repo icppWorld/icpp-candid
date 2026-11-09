@@ -24,11 +24,10 @@ inline std::shared_ptr<CandidTypeRoot> root_ptr(CandidType c) {
 // True if a and b encode the same type
 inline bool same_type(const std::shared_ptr<CandidTypeRoot> &a,
                       const std::shared_ptr<CandidTypeRoot> &b) {
-  if (a->get_T().size() > 0 || b->get_T().size() > 0) {
-    return a->get_T().size() > 0 && b->get_T().size() > 0 &&
-           a->get_type_table_index() == b->get_type_table_index();
-  }
-  return a->get_datatype_opcode() == b->get_datatype_opcode();
+  CandidTypeGraph g;
+  int ta = a->graph_type(g);
+  int tb = b->graph_type(g);
+  return CandidTypeGraph::same(g, ta, g, tb);
 }
 
 } // namespace candid_type_of

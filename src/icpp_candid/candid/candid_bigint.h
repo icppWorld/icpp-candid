@@ -38,6 +38,11 @@ public:
 
   std::string to_string() const;
 
+  // LEB128 (nat) and SLEB128 (int), appended to out: the shortest form, as
+  // Candid writes them. to_leb128 is false for a negative value.
+  bool to_leb128(std::vector<uint8_t> &out) const;
+  void to_sleb128(std::vector<uint8_t> &out) const;
+
   bool operator==(const CandidBigInt &o) const {
     return m_neg == o.m_neg && m_limbs == o.m_limbs;
   }
@@ -52,4 +57,7 @@ private:
   void add_small(uint32_t a);
   uint32_t divmod_small(uint32_t d);
   static CandidBigInt from_groups(const std::vector<uint8_t> &groups);
+  bool bit(size_t k) const;
+  size_t bit_length() const;
+  void write_groups(std::vector<uint8_t> &out, bool sleb, bool invert) const;
 };

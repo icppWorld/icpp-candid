@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <functional>
+#include <set>
 #include <utility>
 
 int CandidTypeGraph::prim(CandidKind k) {
@@ -104,6 +105,7 @@ int CandidTypeGraph::reserve() {
   CandidGraphNode n;
   n.defined = false;
   m_nodes.push_back(n);
+  m_named.push_back(true);
   m_zero_width.clear();
   m_infinite_opt.clear();
   return int(m_nodes.size() - 1);
@@ -119,9 +121,87 @@ void CandidTypeGraph::define(int idx, CandidGraphNode n) {
 int CandidTypeGraph::add(CandidGraphNode n) {
   n.defined = true;
   m_nodes.push_back(std::move(n));
+  m_named.push_back(false);
   m_zero_width.clear();
   m_infinite_opt.clear();
   return int(m_nodes.size() - 1);
+}
+
+int CandidTypeGraph::import(const CandidTypeGraph &src, int t) {
+  if (!is_node(t)) return t;
+  for (const Import &im : m_imports)
+    if (im.nodes == src.m_nodes && im.named == src.m_named)
+      return im.offset + t;
+  int offset = int(m_nodes.size());
+  auto shift = [offset](int &r) {
+    if (is_node(r)) r += offset;
+  };
+  for (CandidGraphNode n : src.m_nodes) {
+    shift(n.inner);
+    for (auto &f : n.fields)
+      shift(f.type);
+    for (int &a : n.args)
+      shift(a);
+    for (int &r : n.rets)
+      shift(r);
+    for (auto &m : n.methods)
+      shift(m.type);
+    m_nodes.push_back(std::move(n));
+  }
+  m_named.insert(m_named.end(), src.m_named.begin(), src.m_named.end());
+  m_imports.push_back({src.m_nodes, src.m_named, offset});
+  m_zero_width.clear();
+  m_infinite_opt.clear();
+  return offset + t;
+}
+
+static bool same_(const CandidTypeGraph &g1, int t1, const CandidTypeGraph &g2,
+                  int t2, std::set<std::pair<int, int>> &seen) {
+  if (!seen.insert({t1, t2}).second) return true;
+  CandidKind k = g1.kind(t1);
+  if (k != g2.kind(t2)) return false;
+  if (!CandidTypeGraph::is_node(t1) || !CandidTypeGraph::is_node(t2))
+    return k != CandidKind::Future;
+  const CandidGraphNode &a = g1.node(t1);
+  const CandidGraphNode &b = g2.node(t2);
+  auto same_list = [&](const std::vector<int> &x, const std::vector<int> &y) {
+    if (x.size() != y.size()) return false;
+    for (size_t i = 0; i < x.size(); ++i)
+      if (!same_(g1, x[i], g2, y[i], seen)) return false;
+    return true;
+  };
+  switch (k) {
+  case CandidKind::Opt:
+  case CandidKind::Vec:
+    return same_(g1, a.inner, g2, b.inner, seen);
+  case CandidKind::Record:
+  case CandidKind::Variant:
+    if (a.fields.size() != b.fields.size()) return false;
+    for (size_t i = 0; i < a.fields.size(); ++i)
+      if (a.fields[i].id != b.fields[i].id ||
+          !same_(g1, a.fields[i].type, g2, b.fields[i].type, seen))
+        return false;
+    return true;
+  case CandidKind::Func:
+    return a.modes == b.modes && same_list(a.args, b.args) &&
+           same_list(a.rets, b.rets);
+  case CandidKind::Service:
+    if (a.methods.size() != b.methods.size()) return false;
+    for (size_t i = 0; i < a.methods.size(); ++i)
+      if (a.methods[i].name != b.methods[i].name ||
+          !same_(g1, a.methods[i].type, g2, b.methods[i].type, seen))
+        return false;
+    return true;
+  default:
+    // A node of a primitive kind, e.g. the decoder's empty: the kind decides.
+    return k != CandidKind::Future;
+  }
+}
+
+bool CandidTypeGraph::same(const CandidTypeGraph &ga, int a,
+                           const CandidTypeGraph &gb, int b) {
+  std::set<std::pair<int, int>> seen;
+  return same_(ga, a, gb, b, seen);
 }
 
 int CandidTypeGraph::opt(int inner) {
