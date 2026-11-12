@@ -45,7 +45,8 @@ the tests and fuzzers of this library live in icpp-pro.
     (`coderabbit review --base main --agent`);
   - a code review and a security review of the branch. This library decodes
     untrusted messages, so the security review matters for every change;
-  - icpp-pro's `make all-static` and the tests of the affected canisters pass.
+  - icpp-pro's `make all-static` and the tests of the affected canisters pass,
+    with icpp-pro's nested `icpp-candid/` checkout on your branch.
 - CodeRabbit on GitHub also reviews every push to a pull request. Each of its
   findings gets a fix, or a reply saying why not.
 - The pull request lists each review's findings and what was done about them.
