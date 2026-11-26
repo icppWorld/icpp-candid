@@ -151,5 +151,4 @@ void CandidTypeVariant::bind(const CandidValue &v) {
   m_selected_field_id = id;
   if (m_p_label) *m_p_label = m_label;
   m_field_ptrs[i]->bind(v.items.at(0));
-  m_M_stale = true; // the label changed
 }
