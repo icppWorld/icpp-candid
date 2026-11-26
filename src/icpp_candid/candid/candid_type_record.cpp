@@ -140,10 +140,7 @@ void CandidTypeRecord::encode_M() {
     // The get_M method is in the CandidTypeBase class
     if (p_field) {
       if (!p_field->has_M()) m_has_M = false;
-      VecBytes M = p_field->get_M();
-      for (std::byte b : M.vec()) {
-        m_M.append_byte(b);
-      }
+      m_M.append(p_field->get_M());
     }
   }
 }

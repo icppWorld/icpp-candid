@@ -47,9 +47,7 @@ void CandidTypeVecBlob::encode_M() {
   m_M.append_uleb128(__uint128_t(m_v.size()));
   for (const std::vector<uint8_t> &blob : m_v) {
     m_M.append_uleb128(__uint128_t(blob.size()));
-    for (uint8_t const &c : blob) {
-      m_M.append_int_fixed_width(c);
-    }
+    m_M.append_bytes(blob.data(), blob.size());
   }
 }
 

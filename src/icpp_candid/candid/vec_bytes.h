@@ -85,7 +85,7 @@ public:
   void append_didl();
 
   void append_byte(const std::byte b);
-  void append_bytes(const uint8_t *bytes, const uint32_t num_bytes);
+  void append_bytes(const uint8_t *bytes, const size_t num_bytes);
   void append(const VecBytes &other);
 
   void append_sleb128(const __int128_t &v);
@@ -102,6 +102,10 @@ public:
   template <typename T>
   typename std::enable_if<MyFloats<T>::value>::type
   append_float_ieee754(const T &v);
+
+  // Appends the values of a fixed-width integer or float vector in one copy,
+  // the same bytes as append_int_fixed_width or append_float_ieee754 per value
+  template <typename T> void append_vec_fixed_width(const std::vector<T> &v);
 
   // parse methods
   void trap_if_vec_does_not_start_with_DIDL();
@@ -134,6 +138,8 @@ public:
 
   // store methods
   void store(const uint8_t *bytes, const uint32_t num_bytes);
+  // Takes over the bytes, without a copy
+  void store(std::vector<uint8_t> &&bytes);
   void store_hex_string(const std::string candid_in);
   void store_hex_tokens(std::vector<std::string> hex_tokens);
 
@@ -145,9 +151,11 @@ public:
                                  __uint128_t B_offset_start,
                                  __uint128_t B_offset_end);
   void debug_print();
-  const std::vector<std::byte> &vec() const { return m_vec; };
+  // The bytes as std::byte. A copy of vec_uint8_t(), made when called after a
+  // change: prefer vec_uint8_t(), and call vec() again after appending.
+  const std::vector<std::byte> &vec() const;
   const std::vector<uint8_t> &vec_uint8_t() const { return m_vec_uint8_t; };
-  int size() const { return m_vec.size(); }
+  int size() const { return m_vec_uint8_t.size(); }
   void clear();
   bool is_little_endian();
   bool is_big_endian();
@@ -156,7 +164,7 @@ public:
 
   // Provide an equal operator to enable comparisons
   friend bool operator==(VecBytes const &lhs, VecBytes const &rhs) {
-    return lhs.m_vec == rhs.m_vec;
+    return lhs.m_vec_uint8_t == rhs.m_vec_uint8_t;
   }
 
 private:
@@ -168,7 +176,9 @@ private:
   bool not_enough_bytes(__uint128_t offset, __uint128_t n,
                         std::string &parse_error) const;
 
-  std::vector<std::byte> m_vec;
+  // The bytes. m_vec is a copy as std::byte, for vec(), made on demand.
   std::vector<uint8_t> m_vec_uint8_t;
+  mutable std::vector<std::byte> m_vec;
+  mutable bool m_vec_in_sync = true;
   std::string m_endian_type = "";
 };

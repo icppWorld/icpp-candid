@@ -47,9 +47,7 @@ void CandidTypeVecNat8::encode_M() {
 
   // encoded vec values - M(v : <datatype>)^N
   // Nat8:             - M(n : nat<N>)   = i<N>(n)    (Litte Endian)
-  for (uint8_t const &c : m_v) {
-    m_M.append_int_fixed_width(c);
-  }
+  m_M.append_bytes(m_v.data(), m_v.size());
 }
 
 // ---------

@@ -189,10 +189,7 @@ void CandidTypeVariant::encode_M() {
       // The get_M method is in the CandidTypeBase class
       if (m_field_ptrs[i]) {
         m_has_M = m_field_ptrs[i]->has_M();
-        VecBytes M = m_field_ptrs[i]->get_M();
-        for (std::byte b : M.vec()) {
-          m_M.append_byte(b);
-        }
+        m_M.append(m_field_ptrs[i]->get_M());
       }
 
       break;

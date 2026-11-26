@@ -47,9 +47,7 @@ void CandidTypeVecInt16::encode_M() {
 
   // encoded vec values - M(v : <datatype>)^N
   // M(n : int<N>)   = i<N>(signed_N^-1(i))    (Litte Endian)
-  for (int16_t const &c : m_v) {
-    m_M.append_int_fixed_width(c);
-  }
+  m_M.append_vec_fixed_width(m_v);
 }
 
 // ---------

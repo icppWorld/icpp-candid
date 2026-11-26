@@ -7,6 +7,7 @@
 #include <cstring>
 
 #include <algorithm>
+#include <functional>
 #include <iterator>
 // #include <bit> // for std::endian (no longer used)
 #include <string>
@@ -125,10 +126,8 @@ void VecBytes::c_int_to_dec(char *str, size_t size, int x) {
 }
 
 void VecBytes::append_didl() {
-  append_byte((std::byte)'D');
-  append_byte((std::byte)'I');
-  append_byte((std::byte)'D');
-  append_byte((std::byte)'L');
+  static const uint8_t didl[] = {'D', 'I', 'D', 'L'};
+  append_bytes(didl, sizeof(didl));
 }
 
 // ------------------------------------------------------------------------------
@@ -145,9 +144,7 @@ void VecBytes::append_uleb128(const __uint128_t &v) {
   uint8_t Bytes[1024];
   auto numBytes = encode_uleb128(v, Bytes);
   assert(numBytes < sizeof(Bytes));
-  for (size_t i = 0; i < numBytes; ++i) {
-    append_byte((std::byte)Bytes[i]);
-  }
+  append_bytes(Bytes, numBytes);
 }
 
 // ------------------------------------------------------------------------------
@@ -158,9 +155,7 @@ void VecBytes::append_sleb128(const __int128_t &v) {
   uint8_t Bytes[1024];
   auto numBytes = encode_sleb128(v, Bytes);
   assert(numBytes < sizeof(Bytes));
-  for (size_t i = 0; i < numBytes; ++i) {
-    append_byte((std::byte)Bytes[i]);
-  }
+  append_bytes(Bytes, numBytes);
 }
 
 __uint128_t VecBytes::bytes_left(__uint128_t offset) const {
@@ -227,15 +222,13 @@ bool VecBytes::parse_bytes(__uint128_t &offset, std::vector<std::byte> &v,
   parse_error = "";
   numbytes = 0;
 
-  // not_enough_bytes checks m_vec_uint8_t, so also check m_vec, copied here
-  if (not_enough_bytes(offset, n, parse_error) ||
-      m_vec.size() != m_vec_uint8_t.size()) {
-    if (parse_error.empty()) parse_error = "Not enough bytes left.";
+  if (not_enough_bytes(offset, n, parse_error)) {
     return true;
   }
 
-  std::copy(m_vec.begin() + offset, m_vec.begin() + offset + n,
-            std::back_inserter(v));
+  const std::byte *p =
+      reinterpret_cast<const std::byte *>(m_vec_uint8_t.data()) + offset;
+  v.insert(v.end(), p, p + n);
 
   numbytes = n;
   offset += numbytes;
@@ -254,8 +247,8 @@ bool VecBytes::parse_bytes(__uint128_t &offset, std::vector<uint8_t> &v,
     return true;
   }
 
-  std::copy(m_vec_uint8_t.begin() + offset, m_vec_uint8_t.begin() + offset + n,
-            std::back_inserter(v));
+  v.insert(v.end(), m_vec_uint8_t.begin() + offset,
+           m_vec_uint8_t.begin() + offset + n);
 
   numbytes = n;
   offset += numbytes;
@@ -266,6 +259,12 @@ bool VecBytes::parse_bytes(__uint128_t &offset, std::vector<uint8_t> &v,
 void VecBytes::store(const uint8_t *bytes, const uint32_t num_bytes) {
   clear();
   append_bytes(bytes, num_bytes);
+}
+
+void VecBytes::store(std::vector<uint8_t> &&bytes) {
+  clear();
+  m_vec_uint8_t = std::move(bytes);
+  m_vec_in_sync = false;
 }
 
 // Initializes m_vec from a bytes array string in hex format.
@@ -283,7 +282,8 @@ void VecBytes::store_hex_string(const std::string hex_string) {
 // convert a vector of tokens into bytes and initialize m_vec with them
 void VecBytes::store_hex_tokens(std::vector<std::string> hex_tokens) {
   clear();
-  for (std::string s : hex_tokens) {
+  m_vec_uint8_t.reserve(hex_tokens.size());
+  for (const std::string &s : hex_tokens) {
     int n;
 
     // TODO: Using istringstream causes too many globals
@@ -298,36 +298,42 @@ void VecBytes::store_hex_tokens(std::vector<std::string> hex_tokens) {
 }
 
 void VecBytes::append_byte(std::byte b) {
-  m_vec.push_back(b);
-
-  // Maintain the same vector as a uint8_t type
-  int n = (int)b;
-  m_vec_uint8_t.push_back((uint8_t)n);
+  m_vec_uint8_t.push_back((uint8_t)b);
+  m_vec_in_sync = false;
 }
 
-void VecBytes::append_bytes(const uint8_t *bytes, const uint32_t num_bytes) {
-  for (size_t i = 0; i < num_bytes; ++i) {
-    append_byte((const std::byte)bytes[i]);
+void VecBytes::append_bytes(const uint8_t *bytes, const size_t num_bytes) {
+  const uint8_t *begin = m_vec_uint8_t.data();
+  const uint8_t *end = begin + m_vec_uint8_t.size();
+  std::less_equal<const uint8_t *> le;
+  if (num_bytes > 0 && le(begin, bytes) && !le(end, bytes)) {
+    // insert may not read from the vector it inserts into
+    const std::vector<uint8_t> copy(bytes, bytes + num_bytes);
+    m_vec_uint8_t.insert(m_vec_uint8_t.end(), copy.begin(), copy.end());
+  } else {
+    m_vec_uint8_t.insert(m_vec_uint8_t.end(), bytes, bytes + num_bytes);
   }
+  m_vec_in_sync = false;
 }
 
 void VecBytes::append(const VecBytes &other) {
-  for (const auto &b : other.m_vec) {
-    append_byte(b);
+  append_bytes(other.m_vec_uint8_t.data(), other.m_vec_uint8_t.size());
+}
+
+const std::vector<std::byte> &VecBytes::vec() const {
+  if (!m_vec_in_sync) {
+    const std::byte *p =
+        reinterpret_cast<const std::byte *>(m_vec_uint8_t.data());
+    m_vec.assign(p, p + m_vec_uint8_t.size());
+    m_vec_in_sync = true;
   }
+  return m_vec;
 }
 
 void VecBytes::trap_if_vec_does_not_start_with_DIDL() {
   // A message shorter than the magic number is not read past its end
-  if (m_vec.size() < 4) {
-    ICPP_HOOKS::trap("ERROR: Message does not start with DIDL");
-  }
-  std::string s;
-  s.append(byte_to_char(m_vec[0]));
-  s.append(byte_to_char(m_vec[1]));
-  s.append(byte_to_char(m_vec[2]));
-  s.append(byte_to_char(m_vec[3]));
-  if (s != "DIDL") {
+  if (m_vec_uint8_t.size() < 4 ||
+      std::memcmp(m_vec_uint8_t.data(), "DIDL", 4) != 0) {
     ICPP_HOOKS::trap("ERROR: Message does not start with DIDL");
   }
 }
@@ -335,8 +341,8 @@ void VecBytes::trap_if_vec_does_not_start_with_DIDL() {
 // Returns the bytes of the vec as a hex string
 std::string VecBytes::as_hex_string() {
   std::string s_hex;
-  for (std::byte b : m_vec) {
-    s_hex.append(byte_to_hex(b, ""));
+  for (uint8_t b : m_vec_uint8_t) {
+    s_hex.append(byte_to_hex(std::byte(b), ""));
   }
   return s_hex;
 }
@@ -373,7 +379,8 @@ void VecBytes::debug_print() {
   ICPP_HOOKS::debug_print("  hex, decimal, char");
 
   std::string s_hex;
-  for (std::byte b : m_vec) {
+  for (uint8_t u : m_vec_uint8_t) {
+    std::byte b{u};
     std::string s;
     s.append("   ");
     s.append(byte_to_hex(b, ""));
@@ -390,8 +397,9 @@ void VecBytes::debug_print() {
 }
 
 void VecBytes::clear() {
-  m_vec.clear();
   m_vec_uint8_t.clear();
+  m_vec.clear();
+  m_vec_in_sync = true;
 }
 
 // Helper function to assign values to __int128_t from strings
@@ -677,6 +685,35 @@ VecBytes::append_float_ieee754(const T &v) {
 // clang-format off
 template void VecBytes::append_float_ieee754<float>  (const float &v);
 template void VecBytes::append_float_ieee754<double> (const double &v);
+// clang-format on
+
+// --
+template <typename T>
+void VecBytes::append_vec_fixed_width(const std::vector<T> &v) {
+  static_assert(MyFixedWidthInts<T>::value || MyFloats<T>::value);
+  if constexpr (MyFloats<T>::value) {
+    if (!is_float_ieee754())
+      trap("ERROR in " + std::string(__func__) +
+           ". The encoding method requires that your system is using IEEE "
+           "754 floating point which it does not.");
+  }
+  if (!is_little_endian())
+    trap("ERROR: append_vec_fixed_width not yet implemented on big endian "
+         "architecture");
+  append_bytes(reinterpret_cast<const uint8_t *>(v.data()),
+               v.size() * sizeof(T));
+}
+// clang-format off
+template void VecBytes::append_vec_fixed_width<int8_t>  (const std::vector<int8_t>   &v);
+template void VecBytes::append_vec_fixed_width<int16_t> (const std::vector<int16_t>  &v);
+template void VecBytes::append_vec_fixed_width<int32_t> (const std::vector<int32_t>  &v);
+template void VecBytes::append_vec_fixed_width<int64_t> (const std::vector<int64_t>  &v);
+template void VecBytes::append_vec_fixed_width<uint8_t> (const std::vector<uint8_t>  &v);
+template void VecBytes::append_vec_fixed_width<uint16_t>(const std::vector<uint16_t> &v);
+template void VecBytes::append_vec_fixed_width<uint32_t>(const std::vector<uint32_t> &v);
+template void VecBytes::append_vec_fixed_width<uint64_t>(const std::vector<uint64_t> &v);
+template void VecBytes::append_vec_fixed_width<float>   (const std::vector<float>    &v);
+template void VecBytes::append_vec_fixed_width<double>  (const std::vector<double>   &v);
 // clang-format on
 
 // --
