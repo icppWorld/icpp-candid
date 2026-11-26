@@ -38,14 +38,13 @@ CandidTypeVecOf::CandidTypeVecOf(std::function<CandidType()> make_element,
 void CandidTypeVecOf::initialize() {
   set_datatype();
   set_content_type();
-  encode_I();
   encode_M();
 }
 
 void CandidTypeVecOf::set_datatype() {
   m_datatype_opcode = CandidOpcode().Vec;
   m_datatype_hex = OpcodeHex().Vec;
-  m_datatype_textual = OpcodeTextual().Vec;
+  m_datatype_textual = opcode_textual().Vec;
 }
 
 void CandidTypeVecOf::set_content_type() {
@@ -54,18 +53,26 @@ void CandidTypeVecOf::set_content_type() {
   m_content_textual = m_p_element_type->get_datatype_textual();
 }
 
-void CandidTypeVecOf::encode_I() { m_I.append_byte((std::byte)m_datatype_hex); }
-
 // M(v^N : vec <datatype>) = leb128(N) M(v : <datatype>)^N
 void CandidTypeVecOf::encode_M() {
   m_M.clear();
   m_has_M = true;
   m_M.append_uleb128(__uint128_t(m_elements.size()));
-  // The element type goes into the graph once; each element is compared to it.
+  // An element that is not certainly of the element type is compared to it
+  // in a type graph, which gets the element type once, when first needed
   CandidTypeGraph g;
-  int t_element = m_p_element_type->graph_type(g);
+  int t_element = 0;
+  bool have_t_element = false;
+  auto same_in_graph = [&](CandidTypeRoot &element) {
+    if (!have_t_element) {
+      t_element = m_p_element_type->graph_type(g);
+      have_t_element = true;
+    }
+    return CandidTypeGraph::same(g, element.graph_type(g), g, t_element);
+  };
   for (size_t i = 0; i < m_elements.size(); ++i) {
-    if (!CandidTypeGraph::same(g, m_elements[i]->graph_type(g), g, t_element)) {
+    if (!m_elements[i]->certainly_same_type(*m_p_element_type) &&
+        !same_in_graph(*m_elements[i])) {
       ICPP_HOOKS::trap("ERROR: CandidTypeVecOf - element " + std::to_string(i) +
                        " (" + m_elements[i]->get_datatype_textual() +
                        ") does not have the element type (" +

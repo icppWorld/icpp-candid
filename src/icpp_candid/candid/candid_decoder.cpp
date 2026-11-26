@@ -43,9 +43,15 @@ private:
   size_t m_zero_width{0};
   size_t m_depth{0};
   std::string m_err;
-  // The rest of the records decoded so far (see CandidValue::rest), by wire
-  // type and expected type. Values are made only at the expected types.
-  std::map<std::pair<int, int>, std::shared_ptr<const CandidValue>> m_rest;
+  // Per wire type and expected type of the records decoded so far: their
+  // rest (see CandidValue::rest), and the number of fields a record value
+  // gets. Values are made only at the expected types.
+  struct RecordTypes {
+    std::shared_ptr<const CandidValue> rest;
+    size_t out_fields{0};
+  };
+  std::map<std::pair<int, int>, RecordTypes> m_records;
+  static constexpr size_t MAX_RESERVED_FIELDS = 64;
 
   St fail(const std::string &msg) {
     m_err = msg;
@@ -643,11 +649,38 @@ St Decoder::decode_record(int w, const CandidTypeGraph &g, int e,
   // rest, which is made the first time, and shared after that. They are
   // still decoded every time: that checks them, and counts them against the
   // budget for values that take no bytes.
-  auto cached = m_rest.find({w, e});
+  //
+  // out gets room for exactly its fields: those in both types that take
+  // bytes on the wire. The others go in the rest, or nowhere.
+  RecordTypes *known = nullptr;
   std::shared_ptr<CandidValue> rest;
-  if (out && cached == m_rest.end()) {
-    rest = std::make_shared<CandidValue>();
-    rest->kind = CandidKind::Record;
+  if (out) {
+    auto it = m_records.find({w, e});
+    if (it == m_records.end()) {
+      RecordTypes t;
+      size_t k = 0;
+      for (const auto &wf : wfs) {
+        while (k < efs.size() && efs[k].id < wf.id)
+          ++k;
+        if (k < efs.size() && efs[k].id == wf.id && !m_w.is_zero_width(wf.type))
+          ++t.out_fields;
+      }
+      it = m_records.emplace(std::make_pair(w, e), std::move(t)).first;
+    }
+    known = &it->second;
+    // A record of this type nested in itself may get here before the first
+    // one made the rest: it makes its own
+    if (!known->rest) {
+      rest = std::make_shared<CandidValue>();
+      rest->kind = CandidKind::Record;
+    }
+    // Reserved before any field is read, and a field can nest a record of
+    // the same type: so at most MAX_RESERVED_FIELDS, or a short message could
+    // nest wide records and make every level hold room for all its fields.
+    // Wider records grow as their fields are decoded.
+    const size_t n = std::min(known->out_fields, MAX_RESERVED_FIELDS);
+    out->ids.reserve(n);
+    out->items.reserve(n);
   }
   auto slot = [&](uint32_t id, bool in_rest) -> CandidValue * {
     CandidValue *r = in_rest ? rest.get() : out;
@@ -693,10 +726,12 @@ St Decoder::decode_record(int w, const CandidTypeGraph &g, int e,
   }
 
   if (out) {
-    std::shared_ptr<const CandidValue> r =
-        rest ? m_rest.emplace(std::make_pair(w, e), rest).first->second
-             : cached->second;
-    if (!r->ids.empty()) out->rest = std::move(r);
+    if (rest) {
+      if (!known->rest) known->rest = rest;
+      if (!rest->ids.empty()) out->rest = std::move(rest);
+    } else if (!known->rest->ids.empty()) {
+      out->rest = known->rest;
+    }
   }
   return St::Ok;
 }

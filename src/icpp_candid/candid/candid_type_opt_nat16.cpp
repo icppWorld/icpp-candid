@@ -34,7 +34,7 @@ CandidTypeOptNat16::CandidTypeOptNat16(std::optional<uint16_t> v)
 void CandidTypeOptNat16::set_content_type() {
   m_content_opcode = CandidOpcode().Nat16;
   m_content_hex = OpcodeHex().Nat16;
-  m_content_textual = OpcodeTextual().Nat16;
+  m_content_textual = opcode_textual().Nat16;
 }
 
 void CandidTypeOptNat16::encode_M() {
@@ -55,22 +55,11 @@ void CandidTypeOptNat16::encode_M() {
 void CandidTypeOptNat16::initialize() {
   set_datatype();
   set_content_type();
-  encode_I();
   encode_M();
 }
 
 void CandidTypeOptNat16::set_datatype() {
   m_datatype_opcode = CandidOpcode().Opt;
   m_datatype_hex = OpcodeHex().Opt;
-  m_datatype_textual = OpcodeTextual().Opt;
-}
-
-// For opts, we set the Opcode, but note that it is not used during serialization.
-// At serialization time, we use the index in the overall type table.
-//
-// Encode the datatype
-// https://github.com/dfinity/candid/blob/master/spec/Candid.md#types
-// For <constype>: the negative Opcode
-void CandidTypeOptNat16::encode_I() {
-  m_I.append_byte((std::byte)m_datatype_hex);
+  m_datatype_textual = opcode_textual().Opt;
 }

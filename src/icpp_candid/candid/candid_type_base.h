@@ -29,6 +29,7 @@ public:
   // Virtual methods to be implemented by VecRecord
   virtual void create_dummy_record_encode();
 
+  // Changes only m_M and m_has_M: get_M() of a const object may call it
   virtual void encode_M();
 
   std::optional<bool> get_is_internal() { return m_is_internal; }
@@ -53,25 +54,43 @@ public:
   VecBytes get_T() { return VecBytes(); }
   __uint128_t get_type_table_index() { return static_cast<size_t>(-1); }
   // Without a copy: a reference, or the bytes moved out of a temporary
-  const VecBytes &get_I() const & { return m_I; }
-  VecBytes get_I() && { return std::move(m_I); }
-  const VecBytes &get_M() const & { return m_M; }
-  VecBytes get_M() && { return std::move(m_M); }
+  const VecBytes &get_I() const & {
+    refresh_I();
+    return m_I;
+  }
+  VecBytes get_I() && {
+    refresh_I();
+    return std::move(m_I);
+  }
+  const VecBytes &get_M() const & {
+    refresh_M();
+    return m_M;
+  }
+  VecBytes get_M() && {
+    refresh_M();
+    return std::move(m_M);
+  }
   // False if get_M() is not this object's value: a CandidTypeValue that only
   // gives a type or receives a decoded value, or anything that holds one
-  bool has_M() const { return m_has_M; }
+  bool has_M() const {
+    refresh_M();
+    return m_has_M;
+  }
   uint64_t get_v_size() { return m_v_size; }
 
   // Record: The field data
   std::vector<uint32_t> get_field_ids() { return m_field_ids; }
   std::vector<std::string> get_field_names() { return m_field_names; }
-  std::vector<int> get_field_datatypes() { return m_field_datatypes; }
-  std::vector<int> get_field_opcodes() { return m_field_opcodes; }
+  // The (content) datatype and opcode of each field, from the fields
+  std::vector<int> get_field_datatypes() {
+    return field_values(&CandidTypeRoot::get_datatype_opcode);
+  }
+  std::vector<int> get_field_opcodes() { return get_field_datatypes(); }
   std::vector<int> get_field_content_datatypes() {
-    return m_field_content_datatypes;
+    return field_values(&CandidTypeRoot::get_content_datatype);
   }
   std::vector<int> get_field_content_opcodes() {
-    return m_field_content_opcodes;
+    return field_values(&CandidTypeRoot::get_content_opcode);
   }
   std::vector<std::shared_ptr<CandidTypeRoot>> get_field_ptrs() {
     return m_field_ptrs;
@@ -82,11 +101,21 @@ public:
   // opcode, or a node of g. The classes of a primitive type, and the vec and
   // opt of one, get it from their opcodes; the others override it.
   virtual int graph_type(CandidTypeGraph &g);
-  // Fills the bound C++ variable(s) with a decoded value of graph_type()
+  // Fills the bound C++ variable(s) with a decoded value of graph_type().
+  // What the object encodes after that (get_M, CandidSerialize) is
+  // unspecified: to send a value, build a new object from the variables.
   virtual void bind(const CandidValue &v);
   // For a vec: appends one decoded element (the columns of a
   // CandidTypeVecRecord)
   virtual void bind_push_back(const CandidValue &e);
+
+  // True if this and other are certainly the same type, found without
+  // building their type graphs: objects of one primitive class, or records
+  // with the same field ids whose fields are. False if that is not certain.
+  // The base takes a primitive opcode for the type, as graph_type does: a
+  // class with a primitive opcode that overrides graph_type must override
+  // this too (CandidTypeValue does).
+  virtual bool certainly_same_type(const CandidTypeRoot &other) const;
 
   uint32_t idl_hash(const std::string &s);
 
@@ -110,25 +139,45 @@ protected:
   // The field data (only used by record & variant)
   std::vector<uint32_t> m_field_ids;      // id | hash
   std::vector<std::string> m_field_names; // field name (label)
-  std::vector<int> m_field_datatypes;
-  std::vector<int> m_field_opcodes;
-  std::vector<int> m_field_content_datatypes;
-  std::vector<int> m_field_content_opcodes;
   std::vector<std::shared_ptr<CandidTypeRoot>> m_field_ptrs;
 
-  // Sort the field data by field id (hash), as the Candid spec requires for
-  // the fields of a record and of a variant in the type table
-  void sort_fields_by_id();
+  // Inserts a field at its place by id, keeping the fields sorted, as the
+  // Candid spec requires for a record and a variant. Traps on a duplicate id;
+  // kind ("record", "variant") is for that message.
+  void insert_field(uint32_t field_id, std::string field_name,
+                    std::shared_ptr<CandidTypeRoot> p, const char *kind);
 
-  // The encoded byte vector for the Candid Type
-  VecBytes m_I;
+  // The encoded byte vector for the Candid Type: the type's opcode, made when
+  // get_I() reads it
+  mutable VecBytes m_I;
 
-  // The encoded byte vector for the value
-  VecBytes m_M;
-  bool m_has_M{true};
+  // The encoded byte vector for the value. A class that sets m_M_stale
+  // re-encodes it with encode_M() when it is read, once, instead of after
+  // every change.
+  mutable VecBytes m_M;
+  mutable bool m_has_M{true};
+  mutable bool m_M_stale{false};
 
   // flag set when the instance is created internally, to decode wire
   std::optional<bool> m_is_internal;
+
+private:
+  std::vector<int> field_values(int (CandidTypeRoot::*get)()) const {
+    std::vector<int> v;
+    v.reserve(m_field_ptrs.size());
+    for (const auto &p : m_field_ptrs)
+      v.push_back(((*p).*get)());
+    return v;
+  }
+  void refresh_I() const {
+    if (m_I.size() == 0) m_I.append_byte(std::byte(m_datatype_hex));
+  }
+  // encode_M() changes only the mutable m_M and m_has_M
+  void refresh_M() const {
+    if (!m_M_stale) return;
+    m_M_stale = false;
+    const_cast<CandidTypeRoot *>(this)->encode_M();
+  }
 };
 
 // Templated base class

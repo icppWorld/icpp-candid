@@ -13,7 +13,7 @@
 
 class CandidOpcode {
 public:
-  CandidOpcode();
+  CandidOpcode() = default;
 
   bool is_primtype(const int &t);
   bool is_constype(const int &t);
@@ -126,3 +126,10 @@ public:
   std::string Func = "func";
   std::string Service = "service";
 };
+
+// One shared instance, for the library's own use: an OpcodeTextual() builds
+// all of its strings, and every Candid type object needs one of them
+inline const OpcodeTextual &opcode_textual() {
+  static const OpcodeTextual t;
+  return t;
+}

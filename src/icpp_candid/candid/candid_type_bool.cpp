@@ -23,7 +23,6 @@ CandidTypeBool::CandidTypeBool(const bool v) { initialize(v); }
 void CandidTypeBool::initialize(const bool &v) {
   m_v = v;
   set_datatype();
-  encode_I();
   encode_M();
 }
 
@@ -33,13 +32,7 @@ void CandidTypeBool::set_pv(bool *v) { m_pv = v; }
 void CandidTypeBool::set_datatype() {
   m_datatype_opcode = CandidOpcode().Bool;
   m_datatype_hex = OpcodeHex().Bool;
-  m_datatype_textual = OpcodeTextual().Bool;
-}
-
-void CandidTypeBool::encode_I() {
-  // https://github.com/dfinity/candid/blob/master/spec/Candid.md#types
-  // For <primtype>: the negative Opcode
-  m_I.append_byte((std::byte)m_datatype_hex);
+  m_datatype_textual = opcode_textual().Bool;
 }
 
 void CandidTypeBool::encode_M() {

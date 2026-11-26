@@ -23,7 +23,6 @@ protected:
   void set_pv(uint32_t *v);
   void initialize(const uint32_t &v);
   void set_datatype();
-  void encode_I();
   void encode_M();
 
   uint32_t m_v;

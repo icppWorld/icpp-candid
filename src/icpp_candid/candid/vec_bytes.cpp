@@ -20,7 +20,7 @@
 
 #define INT_STR_SIZE (sizeof(int) * CHAR_BIT / 3 + 3)
 
-VecBytes::VecBytes() { check_endian(); }
+VecBytes::VecBytes() = default;
 
 // TODO: use __int128_t
 std::string VecBytes::int_to_hex(const int i, const std::string prefix) {
@@ -623,17 +623,6 @@ bool VecBytes::is_mixed_endian() const {
 bool VecBytes::is_float_ieee754() const {
   if constexpr (std::numeric_limits<double>::is_iec559 == true) return true;
   else return false;
-}
-
-void VecBytes::check_endian() {
-  if (is_little_endian()) m_endian_type = "little";
-  else if (is_big_endian()) {
-    m_endian_type = "big";
-  } else if (is_mixed_endian()) {
-    m_endian_type = "mixed";
-  } else {
-    ICPP_HOOKS::trap("Could not determine endianness of architecture. ");
-  }
 }
 
 void VecBytes::trap(const std::string &msg) const { ICPP_HOOKS::trap(msg); }

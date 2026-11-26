@@ -13,6 +13,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <typeinfo>
 #include <utility>
 
 #include "candid_type_of.h"
@@ -20,32 +21,30 @@
 CandidTypeRecord::CandidTypeRecord() : CandidTypeBase() {
 
   set_datatype();
-  encode_I();
-  encode_M();
+  m_M_stale = true;
 }
 
 void CandidTypeRecord::set_datatype() {
   m_datatype_opcode = CandidOpcode().Record;
   m_datatype_hex = OpcodeHex().Record;
-  m_datatype_textual = OpcodeTextual().Record;
+  m_datatype_textual = opcode_textual().Record;
 }
 
 // Tuple notation with uint32_t field_id
 void CandidTypeRecord::append(uint32_t field_id, CandidType field) {
-  std::string s = "";
-  _append(field_id, s, std::move(field));
+  _append(field_id, std::string(), std::move(field));
 }
 
 // Record notation with string name -> hash name into uint32_t field_id
 void CandidTypeRecord::append(std::string field_name, CandidType field) {
   uint32_t field_id = idl_hash(field_name);
-  _append(field_id, field_name, std::move(field));
+  _append(field_id, std::move(field_name), std::move(field));
 }
 
 void CandidTypeRecord::append_optional(std::string field_name, CandidType field,
                                        bool *p_on_wire) {
   uint32_t field_id = idl_hash(field_name);
-  _append(field_id, field_name, std::move(field));
+  _append(field_id, std::move(field_name), std::move(field));
   m_optional_fields[field_id] = p_on_wire;
 }
 
@@ -69,50 +68,22 @@ void CandidTypeRecord::append(CandidType field) {
 }
 
 void CandidTypeRecord::_append(uint32_t field_id, std::string field_name,
-                               CandidType field) {
-  // Check if field with identical hash already exists
-  auto iter = std::find(begin(m_field_ids), end(m_field_ids), field_id);
-  if (iter != end(m_field_ids)) {
-    auto i = std::distance(begin(m_field_ids), iter);
-    std::string msg;
-    msg.append("ERROR: record already has a field with the same field_id.\n");
-    msg.append("       field id (hash): " + std::to_string(field_id) + "\n");
-    msg.append("       field name 1   : " + m_field_names[i] + "\n");
-    msg.append("       field name 2   : " + field_name + "\n");
-    ICPP_HOOKS::trap(msg);
-  }
-
-  // Add the field
-  m_field_ids.push_back(field_id);
-  m_field_names.push_back(field_name);
-
-  // During encoding, the datatype is always a negative opcode !
-  // Store the negative opcode of the field's type
-  int datatype =
-      std::visit([](auto &&c) { return c.get_datatype_opcode(); }, field);
-  assert(datatype < 0);
-  m_field_datatypes.push_back(datatype);
-  m_field_opcodes.push_back(datatype);
-
-  // Store a shared pointer to the CandidTypeRoot class
-  m_field_ptrs.push_back(candid_type_of::root_ptr(std::move(field)));
-  m_field_content_datatypes.push_back(
-      m_field_ptrs.back()->get_content_datatype());
-  m_field_content_opcodes.push_back(m_field_ptrs.back()->get_content_opcode());
-
-  sort_fields_by_id();
-
-  encode_M();
+                               CandidType &&field) {
+  insert_field(field_id, std::move(field_name),
+               candid_type_of::root_ptr(std::move(field)), "record");
+  // Encoded once, when the value is read, not after every field
+  m_M_stale = true;
 }
 
-// For records, we set the Opcode, but note that it is not used during serialization.
-// At serialization time, we use the index in the overall type table.
-//
-// Encode the datatype
-// https://github.com/dfinity/candid/blob/master/spec/Candid.md#types
-// For <constype>: the negative Opcode
-void CandidTypeRecord::encode_I() {
-  m_I.append_byte((std::byte)m_datatype_hex);
+bool CandidTypeRecord::certainly_same_type(const CandidTypeRoot &other) const {
+  if (typeid(other) != typeid(CandidTypeRecord)) return false;
+  const auto &o = static_cast<const CandidTypeRecord &>(other);
+  if (!m_optional_fields.empty() || !o.m_optional_fields.empty() ||
+      m_field_ids != o.m_field_ids)
+    return false;
+  for (size_t i = 0; i < m_field_ptrs.size(); ++i)
+    if (!m_field_ptrs[i]->certainly_same_type(*o.m_field_ptrs[i])) return false;
+  return true;
 }
 
 // (re-)build the value encoding
@@ -120,12 +91,10 @@ void CandidTypeRecord::encode_M() {
   m_M.clear();
   m_has_M = true;
 
-  for (auto p_field : m_field_ptrs) {
-    // The get_M method is in the CandidTypeBase class
-    if (p_field) {
-      if (!p_field->has_M()) m_has_M = false;
-      m_M.append(p_field->get_M());
-    }
+  // The fields are never null: insert_field adds them
+  for (const auto &p_field : m_field_ptrs) {
+    if (!p_field->has_M()) m_has_M = false;
+    m_M.append(p_field->get_M());
   }
 }
 

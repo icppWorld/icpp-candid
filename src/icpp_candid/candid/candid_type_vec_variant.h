@@ -65,7 +65,6 @@ protected:
 
   void initialize();
   void set_datatype();
-  void encode_I();
 
   // Helper to find label index in the template variant
   int find_label_index(const std::string &label);

@@ -46,6 +46,8 @@ class CandidTypeValue : public CandidTypeBase<CandidTypeValue> {
 public:
   // Decoding, with CandidDecoder: see CandidTypeRoot
   int graph_type(CandidTypeGraph &g);
+  // Its type is in its value: certain only after a graph comparison
+  bool certainly_same_type(const CandidTypeRoot &) const { return false; }
   void bind(const CandidValue &v);
 
   // Encode: the value v of type t of g
@@ -59,7 +61,6 @@ public:
 
 protected:
   void set_datatype();
-  void encode_I();
   void encode_M();
 
   std::shared_ptr<const CandidTypeGraph> m_g;

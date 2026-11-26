@@ -69,7 +69,7 @@ CandidTypeVecRecord::CandidTypeVecRecord(
 void CandidTypeVecRecord::set_content_type() {
   m_content_opcode = CandidOpcode().Record;
   m_content_hex = OpcodeHex().Record;
-  m_content_textual = OpcodeTextual().Record;
+  m_content_textual = opcode_textual().Record;
 }
 
 void CandidTypeVecRecord::encode_M() {
@@ -78,50 +78,42 @@ void CandidTypeVecRecord::encode_M() {
 
   // encoded size of vec - leb128(N)
   // Check the size of the first vector of the Record of vecs that was passed in
+  const auto field_ptrs = m_v.get_field_ptrs();
   __uint128_t size_vec = 0;
-  if (!m_v.get_field_ptrs().empty() && m_v.get_field_ptrs()[0]) {
-    size_vec = __uint128_t(m_v.get_field_ptrs()[0]->get_v_size());
+  if (!field_ptrs.empty() && field_ptrs[0]) {
+    size_vec = __uint128_t(field_ptrs[0]->get_v_size());
   }
   m_M.append_uleb128(size_vec);
   m_has_M = m_v.has_M();
 
   // encoded vec values - M(v : <datatype>)^N
-  auto field_ptrs = m_v.get_field_ptrs();
-  auto field_names = m_v.get_field_names();
   auto field_ids = m_v.get_field_ids();
   CandidOpcode candidOpcode;
 
-  // Transpose the input of Record-of-Vecs to Vec-of-Records
+  // Transpose the input of Record-of-Vecs to Vec-of-Records. Each column is
+  // made a CandidType once, not for every row.
+  std::vector<CandidType> columns;
+  columns.reserve(field_ptrs.size());
+  for (size_t j = 0; j < field_ptrs.size(); ++j) {
+    auto field_opcode = field_ptrs[j]->get_datatype_opcode();
+    if (field_opcode != candidOpcode.Vec) {
+      std::string msg;
+      msg.append(
+          "ERROR: The field at index " + std::to_string(j) +
+          " for the CandidTypeRecord passed into a CandidTypeVecRecord is not a Vec.");
+      msg.append("\nInstead, the opcode = " + std::to_string(field_opcode) +
+                 " (" + candidOpcode.name_from_opcode(field_opcode) + ")");
+      ICPP_HOOKS::trap(msg);
+    }
+    columns.push_back(field_ptrs[j]->toCandidType());
+  }
 
-  // Loop over the vector size
+  // Loop over the vector size, and encode a record per row
   for (size_t i = 0; i < size_vec; ++i) {
     CandidTypeRecord c_record;
-    // Loop over all the fields and encode a record
-    for (size_t j = 0; j < field_ptrs.size(); ++j) {
-      auto field_ptr = field_ptrs[j];
-      auto field_name = field_names[j];
-      auto field_id = field_ids[j];
-
-      // using the encoder of a dummy CandidTypeVecXXX
-      auto field_opcode = field_ptr->get_datatype_opcode();
-
-      if (field_opcode != candidOpcode.Vec) {
-        std::string msg;
-        msg.append(
-            "ERROR: The field at index " + std::to_string(j) +
-            " for the CandidTypeRecord passed into a CandidTypeVecRecord is not a Vec.");
-        msg.append("\nInstead, the opcode = " + std::to_string(field_opcode) +
-                   " (" + candidOpcode.name_from_opcode(field_opcode) + ")");
-        ICPP_HOOKS::trap(msg);
-      }
-
-      // auto content_opcode = field_ptr->get_content_opcode();
-      CandidType c_field = field_ptr->toCandidType();
-      CandidType c_fields_vector_value_at_index_i =
-          std::visit(GetCandidTypeVecIndexVisitor(i), c_field);
-
-      c_record.append(field_id, std::move(c_fields_vector_value_at_index_i));
-    }
+    for (size_t j = 0; j < columns.size(); ++j)
+      c_record.append(field_ids[j],
+                      std::visit(GetCandidTypeVecIndexVisitor(i), columns[j]));
     m_M.append(c_record.get_M());
   }
 }
@@ -131,24 +123,13 @@ void CandidTypeVecRecord::encode_M() {
 void CandidTypeVecRecord::initialize() {
   set_datatype();
   set_content_type();
-  encode_I();
   encode_M();
 }
 
 void CandidTypeVecRecord::set_datatype() {
   m_datatype_opcode = CandidOpcode().Vec;
   m_datatype_hex = OpcodeHex().Vec;
-  m_datatype_textual = OpcodeTextual().Vec;
-}
-
-// For vecs, we set the Opcode, but note that it is not used during serialization.
-// At serialization time, we use the index in the overall type table.
-//
-// Encode the datatype
-// https://github.com/dfinity/candid/blob/master/spec/Candid.md#types
-// For <constype>: the negative Opcode
-void CandidTypeVecRecord::encode_I() {
-  m_I.append_byte((std::byte)m_datatype_hex);
+  m_datatype_textual = opcode_textual().Vec;
 }
 
 // m_v is the record whose fields are the columns: vecs, one per field of the

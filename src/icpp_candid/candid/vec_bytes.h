@@ -174,7 +174,6 @@ public:
   }
 
 private:
-  void check_endian();
   void trap(const std::string &msg) const;
   // The bytes left from offset to the end, 0 when offset is past the end
   __uint128_t bytes_left(__uint128_t offset) const;
@@ -186,5 +185,4 @@ private:
   std::vector<uint8_t> m_vec_uint8_t;
   mutable std::vector<std::byte> m_vec;
   mutable bool m_vec_in_sync = true;
-  std::string m_endian_type = "";
 };

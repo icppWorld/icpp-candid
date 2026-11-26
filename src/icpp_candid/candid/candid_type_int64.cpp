@@ -24,7 +24,6 @@ CandidTypeInt64::CandidTypeInt64(const int64_t v) { initialize(v); }
 void CandidTypeInt64::initialize(const int64_t &v) {
   m_v = v;
   set_datatype();
-  encode_I();
   encode_M();
 }
 
@@ -34,13 +33,7 @@ void CandidTypeInt64::set_pv(int64_t *v) { m_pv = v; }
 void CandidTypeInt64::set_datatype() {
   m_datatype_opcode = CandidOpcode().Int64;
   m_datatype_hex = OpcodeHex().Int64;
-  m_datatype_textual = OpcodeTextual().Int64;
-}
-
-void CandidTypeInt64::encode_I() {
-  // https://github.com/dfinity/candid/blob/master/spec/Candid.md#types
-  // For <primtype>: the negative Opcode
-  m_I.append_byte((std::byte)m_datatype_hex);
+  m_datatype_textual = opcode_textual().Int64;
 }
 
 void CandidTypeInt64::encode_M() {

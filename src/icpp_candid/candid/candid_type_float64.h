@@ -23,7 +23,6 @@ protected:
   void set_pv(double *v);
   void initialize(const double &v);
   void set_datatype();
-  void encode_I();
   void encode_M();
 
   double m_v;

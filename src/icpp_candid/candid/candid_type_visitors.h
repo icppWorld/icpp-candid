@@ -48,17 +48,15 @@ template <typename T> bool is_candid_type(const CandidType &c) {
 // ---------------------------------------------------------
 // A visitor to the index of a CandidTypeVecXXX, returning it's value as a CandidType
 
-template <typename T_CandidTypeVec, typename T_CandidType>
-T_CandidType get_vec_value(T_CandidTypeVec &c, size_t index) {
-  if (c.get_v().size() > 0 && index < c.get_v().size()) {
-    return T_CandidType{c.get_v()[index]};
-  }
-  T_CandidType c_default;
-  return c_default;
-}
-
 struct GetCandidTypeVecIndexVisitor {
   size_t idx;
+
+  // The element at index, read in place: a friend of each CandidTypeVecXXX
+  template <typename T_CandidTypeVec, typename T_CandidType>
+  static T_CandidType get_vec_value(T_CandidTypeVec &c, size_t index) {
+    if (index < c.m_v.size()) return T_CandidType{c.m_v[index]};
+    return T_CandidType{};
+  }
 
   GetCandidTypeVecIndexVisitor(size_t index) : idx(index) {}
 

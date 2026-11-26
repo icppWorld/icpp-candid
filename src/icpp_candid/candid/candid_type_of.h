@@ -10,8 +10,8 @@
 
 namespace candid_type_of {
 
-// A CandidType as a pointer to its base class
-inline std::shared_ptr<CandidTypeRoot> root_ptr(CandidType c) {
+// A CandidType as a pointer to its base class, moved into it
+inline std::shared_ptr<CandidTypeRoot> root_ptr(CandidType &&c) {
   return std::visit(
       [](auto &&arg_) -> std::shared_ptr<CandidTypeRoot> {
         auto derivedPtr = std::make_shared<std::decay_t<decltype(arg_)>>(

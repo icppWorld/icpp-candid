@@ -24,7 +24,6 @@ CandidTypeText::CandidTypeText(std::string v) { initialize(std::move(v)); }
 void CandidTypeText::initialize(std::string v) {
   m_v = std::move(v);
   set_datatype();
-  encode_I();
   encode_M();
 }
 
@@ -34,13 +33,7 @@ void CandidTypeText::set_pv(std::string *v) { m_pv = v; }
 void CandidTypeText::set_datatype() {
   m_datatype_opcode = CandidOpcode().Text;
   m_datatype_hex = OpcodeHex().Text;
-  m_datatype_textual = OpcodeTextual().Text;
-}
-
-void CandidTypeText::encode_I() {
-  // https://github.com/dfinity/candid/blob/master/spec/Candid.md#types
-  // For <primtype>: the negative Opcode
-  m_I.append_byte((std::byte)m_datatype_hex);
+  m_datatype_textual = opcode_textual().Text;
 }
 
 void CandidTypeText::encode_M() {
