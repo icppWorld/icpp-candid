@@ -53,13 +53,8 @@ void CandidDeserialize::decode(const VecBytes &B, const CandidArgs &A) {
                      "expected types: " +
                      err);
   }
-  for (size_t i = 0; i < types.size(); ++i) {
-    // Encoding is lazy, and bind changes what an argument would encode.
-    // Encode it, and so everything in it, as it is before the decode: the
-    // decode then leaves its encoding as it was, also when it was not read yet
-    (void)A.m_args_ptrs[i]->has_M();
+  for (size_t i = 0; i < types.size(); ++i)
     A.m_args_ptrs[i]->bind(values[i]);
-  }
 }
 
 // Assert candid VecBytes against a string in "hex" format (didc encode)

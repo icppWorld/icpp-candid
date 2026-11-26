@@ -101,7 +101,9 @@ public:
   // opcode, or a node of g. The classes of a primitive type, and the vec and
   // opt of one, get it from their opcodes; the others override it.
   virtual int graph_type(CandidTypeGraph &g);
-  // Fills the bound C++ variable(s) with a decoded value of graph_type()
+  // Fills the bound C++ variable(s) with a decoded value of graph_type().
+  // What the object encodes after that (get_M, CandidSerialize) is
+  // unspecified: to send a value, build a new object from the variables.
   virtual void bind(const CandidValue &v);
   // For a vec: appends one decoded element (the columns of a
   // CandidTypeVecRecord)

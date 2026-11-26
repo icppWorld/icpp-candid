@@ -38,7 +38,8 @@ public:
   static constexpr __uint128_t MAX_ZERO_WIDTH_VALUES = 1000000;
 
   // Decodes B at the types of A and fills their bound C++ variables, as the
-  // constructors do, reading B without copying or keeping it
+  // constructors do, reading B without copying or keeping it. What the
+  // objects of A encode after that is unspecified (see CandidTypeRoot::bind)
   static void decode(const VecBytes &B, const CandidArgs &A);
 
   int assert_candid(const std::string &candid_expected,
