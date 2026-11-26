@@ -87,41 +87,33 @@ void CandidTypeVecRecord::encode_M() {
   m_has_M = m_v.has_M();
 
   // encoded vec values - M(v : <datatype>)^N
-  auto field_names = m_v.get_field_names();
   auto field_ids = m_v.get_field_ids();
   CandidOpcode candidOpcode;
 
-  // Transpose the input of Record-of-Vecs to Vec-of-Records
+  // Transpose the input of Record-of-Vecs to Vec-of-Records. Each column is
+  // made a CandidType once, not for every row.
+  std::vector<CandidType> columns;
+  columns.reserve(field_ptrs.size());
+  for (size_t j = 0; j < field_ptrs.size(); ++j) {
+    auto field_opcode = field_ptrs[j]->get_datatype_opcode();
+    if (field_opcode != candidOpcode.Vec) {
+      std::string msg;
+      msg.append(
+          "ERROR: The field at index " + std::to_string(j) +
+          " for the CandidTypeRecord passed into a CandidTypeVecRecord is not a Vec.");
+      msg.append("\nInstead, the opcode = " + std::to_string(field_opcode) +
+                 " (" + candidOpcode.name_from_opcode(field_opcode) + ")");
+      ICPP_HOOKS::trap(msg);
+    }
+    columns.push_back(field_ptrs[j]->toCandidType());
+  }
 
-  // Loop over the vector size
+  // Loop over the vector size, and encode a record per row
   for (size_t i = 0; i < size_vec; ++i) {
     CandidTypeRecord c_record;
-    // Loop over all the fields and encode a record
-    for (size_t j = 0; j < field_ptrs.size(); ++j) {
-      auto field_ptr = field_ptrs[j];
-      auto field_name = field_names[j];
-      auto field_id = field_ids[j];
-
-      // using the encoder of a dummy CandidTypeVecXXX
-      auto field_opcode = field_ptr->get_datatype_opcode();
-
-      if (field_opcode != candidOpcode.Vec) {
-        std::string msg;
-        msg.append(
-            "ERROR: The field at index " + std::to_string(j) +
-            " for the CandidTypeRecord passed into a CandidTypeVecRecord is not a Vec.");
-        msg.append("\nInstead, the opcode = " + std::to_string(field_opcode) +
-                   " (" + candidOpcode.name_from_opcode(field_opcode) + ")");
-        ICPP_HOOKS::trap(msg);
-      }
-
-      // auto content_opcode = field_ptr->get_content_opcode();
-      CandidType c_field = field_ptr->toCandidType();
-      CandidType c_fields_vector_value_at_index_i =
-          std::visit(GetCandidTypeVecIndexVisitor(i), c_field);
-
-      c_record.append(field_id, std::move(c_fields_vector_value_at_index_i));
-    }
+    for (size_t j = 0; j < columns.size(); ++j)
+      c_record.append(field_ids[j],
+                      std::visit(GetCandidTypeVecIndexVisitor(i), columns[j]));
     m_M.append(c_record.get_M());
   }
 }

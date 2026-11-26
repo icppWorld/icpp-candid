@@ -110,6 +110,9 @@ public:
   // True if this and other are certainly the same type, found without
   // building their type graphs: objects of one primitive class, or records
   // with the same field ids whose fields are. False if that is not certain.
+  // The base takes a primitive opcode for the type, as graph_type does: a
+  // class with a primitive opcode that overrides graph_type must override
+  // this too (CandidTypeValue does).
   virtual bool certainly_same_type(const CandidTypeRoot &other) const;
 
   uint32_t idl_hash(const std::string &s);

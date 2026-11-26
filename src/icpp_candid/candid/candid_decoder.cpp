@@ -657,10 +657,17 @@ St Decoder::decode_record(int w, const CandidTypeGraph &g, int e,
     return &r->items.back();
   };
 
-  // Room for the fields in both types, the most out can get. Bounded by the
-  // expected type, the canister's own, not by what the message claims.
+  // Room for exactly the fields that go into out: in both types, and taking
+  // bytes on the wire. The others go in the shared rest, or nowhere.
   if (out) {
-    const size_t n = std::min(wfs.size(), efs.size());
+    size_t n = 0;
+    size_t k = 0;
+    for (const auto &wf : wfs) {
+      while (k < efs.size() && efs[k].id < wf.id)
+        ++k;
+      if (k < efs.size() && efs[k].id == wf.id && !m_w.is_zero_width(wf.type))
+        ++n;
+    }
     out->ids.reserve(n);
     out->items.reserve(n);
   }

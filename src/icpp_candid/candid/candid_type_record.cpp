@@ -91,12 +91,10 @@ void CandidTypeRecord::encode_M() {
   m_M.clear();
   m_has_M = true;
 
+  // The fields are never null: insert_field adds them
   for (const auto &p_field : m_field_ptrs) {
-    // The get_M method is in the CandidTypeBase class
-    if (p_field) {
-      if (!p_field->has_M()) m_has_M = false;
-      m_M.append(p_field->get_M());
-    }
+    if (!p_field->has_M()) m_has_M = false;
+    m_M.append(p_field->get_M());
   }
 }
 

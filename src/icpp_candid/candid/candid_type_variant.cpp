@@ -103,8 +103,8 @@ void CandidTypeVariant::_append(uint32_t field_id, std::string field_name,
   insert_field(field_id, std::move(field_name),
                candid_type_of::root_ptr(std::move(field)), "variant");
 
-  // Encoded at once: the encoding depends on the label, which bind() sets
-  encode_M();
+  // Encoded once, when the value is read, not after every field
+  m_M_stale = true;
 }
 
 // (re-)build the value encoding
@@ -120,11 +120,8 @@ void CandidTypeVariant::encode_M() {
       m_M.append_uleb128(__uint128_t(i));
 
       // encode the variant's value
-      // The get_M method is in the CandidTypeBase class
-      if (m_field_ptrs[i]) {
-        m_has_M = m_field_ptrs[i]->has_M();
-        m_M.append(m_field_ptrs[i]->get_M());
-      }
+      m_has_M = m_field_ptrs[i]->has_M();
+      m_M.append(m_field_ptrs[i]->get_M());
 
       break;
     }
