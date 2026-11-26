@@ -7,6 +7,7 @@
 #include <cstring>
 
 #include <algorithm>
+#include <functional>
 #include <iterator>
 // #include <bit> // for std::endian (no longer used)
 #include <string>
@@ -302,18 +303,21 @@ void VecBytes::append_byte(std::byte b) {
 }
 
 void VecBytes::append_bytes(const uint8_t *bytes, const size_t num_bytes) {
-  m_vec_uint8_t.insert(m_vec_uint8_t.end(), bytes, bytes + num_bytes);
+  const uint8_t *begin = m_vec_uint8_t.data();
+  const uint8_t *end = begin + m_vec_uint8_t.size();
+  std::less_equal<const uint8_t *> le;
+  if (num_bytes > 0 && le(begin, bytes) && !le(end, bytes)) {
+    // insert may not read from the vector it inserts into
+    const std::vector<uint8_t> copy(bytes, bytes + num_bytes);
+    m_vec_uint8_t.insert(m_vec_uint8_t.end(), copy.begin(), copy.end());
+  } else {
+    m_vec_uint8_t.insert(m_vec_uint8_t.end(), bytes, bytes + num_bytes);
+  }
   m_vec_in_sync = false;
 }
 
 void VecBytes::append(const VecBytes &other) {
-  if (&other == this) {
-    // insert may not read from the vector it inserts into
-    const std::vector<uint8_t> copy = m_vec_uint8_t;
-    append_bytes(copy.data(), copy.size());
-  } else {
-    append_bytes(other.m_vec_uint8_t.data(), other.m_vec_uint8_t.size());
-  }
+  append_bytes(other.m_vec_uint8_t.data(), other.m_vec_uint8_t.size());
 }
 
 const std::vector<std::byte> &VecBytes::vec() const {
