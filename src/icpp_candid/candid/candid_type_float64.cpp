@@ -24,8 +24,6 @@ CandidTypeFloat64::CandidTypeFloat64(double *p_v) {
 // This constructor is only for encoding
 CandidTypeFloat64::CandidTypeFloat64(const double v) { initialize(v); }
 
-CandidTypeFloat64::~CandidTypeFloat64() {}
-
 // Initialize things
 void CandidTypeFloat64::initialize(const double &v) {
   if (sizeof(v) != 8) {

@@ -17,18 +17,15 @@ public:
   // clang-format off
   // docs start: demo_candid_type_opt
   CandidTypeOptBool(std::optional<bool> *v);
-  CandidTypeOptBool(const std::optional<bool> v); // docs end: demo_candid_type_opt
+  CandidTypeOptBool(std::optional<bool> v); // docs end: demo_candid_type_opt
   // clang-format on
-
-  // Destructor
-  ~CandidTypeOptBool();
 
   std::optional<bool> get_v() { return m_v; }
   std::optional<bool> *get_pv() { return m_pv; }
 
 protected:
   void set_pv(std::optional<bool> *v) { m_pv = v; }
-  void set_v(const std::optional<bool> &v) { m_v = v; }
+  void set_v(std::optional<bool> v) { m_v = std::move(v); }
   void set_content_type();
   void encode_M();
 

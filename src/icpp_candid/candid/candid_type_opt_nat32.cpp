@@ -20,19 +20,16 @@ CandidTypeOptNat32::CandidTypeOptNat32(std::optional<uint32_t> *p_v)
     : CandidTypeBase() {
   set_pv(p_v);
 
-  const std::optional<uint32_t> v = const_cast<std::optional<uint32_t> &>(*p_v);
-  set_v(v);
+  set_v(*p_v);
   initialize();
 }
 
 // These constructors are only for encoding
-CandidTypeOptNat32::CandidTypeOptNat32(const std::optional<uint32_t> v)
+CandidTypeOptNat32::CandidTypeOptNat32(std::optional<uint32_t> v)
     : CandidTypeBase() {
-  set_v(v);
+  set_v(std::move(v));
   initialize();
 }
-
-CandidTypeOptNat32::~CandidTypeOptNat32() {}
 
 void CandidTypeOptNat32::set_content_type() {
   m_content_opcode = CandidOpcode().Nat32;

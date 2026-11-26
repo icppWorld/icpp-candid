@@ -16,9 +16,6 @@ public:
   CandidTypeNat16(uint16_t *v);
   CandidTypeNat16(const uint16_t v); // docs end: demo_candid_type_nat16
 
-  // Destructor
-  ~CandidTypeNat16();
-
   uint16_t get_v() { return m_v; }
   uint16_t *get_pv() { return m_pv; }
 

@@ -27,9 +27,6 @@ public:
   void append_optional(std::string field_name, CandidType field,
                        bool *p_on_wire = nullptr);
 
-  // Destructor
-  ~CandidTypeRecord();
-
   std::vector<std::string> get_v() { return m_field_names; }
   std::vector<std::string> *get_pv() { return &m_field_names; }
 

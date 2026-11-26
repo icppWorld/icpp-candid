@@ -20,19 +20,15 @@ CandidTypeOptBool::CandidTypeOptBool(std::optional<bool> *p_v)
     : CandidTypeBase() {
   set_pv(p_v);
 
-  const std::optional<bool> v = const_cast<std::optional<bool> &>(*p_v);
-  set_v(v);
+  set_v(*p_v);
   initialize();
 }
 
 // These constructors are only for encoding
-CandidTypeOptBool::CandidTypeOptBool(const std::optional<bool> v)
-    : CandidTypeBase() {
-  set_v(v);
+CandidTypeOptBool::CandidTypeOptBool(std::optional<bool> v) : CandidTypeBase() {
+  set_v(std::move(v));
   initialize();
 }
-
-CandidTypeOptBool::~CandidTypeOptBool() {}
 
 void CandidTypeOptBool::set_content_type() {
   m_content_opcode = CandidOpcode().Bool;

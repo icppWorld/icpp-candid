@@ -14,21 +14,18 @@ public:
 
   // Constructors
   CandidTypeVecBool();
-  CandidTypeVecBool(const std::vector<bool> v);
+  CandidTypeVecBool(std::vector<bool> v);
 
   CandidTypeVecBool(std::vector<bool> *p_v);
-
-  // Destructor
-  ~CandidTypeVecBool();
 
   std::vector<bool> get_v() { return m_v; }
   std::vector<bool> *get_pv() { return m_pv; }
 
 protected:
   void set_pv(std::vector<bool> *v) { m_pv = v; }
-  void set_v(const std::vector<bool> &v) {
-    m_v = v;
+  void set_v(std::vector<bool> v) {
     m_v_size = v.size();
+    m_v = std::move(v);
   }
   void set_content_type();
   void encode_M();

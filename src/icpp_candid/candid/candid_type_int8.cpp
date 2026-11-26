@@ -20,8 +20,6 @@ CandidTypeInt8::CandidTypeInt8(int8_t *p_v) {
 // This constructor is only for encoding
 CandidTypeInt8::CandidTypeInt8(const int8_t v) { initialize(v); }
 
-CandidTypeInt8::~CandidTypeInt8() {}
-
 // Initialize things
 void CandidTypeInt8::initialize(const int8_t &v) {
   m_v = v;

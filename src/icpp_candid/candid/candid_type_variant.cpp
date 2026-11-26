@@ -16,6 +16,8 @@
 #include <unordered_map>
 #include <utility>
 
+#include "candid_type_of.h"
+
 CandidTypeVariant::CandidTypeVariant() : CandidTypeBase() { initialize(); }
 
 CandidTypeVariant::CandidTypeVariant(std::string *p_label) : CandidTypeBase() {
@@ -34,16 +36,13 @@ CandidTypeVariant::CandidTypeVariant(const std::string label)
   m_label_value_set = false;
 }
 
-CandidTypeVariant::CandidTypeVariant(const std::string label,
-                                     const CandidType field)
+CandidTypeVariant::CandidTypeVariant(const std::string label, CandidType field)
     : CandidTypeBase() {
 
   m_label = label;
   initialize();
-  append(label, field);
+  append(label, std::move(field));
 }
-
-CandidTypeVariant::~CandidTypeVariant() {}
 
 void CandidTypeVariant::initialize() {
   set_datatype();
@@ -60,13 +59,13 @@ void CandidTypeVariant::set_datatype() {
 // Tuple notation with uint32_t field_id
 void CandidTypeVariant::append(uint32_t field_id, CandidType field) {
   std::string s = "";
-  _append(field_id, s, field);
+  _append(field_id, s, std::move(field));
 }
 
 // Variant notation with string name -> hash name into uint32_t field_id
 void CandidTypeVariant::append(std::string field_name, CandidType field) {
   uint32_t field_id = idl_hash(field_name);
-  _append(field_id, field_name, field);
+  _append(field_id, field_name, std::move(field));
 }
 
 // Tuple notation without field_id -> generate sequential uint32_t field_id
@@ -74,10 +73,10 @@ void CandidTypeVariant::append(CandidType field) {
   // The implicit id follows the previously appended field, not the largest id
   if (m_field_ptrs.size() == 0) {
     uint32_t field_id = 0;
-    append(field_id, field);
+    append(field_id, std::move(field));
   } else if (in_range<std::uint32_t>(m_last_appended_field_id + 1)) {
     uint32_t field_id = m_last_appended_field_id + 1;
-    append(field_id, field);
+    append(field_id, std::move(field));
   } else {
     std::string msg;
     msg.append("ERROR: field_id outside range of uint32_t\n");
@@ -132,24 +131,7 @@ void CandidTypeVariant::_append(uint32_t field_id, std::string field_name,
   m_field_opcodes.push_back(datatype);
 
   // Store the shared pointer to a CandidTypeRoot class
-  m_field_ptrs.push_back(std::visit(
-      [](auto &&arg_) -> std::shared_ptr<CandidTypeRoot> {
-        // Create shared_ptr for the derived type
-        auto derivedPtr = std::make_shared<std::decay_t<decltype(arg_)>>(
-            std::forward<decltype(arg_)>(arg_));
-
-        // Cast it to a shared_ptr of the base type
-        return std::static_pointer_cast<CandidTypeRoot>(derivedPtr);
-      },
-      field));
-  // This makes a copy
-  // m_field_ptrs.push_back(std::visit(
-  //     [](auto &&arg) -> std::shared_ptr<CandidTypeRoot> {
-  //       return std::make_shared<std::decay_t<decltype(arg)>>(arg);
-  //     },
-  //     field));
-
-  // For Vec & Opt fields
+  m_field_ptrs.push_back(candid_type_of::root_ptr(std::move(field)));
   m_field_content_datatypes.push_back(
       m_field_ptrs.back()->get_content_datatype());
   m_field_content_opcodes.push_back(m_field_ptrs.back()->get_content_opcode());

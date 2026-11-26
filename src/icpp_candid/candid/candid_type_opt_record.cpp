@@ -28,8 +28,7 @@ CandidTypeOptRecord::CandidTypeOptRecord(CandidTypeRecord *p_v, bool *has_value)
 
   set_pv(static_cast<CandidTypeRoot *>(p_v));
 
-  const CandidTypeRecord v = const_cast<CandidTypeRecord &>(*p_v);
-  set_v(v);
+  set_v(*p_v);
   initialize();
 }
 
@@ -82,8 +81,6 @@ CandidTypeOptRecord::CandidTypeOptRecord(
         std::string(__func__));
   }
 }
-
-CandidTypeOptRecord::~CandidTypeOptRecord() {}
 
 void CandidTypeOptRecord::set_content_type() {
   m_content_opcode = CandidOpcode().Record;

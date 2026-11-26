@@ -10,7 +10,6 @@
 class CandidAssert {
 public:
   CandidAssert();
-  ~CandidAssert();
 
   static int assert_candid(const VecBytes &B,
                            const std::string &candid_expected,

@@ -16,9 +16,6 @@ public:
   CandidTypeInt(__int128_t *v);
   CandidTypeInt(const __int128_t &v); // docs end: demo_candid_type_int
 
-  // Destructor
-  ~CandidTypeInt();
-
   __int128_t get_v() { return m_v; }
   __int128_t *get_pv() { return m_pv; }
 

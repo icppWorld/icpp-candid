@@ -17,17 +17,14 @@ public:
   CandidTypeText(const char *c);
   // docs start: demo_candid_type_text
   CandidTypeText(std::string *v);
-  CandidTypeText(const std::string v); // docs end: demo_candid_type_text
-
-  // Destructor
-  ~CandidTypeText();
+  CandidTypeText(std::string v); // docs end: demo_candid_type_text
 
   std::string get_v() { return m_v; }
   std::string *get_pv() { return m_pv; }
 
 protected:
   void set_pv(std::string *v);
-  void initialize(const std::string &v);
+  void initialize(std::string v);
   void set_datatype();
   void encode_I();
   void encode_M();

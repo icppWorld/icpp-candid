@@ -55,8 +55,6 @@ public:
   // Only the type t of g
   CandidTypeValue(const CandidTypeGraph &g, int t);
 
-  ~CandidTypeValue();
-
   const CandidValue &get_v() const { return m_v; }
 
 protected:

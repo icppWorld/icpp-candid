@@ -26,9 +26,6 @@ public:
   // Internal: During deserialization for an additional wire argument (dummy !)
   CandidTypeVecRecord(std::shared_ptr<CandidTypeRoot> p_wire_record);
 
-  // Destructor
-  ~CandidTypeVecRecord();
-
   CandidTypeRecord get_v() { return m_v; }
   CandidTypeRoot *get_pv() { return m_pv; }
   std::shared_ptr<CandidTypeRoot> get_pvs() { return m_pvs; }

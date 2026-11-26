@@ -26,8 +26,7 @@ CandidTypeVecRecord::CandidTypeVecRecord(CandidTypeRecord *p_v)
     : CandidTypeBase() {
   set_pv(static_cast<CandidTypeRoot *>(p_v));
 
-  const CandidTypeRecord v = const_cast<CandidTypeRecord &>(*p_v);
-  set_v(v);
+  set_v(*p_v);
   initialize();
 }
 
@@ -66,8 +65,6 @@ CandidTypeVecRecord::CandidTypeVecRecord(
   set_content_type();
   // No need to set anything else...
 }
-
-CandidTypeVecRecord::~CandidTypeVecRecord() {}
 
 void CandidTypeVecRecord::set_content_type() {
   m_content_opcode = CandidOpcode().Record;
@@ -123,10 +120,9 @@ void CandidTypeVecRecord::encode_M() {
       CandidType c_fields_vector_value_at_index_i =
           std::visit(GetCandidTypeVecIndexVisitor(i), c_field);
 
-      c_record.append(field_id, c_fields_vector_value_at_index_i);
+      c_record.append(field_id, std::move(c_fields_vector_value_at_index_i));
     }
-    VecBytes m = c_record.get_M();
-    m_M.append_bytes(m.vec_uint8_t().data(), m.size());
+    m_M.append(c_record.get_M());
   }
 }
 

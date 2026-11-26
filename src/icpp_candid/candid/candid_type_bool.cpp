@@ -19,8 +19,6 @@ CandidTypeBool::CandidTypeBool(bool *p_v) {
 // This constructor is only for encoding
 CandidTypeBool::CandidTypeBool(const bool v) { initialize(v); }
 
-CandidTypeBool::~CandidTypeBool() {}
-
 // Initialize things
 void CandidTypeBool::initialize(const bool &v) {
   m_v = v;

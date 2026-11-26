@@ -31,8 +31,6 @@ CandidTypeValue::CandidTypeValue(const CandidTypeGraph &g, int t)
   m_has_M = false;
 }
 
-CandidTypeValue::~CandidTypeValue() {}
-
 void CandidTypeValue::initialize(const CandidTypeGraph &g, int t) {
   std::string err;
   if (!g.validate(err))

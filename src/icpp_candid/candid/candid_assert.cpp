@@ -6,7 +6,6 @@
 #include <limits>
 
 CandidAssert::CandidAssert() {}
-CandidAssert::~CandidAssert() {}
 
 // Assert a candid VecBytes against a string in "hex" format (didc encode)
 int CandidAssert::assert_candid(const VecBytes &B,

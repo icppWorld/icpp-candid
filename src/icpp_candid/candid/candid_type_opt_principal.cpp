@@ -22,21 +22,16 @@ CandidTypeOptPrincipal::CandidTypeOptPrincipal(std::optional<std::string> *p_v)
     : CandidTypeBase() {
   set_pv(p_v);
 
-  const std::optional<std::string> v =
-      const_cast<std::optional<std::string> &>(*p_v);
-  set_v(v);
+  set_v(*p_v);
   initialize();
 }
 
 // These constructors are only for encoding
-CandidTypeOptPrincipal::CandidTypeOptPrincipal(
-    const std::optional<std::string> v)
+CandidTypeOptPrincipal::CandidTypeOptPrincipal(std::optional<std::string> v)
     : CandidTypeBase() {
-  set_v(v);
+  set_v(std::move(v));
   initialize();
 }
-
-CandidTypeOptPrincipal::~CandidTypeOptPrincipal() {}
 
 void CandidTypeOptPrincipal::set_content_type() {
   m_content_opcode = CandidOpcode().Principal;
@@ -56,8 +51,7 @@ void CandidTypeOptPrincipal::encode_M() {
 
     std::string s = m_v.value();
     CandidTypePrincipal c{s};
-    VecBytes m = c.get_M();
-    m_M.append_bytes(m.vec_uint8_t().data(), m.size());
+    m_M.append(c.get_M());
   }
 }
 

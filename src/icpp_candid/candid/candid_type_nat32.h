@@ -16,9 +16,6 @@ public:
   CandidTypeNat32(uint32_t *v);
   CandidTypeNat32(const uint32_t v); // docs end: demo_candid_type_nat32
 
-  // Destructor
-  ~CandidTypeNat32();
-
   uint32_t get_v() { return m_v; }
   uint32_t *get_pv() { return m_pv; }
 

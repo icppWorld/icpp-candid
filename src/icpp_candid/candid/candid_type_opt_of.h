@@ -36,9 +36,6 @@ public:
   // Decode
   CandidTypeOptOf(std::function<CandidType()> make_content, bool *has_value);
 
-  // Destructor
-  ~CandidTypeOptOf();
-
 protected:
   void set_datatype();
   void set_content_type();

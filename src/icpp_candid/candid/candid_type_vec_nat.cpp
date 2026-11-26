@@ -18,20 +18,16 @@ CandidTypeVecNat::CandidTypeVecNat(std::vector<__uint128_t> *p_v)
     : CandidTypeBase() {
   set_pv(p_v);
 
-  const std::vector<__uint128_t> v =
-      const_cast<std::vector<__uint128_t> &>(*p_v);
-  set_v(v);
+  set_v(*p_v);
   initialize();
 }
 
 // These constructors are only for encoding
-CandidTypeVecNat::CandidTypeVecNat(const std::vector<__uint128_t> v)
+CandidTypeVecNat::CandidTypeVecNat(std::vector<__uint128_t> v)
     : CandidTypeBase() {
-  set_v(v);
+  set_v(std::move(v));
   initialize();
 }
-
-CandidTypeVecNat::~CandidTypeVecNat() {}
 
 void CandidTypeVecNat::set_content_type() {
   m_content_opcode = CandidOpcode().Nat;

@@ -14,21 +14,18 @@ public:
 
   // Constructors
   CandidTypeVecNat8();
-  CandidTypeVecNat8(const std::vector<uint8_t> v);
+  CandidTypeVecNat8(std::vector<uint8_t> v);
 
   CandidTypeVecNat8(std::vector<uint8_t> *p_v);
-
-  // Destructor
-  ~CandidTypeVecNat8();
 
   std::vector<uint8_t> get_v() { return m_v; }
   std::vector<uint8_t> *get_pv() { return m_pv; }
 
 protected:
   void set_pv(std::vector<uint8_t> *v) { m_pv = v; }
-  void set_v(const std::vector<uint8_t> &v) {
-    m_v = v;
+  void set_v(std::vector<uint8_t> v) {
     m_v_size = v.size();
+    m_v = std::move(v);
   }
   void set_content_type();
   void encode_M();

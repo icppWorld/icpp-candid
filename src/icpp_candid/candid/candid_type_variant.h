@@ -19,11 +19,8 @@ public:
   CandidTypeVariant();
   CandidTypeVariant(std::string *p_label);
   CandidTypeVariant(const std::string label);
-  CandidTypeVariant(const std::string label, const CandidType field); // docs end: demo_candid_type_variant
+  CandidTypeVariant(const std::string label, CandidType field); // docs end: demo_candid_type_variant
   // clang-format on
-
-  // Destructor
-  ~CandidTypeVariant();
 
   std::vector<std::string> get_v() { return m_field_names; }
   std::vector<std::string> *get_pv() { return &m_field_names; }

@@ -20,8 +20,6 @@ CandidTypeInt32::CandidTypeInt32(int32_t *p_v) {
 // This constructor is only for encoding
 CandidTypeInt32::CandidTypeInt32(const int32_t v) { initialize(v); }
 
-CandidTypeInt32::~CandidTypeInt32() {}
-
 // Initialize things
 void CandidTypeInt32::initialize(const int32_t &v) {
   m_v = v;

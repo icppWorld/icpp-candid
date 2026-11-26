@@ -20,19 +20,16 @@ CandidTypeOptInt64::CandidTypeOptInt64(std::optional<int64_t> *p_v)
     : CandidTypeBase() {
   set_pv(p_v);
 
-  const std::optional<int64_t> v = const_cast<std::optional<int64_t> &>(*p_v);
-  set_v(v);
+  set_v(*p_v);
   initialize();
 }
 
 // These constructors are only for encoding
-CandidTypeOptInt64::CandidTypeOptInt64(const std::optional<int64_t> v)
+CandidTypeOptInt64::CandidTypeOptInt64(std::optional<int64_t> v)
     : CandidTypeBase() {
-  set_v(v);
+  set_v(std::move(v));
   initialize();
 }
-
-CandidTypeOptInt64::~CandidTypeOptInt64() {}
 
 void CandidTypeOptInt64::set_content_type() {
   m_content_opcode = CandidOpcode().Int64;

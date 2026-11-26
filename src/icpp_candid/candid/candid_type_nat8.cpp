@@ -20,8 +20,6 @@ CandidTypeNat8::CandidTypeNat8(uint8_t *p_v) {
 // This constructor is only for encoding
 CandidTypeNat8::CandidTypeNat8(const uint8_t v) { initialize(v); }
 
-CandidTypeNat8::~CandidTypeNat8() {}
-
 // Initialize things
 void CandidTypeNat8::initialize(const uint8_t &v) {
   m_v = v;

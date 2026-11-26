@@ -18,19 +18,15 @@ CandidTypeVecInt8::CandidTypeVecInt8(std::vector<int8_t> *p_v)
     : CandidTypeBase() {
   set_pv(p_v);
 
-  const std::vector<int8_t> v = const_cast<std::vector<int8_t> &>(*p_v);
-  set_v(v);
+  set_v(*p_v);
   initialize();
 }
 
 // These constructors are only for encoding
-CandidTypeVecInt8::CandidTypeVecInt8(const std::vector<int8_t> v)
-    : CandidTypeBase() {
-  set_v(v);
+CandidTypeVecInt8::CandidTypeVecInt8(std::vector<int8_t> v) : CandidTypeBase() {
+  set_v(std::move(v));
   initialize();
 }
-
-CandidTypeVecInt8::~CandidTypeVecInt8() {}
 
 void CandidTypeVecInt8::set_content_type() {
   m_content_opcode = CandidOpcode().Int8;

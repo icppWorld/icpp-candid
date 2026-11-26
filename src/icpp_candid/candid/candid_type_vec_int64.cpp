@@ -18,19 +18,16 @@ CandidTypeVecInt64::CandidTypeVecInt64(std::vector<int64_t> *p_v)
     : CandidTypeBase() {
   set_pv(p_v);
 
-  const std::vector<int64_t> v = const_cast<std::vector<int64_t> &>(*p_v);
-  set_v(v);
+  set_v(*p_v);
   initialize();
 }
 
 // These constructors are only for encoding
-CandidTypeVecInt64::CandidTypeVecInt64(const std::vector<int64_t> v)
+CandidTypeVecInt64::CandidTypeVecInt64(std::vector<int64_t> v)
     : CandidTypeBase() {
-  set_v(v);
+  set_v(std::move(v));
   initialize();
 }
-
-CandidTypeVecInt64::~CandidTypeVecInt64() {}
 
 void CandidTypeVecInt64::set_content_type() {
   m_content_opcode = CandidOpcode().Int64;

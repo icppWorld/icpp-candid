@@ -16,9 +16,6 @@ public:
   CandidTypeBool(bool *v);
   CandidTypeBool(const bool v); // docs end: demo_candid_type_bool
 
-  // Destructor
-  ~CandidTypeBool();
-
   bool get_v() { return m_v; }
   bool *get_pv() { return m_pv; }
 

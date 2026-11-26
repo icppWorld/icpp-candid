@@ -19,9 +19,6 @@ public:
   CandidTypeOptNull(); // docs end: demo_candid_type_opt
   // clang-format on
 
-  // Destructor
-  ~CandidTypeOptNull();
-
   std::optional<std::string> get_v() { return m_v; }
   std::optional<std::string> *get_pv() { return m_pv; }
 

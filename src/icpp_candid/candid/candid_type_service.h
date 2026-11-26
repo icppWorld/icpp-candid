@@ -41,9 +41,6 @@ public:
   // sorted by name, as the type table requires
   void append_method(const std::string &name, const CandidTypeFunc &method);
 
-  // Destructor
-  ~CandidTypeService();
-
 protected:
   void set_datatype();
   void encode_I();

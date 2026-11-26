@@ -159,8 +159,6 @@ CandidTypeOptVec::CandidTypeOptVec(std::shared_ptr<CandidTypeRoot> v)
   set_content_type();
 }
 
-CandidTypeOptVec::~CandidTypeOptVec() {}
-
 void CandidTypeOptVec::set_content_type() {
   m_content_opcode = CandidOpcode().Vec;
   m_content_hex = OpcodeHex().Vec;

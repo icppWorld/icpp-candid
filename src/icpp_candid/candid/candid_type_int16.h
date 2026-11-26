@@ -16,9 +16,6 @@ public:
   CandidTypeInt16(int16_t *v);
   CandidTypeInt16(const int16_t v); // docs end: demo_candid_type_int16
 
-  // Destructor
-  ~CandidTypeInt16();
-
   int16_t get_v() { return m_v; }
   int16_t *get_pv() { return m_pv; }
 

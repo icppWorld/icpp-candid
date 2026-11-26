@@ -12,9 +12,6 @@ public:
   // Constructors
   CandidTypeNull();
 
-  // Destructor
-  ~CandidTypeNull();
-
   std::string get_v() { return m_v; }
   std::string *get_pv() { return &m_v; }
 

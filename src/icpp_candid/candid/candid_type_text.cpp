@@ -13,22 +13,16 @@ CandidTypeText::CandidTypeText() { initialize(""); }
 CandidTypeText::CandidTypeText(std::string *p_v) {
   set_pv(p_v);
 
-  const std::string v = const_cast<std::string &>(*p_v);
-  initialize(v);
+  initialize(*p_v);
 }
 
 // These constructors are only for encoding
-CandidTypeText::CandidTypeText(const char *c) {
-  std::string v(c);
-  initialize(v);
-}
-CandidTypeText::CandidTypeText(const std::string v) { initialize(v); }
-
-CandidTypeText::~CandidTypeText() {}
+CandidTypeText::CandidTypeText(const char *c) { initialize(std::string(c)); }
+CandidTypeText::CandidTypeText(std::string v) { initialize(std::move(v)); }
 
 // Initialize things
-void CandidTypeText::initialize(const std::string &v) {
-  m_v = v;
+void CandidTypeText::initialize(std::string v) {
+  m_v = std::move(v);
   set_datatype();
   encode_I();
   encode_M();

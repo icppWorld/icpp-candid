@@ -26,13 +26,11 @@ CandidTypeVecBlob::CandidTypeVecBlob(std::vector<std::vector<uint8_t>> *p_v)
 }
 
 // These constructors are only for encoding
-CandidTypeVecBlob::CandidTypeVecBlob(const std::vector<std::vector<uint8_t>> v)
+CandidTypeVecBlob::CandidTypeVecBlob(std::vector<std::vector<uint8_t>> v)
     : CandidTypeBase() {
-  set_v(v);
+  set_v(std::move(v));
   initialize();
 }
-
-CandidTypeVecBlob::~CandidTypeVecBlob() {}
 
 void CandidTypeVecBlob::set_content_type() {
   m_content_opcode = CandidOpcode().Vec;

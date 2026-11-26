@@ -37,9 +37,6 @@ public:
   CandidTypeVecOf(std::function<CandidType()> make_element,
                   std::function<void()> element_done);
 
-  // Destructor
-  ~CandidTypeVecOf();
-
 protected:
   void set_datatype();
   void set_content_type();

@@ -19,20 +19,16 @@ CandidTypeVecText::CandidTypeVecText(std::vector<std::string> *p_v)
     : CandidTypeBase() {
   set_pv(p_v);
 
-  const std::vector<std::string> v =
-      const_cast<std::vector<std::string> &>(*p_v);
-  set_v(v);
+  set_v(*p_v);
   initialize();
 }
 
 // These constructors are only for encoding
-CandidTypeVecText::CandidTypeVecText(const std::vector<std::string> v)
+CandidTypeVecText::CandidTypeVecText(std::vector<std::string> v)
     : CandidTypeBase() {
-  set_v(v);
+  set_v(std::move(v));
   initialize();
 }
-
-CandidTypeVecText::~CandidTypeVecText() {}
 
 void CandidTypeVecText::set_content_type() {
   m_content_opcode = CandidOpcode().Text;

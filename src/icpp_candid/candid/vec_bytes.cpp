@@ -22,8 +22,6 @@
 
 VecBytes::VecBytes() { check_endian(); }
 
-VecBytes::~VecBytes() {}
-
 // TODO: use __int128_t
 std::string VecBytes::int_to_hex(const int i, const std::string prefix) {
   const int LEN_STR = 80;
@@ -179,7 +177,8 @@ bool VecBytes::not_enough_bytes(__uint128_t offset, __uint128_t n,
 
 // Decode with uleb128, starting at & updating offset
 bool VecBytes::parse_uleb128(__uint128_t &offset, __uint128_t &v,
-                             __uint128_t &numbytes, std::string &parse_error) {
+                             __uint128_t &numbytes,
+                             std::string &parse_error) const {
   __uint128_t len = bytes_left(offset);
 
   const uint8_t *buf = m_vec_uint8_t.data() + (m_vec_uint8_t.size() - len);
@@ -198,7 +197,8 @@ bool VecBytes::parse_uleb128(__uint128_t &offset, __uint128_t &v,
 
 // Decode bytes with sleb128, starting at & updating offset
 bool VecBytes::parse_sleb128(__uint128_t &offset, __int128_t &v,
-                             __uint128_t &numbytes, std::string &parse_error) {
+                             __uint128_t &numbytes,
+                             std::string &parse_error) const {
   __uint128_t len = bytes_left(offset);
 
   const uint8_t *buf = m_vec_uint8_t.data() + (m_vec_uint8_t.size() - len);
@@ -218,7 +218,7 @@ bool VecBytes::parse_sleb128(__uint128_t &offset, __int128_t &v,
 // Parse n bytes, starting at & updating offset
 bool VecBytes::parse_bytes(__uint128_t &offset, std::vector<std::byte> &v,
                            __uint128_t &n, __uint128_t &numbytes,
-                           std::string &parse_error) {
+                           std::string &parse_error) const {
   parse_error = "";
   numbytes = 0;
 
@@ -239,7 +239,7 @@ bool VecBytes::parse_bytes(__uint128_t &offset, std::vector<std::byte> &v,
 // Parse n bytes, starting at & updating offset
 bool VecBytes::parse_bytes(__uint128_t &offset, std::vector<uint8_t> &v,
                            __uint128_t &n, __uint128_t &numbytes,
-                           std::string &parse_error) {
+                           std::string &parse_error) const {
   parse_error = "";
   numbytes = 0;
 
@@ -330,7 +330,7 @@ const std::vector<std::byte> &VecBytes::vec() const {
   return m_vec;
 }
 
-void VecBytes::trap_if_vec_does_not_start_with_DIDL() {
+void VecBytes::trap_if_vec_does_not_start_with_DIDL() const {
   // A message shorter than the magic number is not read past its end
   if (m_vec_uint8_t.size() < 4 ||
       std::memcmp(m_vec_uint8_t.data(), "DIDL", 4) != 0) {
@@ -339,7 +339,7 @@ void VecBytes::trap_if_vec_does_not_start_with_DIDL() {
 }
 
 // Returns the bytes of the vec as a hex string
-std::string VecBytes::as_hex_string() {
+std::string VecBytes::as_hex_string() const {
   std::string s_hex;
   for (uint8_t b : m_vec_uint8_t) {
     s_hex.append(byte_to_hex(std::byte(b), ""));
@@ -352,14 +352,14 @@ std::string VecBytes::as_hex_string() {
                     ^
 */
 void VecBytes::debug_print_as_hex_string(__uint128_t B_offset_start,
-                                         __uint128_t B_offset_end) {
+                                         __uint128_t B_offset_end) const {
   std::string hex_string = as_hex_string();
   debug_print_as_hex_string(hex_string, B_offset_start, B_offset_end);
 }
 
 void VecBytes::debug_print_as_hex_string(std::string hex_string,
                                          __uint128_t B_offset_start,
-                                         __uint128_t B_offset_end) {
+                                         __uint128_t B_offset_end) const {
 
   // Insert spaces for visual separation of the chunk that was decoded
   hex_string.insert(2 * B_offset_end, " ");
@@ -375,7 +375,7 @@ void VecBytes::debug_print_as_hex_string(std::string hex_string,
 }
 
 // Prints the bytes of the vec in hex, dec & bits
-void VecBytes::debug_print() {
+void VecBytes::debug_print() const {
   ICPP_HOOKS::debug_print("  hex, decimal, char");
 
   std::string s_hex;
@@ -511,7 +511,8 @@ unsigned VecBytes::encode_uleb128(__uint128_t Value, uint8_t *p) {
 
 // Utility function to decode a ULEB128 value.
 __uint128_t VecBytes::decode_uleb128(const uint8_t *p, __uint128_t *n,
-                                     const uint8_t *end, std::string &error) {
+                                     const uint8_t *end,
+                                     std::string &error) const {
   const uint8_t *orig_p = p;
   __uint128_t Value = 0;
   unsigned Shift = 0;
@@ -536,7 +537,8 @@ __uint128_t VecBytes::decode_uleb128(const uint8_t *p, __uint128_t *n,
 
 // Utility function to decode a SLEB128 value.
 __int128_t VecBytes::decode_sleb128(const uint8_t *p, __uint128_t *n,
-                                    const uint8_t *end, std::string &error) {
+                                    const uint8_t *end,
+                                    std::string &error) const {
   const uint8_t *orig_p = p;
   // TODO: update this function for an __int128_t
   int64_t Value = 0;
@@ -567,7 +569,7 @@ __int128_t VecBytes::decode_sleb128(const uint8_t *p, __uint128_t *n,
 }
 
 // Utility function to get the size of the ULEB128-encoded value.
-unsigned VecBytes::getULEB128Size(uint64_t Value) {
+unsigned VecBytes::getULEB128Size(uint64_t Value) const {
   unsigned Size = 0;
   do {
     Value >>= 7;
@@ -577,7 +579,7 @@ unsigned VecBytes::getULEB128Size(uint64_t Value) {
 }
 
 // Utility function to get the size of the SLEB128-encoded value.
-unsigned VecBytes::getSLEB128Size(int64_t Value) {
+unsigned VecBytes::getSLEB128Size(int64_t Value) const {
   unsigned Size = 0;
   int Sign = Value >> (8 * sizeof(Value) - 1);
   bool IsMore;
@@ -592,7 +594,7 @@ unsigned VecBytes::getSLEB128Size(int64_t Value) {
 }
 
 // Utility function to check if we are running on little-endian
-bool VecBytes::is_little_endian() {
+bool VecBytes::is_little_endian() const {
   // if constexpr (std::endian::native == std::endian::little) return true;
   // else return false;
   // c++17 version
@@ -602,7 +604,7 @@ bool VecBytes::is_little_endian() {
 }
 
 // Utility function to check if we are running on big-endian
-bool VecBytes::is_big_endian() {
+bool VecBytes::is_big_endian() const {
   // if constexpr (std::endian::native == std::endian::big) return true;
   // else return false;
   // c++17 version
@@ -612,13 +614,13 @@ bool VecBytes::is_big_endian() {
 }
 
 // Utility function to check if we are running on mixed-endian
-bool VecBytes::is_mixed_endian() {
+bool VecBytes::is_mixed_endian() const {
   if (is_little_endian() || is_big_endian()) return false;
   else return true;
 }
 
 // Utility function to check if we are running on a system with IEEE 754 floats
-bool VecBytes::is_float_ieee754() {
+bool VecBytes::is_float_ieee754() const {
   if constexpr (std::numeric_limits<double>::is_iec559 == true) return true;
   else return false;
 }
@@ -634,7 +636,7 @@ void VecBytes::check_endian() {
   }
 }
 
-void VecBytes::trap(const std::string &msg) { ICPP_HOOKS::trap(msg); }
+void VecBytes::trap(const std::string &msg) const { ICPP_HOOKS::trap(msg); }
 
 // -----------------------------------------------------------------------------
 // template definitions with Explicit Template Instantiations
@@ -720,7 +722,7 @@ template void VecBytes::append_vec_fixed_width<double>  (const std::vector<doubl
 template <typename T>
 typename std::enable_if<MyFixedWidthInts<T>::value, bool>::type
 VecBytes::parse_int_fixed_width(__uint128_t &offset, T &v,
-                                std::string &parse_error) {
+                                std::string &parse_error) const {
   parse_error = "";
   if (not_enough_bytes(offset, sizeof(v), parse_error)) {
     return true;
@@ -733,21 +735,21 @@ VecBytes::parse_int_fixed_width(__uint128_t &offset, T &v,
 }
 
 // clang-format off
-template bool VecBytes::parse_int_fixed_width<int8_t>  (__uint128_t &offset, int8_t   &v, std::string &parse_error);
-template bool VecBytes::parse_int_fixed_width<int16_t> (__uint128_t &offset, int16_t  &v, std::string &parse_error);
-template bool VecBytes::parse_int_fixed_width<int32_t> (__uint128_t &offset, int32_t  &v, std::string &parse_error);
-template bool VecBytes::parse_int_fixed_width<int64_t> (__uint128_t &offset, int64_t  &v, std::string &parse_error);
-template bool VecBytes::parse_int_fixed_width<uint8_t> (__uint128_t &offset, uint8_t  &v, std::string &parse_error);
-template bool VecBytes::parse_int_fixed_width<uint16_t>(__uint128_t &offset, uint16_t &v, std::string &parse_error);
-template bool VecBytes::parse_int_fixed_width<uint32_t>(__uint128_t &offset, uint32_t &v, std::string &parse_error);
-template bool VecBytes::parse_int_fixed_width<uint64_t>(__uint128_t &offset, uint64_t &v, std::string &parse_error);
+template bool VecBytes::parse_int_fixed_width<int8_t>  (__uint128_t &offset, int8_t   &v, std::string &parse_error) const;
+template bool VecBytes::parse_int_fixed_width<int16_t> (__uint128_t &offset, int16_t  &v, std::string &parse_error) const;
+template bool VecBytes::parse_int_fixed_width<int32_t> (__uint128_t &offset, int32_t  &v, std::string &parse_error) const;
+template bool VecBytes::parse_int_fixed_width<int64_t> (__uint128_t &offset, int64_t  &v, std::string &parse_error) const;
+template bool VecBytes::parse_int_fixed_width<uint8_t> (__uint128_t &offset, uint8_t  &v, std::string &parse_error) const;
+template bool VecBytes::parse_int_fixed_width<uint16_t>(__uint128_t &offset, uint16_t &v, std::string &parse_error) const;
+template bool VecBytes::parse_int_fixed_width<uint32_t>(__uint128_t &offset, uint32_t &v, std::string &parse_error) const;
+template bool VecBytes::parse_int_fixed_width<uint64_t>(__uint128_t &offset, uint64_t &v, std::string &parse_error) const;
 // clang-format on
 
 // --
 template <typename T>
 typename std::enable_if<MyFloats<T>::value, bool>::type
 VecBytes::parse_float_ieee754(__uint128_t &offset, T &v,
-                              std::string &parse_error) {
+                              std::string &parse_error) const {
   if (is_float_ieee754()) {
     // https://github.com/dfinity/candid/blob/master/spec/Candid.md#floating-point-numbers
     // Floating-point values are represented in IEEE 754 binary format and are
@@ -771,6 +773,6 @@ VecBytes::parse_float_ieee754(__uint128_t &offset, T &v,
   return false;
 }
 // clang-format off
-template bool VecBytes::parse_float_ieee754<float>  (__uint128_t &offset, float  &v, std::string &parse_error);
-template bool VecBytes::parse_float_ieee754<double> (__uint128_t &offset, double &v, std::string &parse_error);
+template bool VecBytes::parse_float_ieee754<float>  (__uint128_t &offset, float  &v, std::string &parse_error) const;
+template bool VecBytes::parse_float_ieee754<double> (__uint128_t &offset, double &v, std::string &parse_error) const;
 // clang-format on

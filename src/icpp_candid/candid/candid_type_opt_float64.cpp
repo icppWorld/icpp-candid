@@ -20,19 +20,16 @@ CandidTypeOptFloat64::CandidTypeOptFloat64(std::optional<double> *p_v)
     : CandidTypeBase() {
   set_pv(p_v);
 
-  const std::optional<double> v = const_cast<std::optional<double> &>(*p_v);
-  set_v(v);
+  set_v(*p_v);
   initialize();
 }
 
 // These constructors are only for encoding
-CandidTypeOptFloat64::CandidTypeOptFloat64(const std::optional<double> v)
+CandidTypeOptFloat64::CandidTypeOptFloat64(std::optional<double> v)
     : CandidTypeBase() {
-  set_v(v);
+  set_v(std::move(v));
   initialize();
 }
-
-CandidTypeOptFloat64::~CandidTypeOptFloat64() {}
 
 void CandidTypeOptFloat64::set_content_type() {
   m_content_opcode = CandidOpcode().Float64;

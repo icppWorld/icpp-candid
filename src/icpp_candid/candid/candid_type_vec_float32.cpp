@@ -18,19 +18,16 @@ CandidTypeVecFloat32::CandidTypeVecFloat32(std::vector<float> *p_v)
     : CandidTypeBase() {
   set_pv(p_v);
 
-  const std::vector<float> v = const_cast<std::vector<float> &>(*p_v);
-  set_v(v);
+  set_v(*p_v);
   initialize();
 }
 
 // These constructors are only for encoding
-CandidTypeVecFloat32::CandidTypeVecFloat32(const std::vector<float> v)
+CandidTypeVecFloat32::CandidTypeVecFloat32(std::vector<float> v)
     : CandidTypeBase() {
-  set_v(v);
+  set_v(std::move(v));
   initialize();
 }
-
-CandidTypeVecFloat32::~CandidTypeVecFloat32() {}
 
 void CandidTypeVecFloat32::set_content_type() {
   m_content_opcode = CandidOpcode().Float32;

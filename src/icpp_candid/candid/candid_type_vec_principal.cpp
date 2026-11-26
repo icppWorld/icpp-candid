@@ -19,20 +19,16 @@ CandidTypeVecPrincipal::CandidTypeVecPrincipal(std::vector<std::string> *p_v)
     : CandidTypeBase() {
   set_pv(p_v);
 
-  const std::vector<std::string> v =
-      const_cast<std::vector<std::string> &>(*p_v);
-  set_v(v);
+  set_v(*p_v);
   initialize();
 }
 
 // These constructors are only for encoding
-CandidTypeVecPrincipal::CandidTypeVecPrincipal(const std::vector<std::string> v)
+CandidTypeVecPrincipal::CandidTypeVecPrincipal(std::vector<std::string> v)
     : CandidTypeBase() {
-  set_v(v);
+  set_v(std::move(v));
   initialize();
 }
-
-CandidTypeVecPrincipal::~CandidTypeVecPrincipal() {}
 
 void CandidTypeVecPrincipal::set_content_type() {
   m_content_opcode = CandidOpcode().Principal;
@@ -50,8 +46,7 @@ void CandidTypeVecPrincipal::encode_M() {
   // encoded vec values - M(v : <datatype>)^N
   for (std::string const &s : m_v) {
     CandidTypePrincipal c{s};
-    VecBytes m = c.get_M();
-    m_M.append_bytes(m.vec_uint8_t().data(), m.size());
+    m_M.append(c.get_M());
   }
 }
 
