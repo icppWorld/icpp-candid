@@ -27,13 +27,12 @@ CandidTypeRecord::CandidTypeRecord() : CandidTypeBase() {
 void CandidTypeRecord::set_datatype() {
   m_datatype_opcode = CandidOpcode().Record;
   m_datatype_hex = OpcodeHex().Record;
-  m_datatype_textual = OpcodeTextual().Record;
+  m_datatype_textual = opcode_textual().Record;
 }
 
 // Tuple notation with uint32_t field_id
 void CandidTypeRecord::append(uint32_t field_id, CandidType field) {
-  std::string s = "";
-  _append(field_id, s, std::move(field));
+  _append(field_id, std::string(), std::move(field));
 }
 
 // Record notation with string name -> hash name into uint32_t field_id
@@ -69,11 +68,11 @@ void CandidTypeRecord::append(CandidType field) {
 }
 
 void CandidTypeRecord::_append(uint32_t field_id, std::string field_name,
-                               CandidType field) {
-  // Check if field with identical hash already exists
-  auto iter = std::find(begin(m_field_ids), end(m_field_ids), field_id);
-  if (iter != end(m_field_ids)) {
-    auto i = std::distance(begin(m_field_ids), iter);
+                               CandidType &&field) {
+  // The fields stay sorted by id: the new one goes in at its place
+  auto iter = std::lower_bound(begin(m_field_ids), end(m_field_ids), field_id);
+  const auto i = std::distance(begin(m_field_ids), iter);
+  if (iter != end(m_field_ids) && *iter == field_id) {
     std::string msg;
     msg.append("ERROR: record already has a field with the same field_id.\n");
     msg.append("       field id (hash): " + std::to_string(field_id) + "\n");
@@ -82,27 +81,21 @@ void CandidTypeRecord::_append(uint32_t field_id, std::string field_name,
     ICPP_HOOKS::trap(msg);
   }
 
-  // Add the field
-  m_field_ids.push_back(field_id);
-  m_field_names.push_back(field_name);
+  // Store a shared pointer to the CandidTypeRoot class
+  std::shared_ptr<CandidTypeRoot> p =
+      candid_type_of::root_ptr(std::move(field));
 
   // During encoding, the datatype is always a negative opcode !
   // Store the negative opcode of the field's type
-  int datatype =
-      std::visit([](auto &&c) { return c.get_datatype_opcode(); }, field);
-  assert(datatype < 0);
-  m_field_datatypes.push_back(datatype);
-  m_field_opcodes.push_back(datatype);
+  assert(p->get_datatype_opcode() < 0);
 
-  // Store a shared pointer to the CandidTypeRoot class
-  m_field_ptrs.push_back(candid_type_of::root_ptr(std::move(field)));
-  m_field_content_datatypes.push_back(
-      m_field_ptrs.back()->get_content_datatype());
-  m_field_content_opcodes.push_back(m_field_ptrs.back()->get_content_opcode());
+  // Add the field
+  m_field_ids.insert(iter, field_id);
+  m_field_names.insert(m_field_names.begin() + i, std::move(field_name));
+  m_field_ptrs.insert(m_field_ptrs.begin() + i, std::move(p));
 
-  sort_fields_by_id();
-
-  encode_M();
+  // Encoded once, when the value is read, not after every field
+  m_M_stale = true;
 }
 
 // For records, we set the Opcode, but note that it is not used during serialization.
@@ -111,9 +104,7 @@ void CandidTypeRecord::_append(uint32_t field_id, std::string field_name,
 // Encode the datatype
 // https://github.com/dfinity/candid/blob/master/spec/Candid.md#types
 // For <constype>: the negative Opcode
-void CandidTypeRecord::encode_I() {
-  m_I.append_byte((std::byte)m_datatype_hex);
-}
+void CandidTypeRecord::encode_I() {}
 
 // (re-)build the value encoding
 void CandidTypeRecord::encode_M() {

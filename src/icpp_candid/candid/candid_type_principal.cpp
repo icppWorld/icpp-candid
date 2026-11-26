@@ -82,13 +82,12 @@ void CandidTypePrincipal::set_pv(std::string *v) { m_pv = v; }
 void CandidTypePrincipal::set_datatype() {
   m_datatype_opcode = CandidOpcode().Principal;
   m_datatype_hex = OpcodeHex().Principal;
-  m_datatype_textual = OpcodeTextual().Principal;
+  m_datatype_textual = opcode_textual().Principal;
 }
 
 void CandidTypePrincipal::encode_I() {
   // https://github.com/dfinity/candid/blob/master/spec/Candid.md#types
   // For <primtype>: the negative Opcode
-  m_I.append_byte((std::byte)m_datatype_hex);
 }
 
 void CandidTypePrincipal::encode_M() {

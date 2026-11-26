@@ -44,13 +44,11 @@ void CandidTypeService::append_method(const std::string &name,
 void CandidTypeService::set_datatype() {
   m_datatype_opcode = CandidOpcode().Service;
   m_datatype_hex = OpcodeHex().Service;
-  m_datatype_textual = OpcodeTextual().Service;
+  m_datatype_textual = opcode_textual().Service;
 }
 
 // Encode the datatype
-void CandidTypeService::encode_I() {
-  m_I.append_byte((std::byte)m_datatype_hex);
-}
+void CandidTypeService::encode_I() {}
 
 // (re-)build the value encoding
 // M(id : service <actortype>) = i8(1) M(id : vec nat8)

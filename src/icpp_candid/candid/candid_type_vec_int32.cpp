@@ -32,7 +32,7 @@ CandidTypeVecInt32::CandidTypeVecInt32(std::vector<int32_t> v)
 void CandidTypeVecInt32::set_content_type() {
   m_content_opcode = CandidOpcode().Int32;
   m_content_hex = OpcodeHex().Int32;
-  m_content_textual = OpcodeTextual().Int32;
+  m_content_textual = opcode_textual().Int32;
 }
 
 void CandidTypeVecInt32::encode_M() {
@@ -59,7 +59,7 @@ void CandidTypeVecInt32::initialize() {
 void CandidTypeVecInt32::set_datatype() {
   m_datatype_opcode = CandidOpcode().Vec;
   m_datatype_hex = OpcodeHex().Vec;
-  m_datatype_textual = OpcodeTextual().Vec;
+  m_datatype_textual = opcode_textual().Vec;
 }
 
 // For vecs, we set the Opcode, but note that it is not used during serialization.
@@ -68,6 +68,4 @@ void CandidTypeVecInt32::set_datatype() {
 // Encode the datatype
 // https://github.com/dfinity/candid/blob/master/spec/Candid.md#types
 // For <constype>: the negative Opcode
-void CandidTypeVecInt32::encode_I() {
-  m_I.append_byte((std::byte)m_datatype_hex);
-}
+void CandidTypeVecInt32::encode_I() {}

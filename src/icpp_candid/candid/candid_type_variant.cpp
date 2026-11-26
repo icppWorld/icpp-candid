@@ -53,7 +53,7 @@ void CandidTypeVariant::initialize() {
 void CandidTypeVariant::set_datatype() {
   m_datatype_opcode = CandidOpcode().Variant;
   m_datatype_hex = OpcodeHex().Variant;
-  m_datatype_textual = OpcodeTextual().Variant;
+  m_datatype_textual = opcode_textual().Variant;
 }
 
 // Tuple notation with uint32_t field_id
@@ -89,7 +89,7 @@ void CandidTypeVariant::append(CandidType field) {
 }
 
 void CandidTypeVariant::_append(uint32_t field_id, std::string field_name,
-                                CandidType field) {
+                                CandidType &&field) {
 
   auto iter = std::find(begin(m_field_ids), end(m_field_ids), field_id);
 
@@ -98,10 +98,6 @@ void CandidTypeVariant::_append(uint32_t field_id, std::string field_name,
     auto i = std::distance(begin(m_field_ids), iter);
     m_field_ids.erase(m_field_ids.begin() + i);
     m_field_names.erase(m_field_names.begin() + i);
-    m_field_datatypes.erase(m_field_datatypes.begin() + i);
-    m_field_opcodes.erase(m_field_opcodes.begin() + i);
-    m_field_content_datatypes.erase(m_field_content_datatypes.begin() + i);
-    m_field_content_opcodes.erase(m_field_content_opcodes.begin() + i);
     m_field_ptrs.erase(m_field_ptrs.begin() + i);
 
     // Check again
@@ -124,17 +120,12 @@ void CandidTypeVariant::_append(uint32_t field_id, std::string field_name,
 
   // During encoding, the datatype is always a negative opcode !
   // Store the negative opcode of the field's type
-  int datatype =
+  [[maybe_unused]] int datatype =
       std::visit([](auto &&c) { return c.get_datatype_opcode(); }, field);
   assert(datatype < 0);
-  m_field_datatypes.push_back(datatype);
-  m_field_opcodes.push_back(datatype);
 
   // Store the shared pointer to a CandidTypeRoot class
   m_field_ptrs.push_back(candid_type_of::root_ptr(std::move(field)));
-  m_field_content_datatypes.push_back(
-      m_field_ptrs.back()->get_content_datatype());
-  m_field_content_opcodes.push_back(m_field_ptrs.back()->get_content_opcode());
 
   if (field_name == m_label) {
     m_label_value_set = true;
@@ -151,9 +142,7 @@ void CandidTypeVariant::_append(uint32_t field_id, std::string field_name,
 // Encode the datatype
 // https://github.com/dfinity/candid/blob/master/spec/Candid.md#types
 // For <constype>: the negative Opcode
-void CandidTypeVariant::encode_I() {
-  m_I.append_byte((std::byte)m_datatype_hex);
-}
+void CandidTypeVariant::encode_I() {}
 
 // (re-)build the value encoding
 void CandidTypeVariant::encode_M() {

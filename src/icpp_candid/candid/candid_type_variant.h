@@ -34,7 +34,7 @@ public:
 
 protected:
   void set_p_label(std::string *p_label) { m_p_label = p_label; };
-  void _append(uint32_t field_id, std::string field_name, CandidType field);
+  void _append(uint32_t field_id, std::string field_name, CandidType &&field);
 
   void initialize();
   void set_datatype();

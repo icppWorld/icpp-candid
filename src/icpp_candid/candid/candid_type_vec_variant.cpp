@@ -71,7 +71,7 @@ CandidTypeVecVariant::CandidTypeVecVariant(
 void CandidTypeVecVariant::set_content_type() {
   m_content_opcode = CandidOpcode().Variant;
   m_content_hex = OpcodeHex().Variant;
-  m_content_textual = OpcodeTextual().Variant;
+  m_content_textual = opcode_textual().Variant;
 }
 
 int CandidTypeVecVariant::find_label_index(const std::string &label) {
@@ -138,7 +138,7 @@ void CandidTypeVecVariant::initialize() {
 void CandidTypeVecVariant::set_datatype() {
   m_datatype_opcode = CandidOpcode().Vec;
   m_datatype_hex = OpcodeHex().Vec;
-  m_datatype_textual = OpcodeTextual().Vec;
+  m_datatype_textual = opcode_textual().Vec;
 }
 
 // For vecs, we set the Opcode, but note that it is not used during serialization.
@@ -147,9 +147,7 @@ void CandidTypeVecVariant::set_datatype() {
 // Encode the datatype
 // https://github.com/dfinity/candid/blob/master/spec/Candid.md#types
 // For <constype>: the negative Opcode
-void CandidTypeVecVariant::encode_I() {
-  m_I.append_byte((std::byte)m_datatype_hex);
-}
+void CandidTypeVecVariant::encode_I() {}
 
 int CandidTypeVecVariant::graph_type(CandidTypeGraph &g) {
   // The type comes from this object's own copy, never from the caller's

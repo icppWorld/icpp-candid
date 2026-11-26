@@ -15,13 +15,12 @@ CandidTypeReserved::CandidTypeReserved() {
 void CandidTypeReserved::set_datatype() {
   m_datatype_opcode = CandidOpcode().Reserved;
   m_datatype_hex = OpcodeHex().Reserved;
-  m_datatype_textual = OpcodeTextual().Reserved;
+  m_datatype_textual = opcode_textual().Reserved;
 }
 
 void CandidTypeReserved::encode_I() {
   // https://github.com/dfinity/candid/blob/master/spec/Candid.md#types
   // For <primtype>: the negative Opcode
-  m_I.append_byte((std::byte)m_datatype_hex);
 }
 
 void CandidTypeReserved::encode_M() {

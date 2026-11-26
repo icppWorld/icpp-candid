@@ -50,11 +50,11 @@ void CandidTypeFunc::set_composite_query() { m_annotations = {3}; }
 void CandidTypeFunc::set_datatype() {
   m_datatype_opcode = CandidOpcode().Func;
   m_datatype_hex = OpcodeHex().Func;
-  m_datatype_textual = OpcodeTextual().Func;
+  m_datatype_textual = opcode_textual().Func;
 }
 
 // Encode the datatype
-void CandidTypeFunc::encode_I() { m_I.append_byte((std::byte)m_datatype_hex); }
+void CandidTypeFunc::encode_I() {}
 
 // (re-)build the value encoding
 // M(id.m : func <functype>) = i8(1) M(id : service <actortype>) M(m : text)

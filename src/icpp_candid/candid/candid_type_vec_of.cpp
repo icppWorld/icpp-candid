@@ -45,7 +45,7 @@ void CandidTypeVecOf::initialize() {
 void CandidTypeVecOf::set_datatype() {
   m_datatype_opcode = CandidOpcode().Vec;
   m_datatype_hex = OpcodeHex().Vec;
-  m_datatype_textual = OpcodeTextual().Vec;
+  m_datatype_textual = opcode_textual().Vec;
 }
 
 void CandidTypeVecOf::set_content_type() {
@@ -54,7 +54,7 @@ void CandidTypeVecOf::set_content_type() {
   m_content_textual = m_p_element_type->get_datatype_textual();
 }
 
-void CandidTypeVecOf::encode_I() { m_I.append_byte((std::byte)m_datatype_hex); }
+void CandidTypeVecOf::encode_I() {}
 
 // M(v^N : vec <datatype>) = leb128(N) M(v : <datatype>)^N
 void CandidTypeVecOf::encode_M() {
@@ -65,7 +65,8 @@ void CandidTypeVecOf::encode_M() {
   CandidTypeGraph g;
   int t_element = m_p_element_type->graph_type(g);
   for (size_t i = 0; i < m_elements.size(); ++i) {
-    if (!CandidTypeGraph::same(g, m_elements[i]->graph_type(g), g, t_element)) {
+    if (!m_elements[i]->certainly_same_type(*m_p_element_type) &&
+        !CandidTypeGraph::same(g, m_elements[i]->graph_type(g), g, t_element)) {
       ICPP_HOOKS::trap("ERROR: CandidTypeVecOf - element " + std::to_string(i) +
                        " (" + m_elements[i]->get_datatype_textual() +
                        ") does not have the element type (" +

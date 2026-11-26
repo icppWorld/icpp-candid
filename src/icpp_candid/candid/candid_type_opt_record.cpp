@@ -85,7 +85,7 @@ CandidTypeOptRecord::CandidTypeOptRecord(
 void CandidTypeOptRecord::set_content_type() {
   m_content_opcode = CandidOpcode().Record;
   m_content_hex = OpcodeHex().Record;
-  m_content_textual = OpcodeTextual().Record;
+  m_content_textual = opcode_textual().Record;
 }
 
 void CandidTypeOptRecord::encode_M() {
@@ -110,7 +110,7 @@ void CandidTypeOptRecord::initialize() {
 void CandidTypeOptRecord::set_datatype() {
   m_datatype_opcode = CandidOpcode().Opt;
   m_datatype_hex = OpcodeHex().Opt;
-  m_datatype_textual = OpcodeTextual().Opt;
+  m_datatype_textual = opcode_textual().Opt;
 }
 
 // For opts, we set the Opcode, but note that it is not used during serialization.
@@ -119,9 +119,7 @@ void CandidTypeOptRecord::set_datatype() {
 // Encode the datatype
 // https://github.com/dfinity/candid/blob/master/spec/Candid.md#types
 // For <constype>: the negative Opcode
-void CandidTypeOptRecord::encode_I() {
-  m_I.append_byte((std::byte)m_datatype_hex);
-}
+void CandidTypeOptRecord::encode_I() {}
 
 int CandidTypeOptRecord::graph_type(CandidTypeGraph &g) {
   // The type comes from this object's own copy, never from the caller's

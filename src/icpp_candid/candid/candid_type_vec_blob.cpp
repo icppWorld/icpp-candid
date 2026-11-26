@@ -35,7 +35,7 @@ CandidTypeVecBlob::CandidTypeVecBlob(std::vector<std::vector<uint8_t>> v)
 void CandidTypeVecBlob::set_content_type() {
   m_content_opcode = CandidOpcode().Vec;
   m_content_hex = OpcodeHex().Vec;
-  m_content_textual = OpcodeTextual().Vec;
+  m_content_textual = opcode_textual().Vec;
 }
 
 void CandidTypeVecBlob::encode_M() {
@@ -61,15 +61,13 @@ void CandidTypeVecBlob::initialize() {
 void CandidTypeVecBlob::set_datatype() {
   m_datatype_opcode = CandidOpcode().Vec;
   m_datatype_hex = OpcodeHex().Vec;
-  m_datatype_textual = OpcodeTextual().Vec;
+  m_datatype_textual = opcode_textual().Vec;
 }
 
 // Encode the datatype
 // https://github.com/dfinity/candid/blob/master/spec/Candid.md#types
 // For <constype>: the negative Opcode
-void CandidTypeVecBlob::encode_I() {
-  m_I.append_byte((std::byte)m_datatype_hex);
-}
+void CandidTypeVecBlob::encode_I() {}
 
 int CandidTypeVecBlob::graph_type(CandidTypeGraph &g) {
   return g.vec(g.vec(CandidTypeGraph::prim(CandidKind::Nat8)));

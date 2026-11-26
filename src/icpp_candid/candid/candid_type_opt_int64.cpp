@@ -34,7 +34,7 @@ CandidTypeOptInt64::CandidTypeOptInt64(std::optional<int64_t> v)
 void CandidTypeOptInt64::set_content_type() {
   m_content_opcode = CandidOpcode().Int64;
   m_content_hex = OpcodeHex().Int64;
-  m_content_textual = OpcodeTextual().Int64;
+  m_content_textual = opcode_textual().Int64;
 }
 
 void CandidTypeOptInt64::encode_M() {
@@ -62,7 +62,7 @@ void CandidTypeOptInt64::initialize() {
 void CandidTypeOptInt64::set_datatype() {
   m_datatype_opcode = CandidOpcode().Opt;
   m_datatype_hex = OpcodeHex().Opt;
-  m_datatype_textual = OpcodeTextual().Opt;
+  m_datatype_textual = opcode_textual().Opt;
 }
 
 // For opts, we set the Opcode, but note that it is not used during serialization.
@@ -71,6 +71,4 @@ void CandidTypeOptInt64::set_datatype() {
 // Encode the datatype
 // https://github.com/dfinity/candid/blob/master/spec/Candid.md#types
 // For <constype>: the negative Opcode
-void CandidTypeOptInt64::encode_I() {
-  m_I.append_byte((std::byte)m_datatype_hex);
-}
+void CandidTypeOptInt64::encode_I() {}

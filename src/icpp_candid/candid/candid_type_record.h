@@ -31,7 +31,9 @@ public:
   std::vector<std::string> *get_pv() { return &m_field_names; }
 
 protected:
-  void _append(uint32_t field_id, std::string field_name, CandidType field);
+  // certainly_same_type() reads m_optional_fields
+  friend class CandidTypeRoot;
+  void _append(uint32_t field_id, std::string field_name, CandidType &&field);
 
   void set_datatype();
   void encode_I();

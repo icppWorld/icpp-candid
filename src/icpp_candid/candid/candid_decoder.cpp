@@ -657,6 +657,14 @@ St Decoder::decode_record(int w, const CandidTypeGraph &g, int e,
     return &r->items.back();
   };
 
+  // Room for the fields in both types, the most out can get. Bounded by the
+  // expected type, the canister's own, not by what the message claims.
+  if (out) {
+    const size_t n = std::min(wfs.size(), efs.size());
+    out->ids.reserve(n);
+    out->items.reserve(n);
+  }
+
   // Both are sorted by id: walk them together
   size_t j = 0;
   auto missing = [&](size_t idx) -> St {

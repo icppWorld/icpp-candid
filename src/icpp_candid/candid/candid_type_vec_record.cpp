@@ -69,7 +69,7 @@ CandidTypeVecRecord::CandidTypeVecRecord(
 void CandidTypeVecRecord::set_content_type() {
   m_content_opcode = CandidOpcode().Record;
   m_content_hex = OpcodeHex().Record;
-  m_content_textual = OpcodeTextual().Record;
+  m_content_textual = opcode_textual().Record;
 }
 
 void CandidTypeVecRecord::encode_M() {
@@ -138,7 +138,7 @@ void CandidTypeVecRecord::initialize() {
 void CandidTypeVecRecord::set_datatype() {
   m_datatype_opcode = CandidOpcode().Vec;
   m_datatype_hex = OpcodeHex().Vec;
-  m_datatype_textual = OpcodeTextual().Vec;
+  m_datatype_textual = opcode_textual().Vec;
 }
 
 // For vecs, we set the Opcode, but note that it is not used during serialization.
@@ -147,9 +147,7 @@ void CandidTypeVecRecord::set_datatype() {
 // Encode the datatype
 // https://github.com/dfinity/candid/blob/master/spec/Candid.md#types
 // For <constype>: the negative Opcode
-void CandidTypeVecRecord::encode_I() {
-  m_I.append_byte((std::byte)m_datatype_hex);
-}
+void CandidTypeVecRecord::encode_I() {}
 
 // m_v is the record whose fields are the columns: vecs, one per field of the
 // elements. The type comes from this object's own copy, never from the

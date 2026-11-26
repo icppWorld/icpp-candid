@@ -48,7 +48,7 @@ void CandidTypeOptOf::initialize() {
 void CandidTypeOptOf::set_datatype() {
   m_datatype_opcode = CandidOpcode().Opt;
   m_datatype_hex = OpcodeHex().Opt;
-  m_datatype_textual = OpcodeTextual().Opt;
+  m_datatype_textual = opcode_textual().Opt;
 }
 
 void CandidTypeOptOf::set_content_type() {
@@ -57,7 +57,7 @@ void CandidTypeOptOf::set_content_type() {
   m_content_textual = m_p_content_type->get_datatype_textual();
 }
 
-void CandidTypeOptOf::encode_I() { m_I.append_byte((std::byte)m_datatype_hex); }
+void CandidTypeOptOf::encode_I() {}
 
 // M(null : opt <datatype>) = i8(0)
 // M(?v   : opt <datatype>) = i8(1) M(v : <datatype>)

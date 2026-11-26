@@ -36,7 +36,7 @@ CandidTypeOptPrincipal::CandidTypeOptPrincipal(std::optional<std::string> v)
 void CandidTypeOptPrincipal::set_content_type() {
   m_content_opcode = CandidOpcode().Principal;
   m_content_hex = OpcodeHex().Principal;
-  m_content_textual = OpcodeTextual().Principal;
+  m_content_textual = opcode_textual().Principal;
 }
 
 void CandidTypeOptPrincipal::encode_M() {
@@ -67,7 +67,7 @@ void CandidTypeOptPrincipal::initialize() {
 void CandidTypeOptPrincipal::set_datatype() {
   m_datatype_opcode = CandidOpcode().Opt;
   m_datatype_hex = OpcodeHex().Opt;
-  m_datatype_textual = OpcodeTextual().Opt;
+  m_datatype_textual = opcode_textual().Opt;
 }
 
 // For opts, we set the Opcode, but note that it is not used during serialization.
@@ -76,6 +76,4 @@ void CandidTypeOptPrincipal::set_datatype() {
 // Encode the datatype
 // https://github.com/dfinity/candid/blob/master/spec/Candid.md#types
 // For <constype>: the negative Opcode
-void CandidTypeOptPrincipal::encode_I() {
-  m_I.append_byte((std::byte)m_datatype_hex);
-}
+void CandidTypeOptPrincipal::encode_I() {}

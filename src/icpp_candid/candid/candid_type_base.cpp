@@ -9,6 +9,7 @@
 #include <charconv>
 #include <cmath>
 #include <system_error>
+#include <typeinfo>
 
 #include "icpp_hooks.h"
 
@@ -29,26 +30,29 @@ void CandidTypeRoot::sort_fields_by_id() {
         auto temp_field = std::move(m_field_ptrs[i]);
         m_field_ptrs[i] = std::move(m_field_ptrs[j]);
         m_field_ptrs[j] = std::move(temp_field);
-
-        auto temp_field_datatype = std::move(m_field_datatypes[i]);
-        m_field_datatypes[i] = std::move(m_field_datatypes[j]);
-        m_field_datatypes[j] = std::move(temp_field_datatype);
-
-        auto temp_field_opcode = std::move(m_field_opcodes[i]);
-        m_field_opcodes[i] = std::move(m_field_opcodes[j]);
-        m_field_opcodes[j] = std::move(temp_field_opcode);
-
-        auto temp_field_content_datatype =
-            std::move(m_field_content_datatypes[i]);
-        m_field_content_datatypes[i] = std::move(m_field_content_datatypes[j]);
-        m_field_content_datatypes[j] = std::move(temp_field_content_datatype);
-
-        auto temp_field_content_opcode = std::move(m_field_content_opcodes[i]);
-        m_field_content_opcodes[i] = std::move(m_field_content_opcodes[j]);
-        m_field_content_opcodes[j] = std::move(temp_field_content_opcode);
       }
     }
   }
+}
+
+bool CandidTypeRoot::certainly_same_type(const CandidTypeRoot &other) const {
+  if (typeid(*this) != typeid(other) ||
+      typeid(*this) == typeid(CandidTypeValue))
+    return false;
+  // A class that does not override graph_type has its primitive opcode as type
+  CandidKind k;
+  if (CandidTypeGraph::prim_kind(m_datatype_opcode, k))
+    return m_datatype_opcode == other.m_datatype_opcode;
+  if (typeid(*this) != typeid(CandidTypeRecord)) return false;
+  const auto &a = static_cast<const CandidTypeRecord &>(*this);
+  const auto &b = static_cast<const CandidTypeRecord &>(other);
+  if (!a.m_optional_fields.empty() || !b.m_optional_fields.empty() ||
+      a.m_field_ids != b.m_field_ids)
+    return false;
+  for (size_t i = 0; i < a.m_field_ptrs.size(); ++i)
+    if (!a.m_field_ptrs[i]->certainly_same_type(*b.m_field_ptrs[i]))
+      return false;
+  return true;
 }
 
 // Virtual method to be implemented by all derived classes

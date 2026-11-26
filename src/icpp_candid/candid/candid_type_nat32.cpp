@@ -34,13 +34,12 @@ void CandidTypeNat32::set_pv(uint32_t *v) { m_pv = v; }
 void CandidTypeNat32::set_datatype() {
   m_datatype_opcode = CandidOpcode().Nat32;
   m_datatype_hex = OpcodeHex().Nat32;
-  m_datatype_textual = OpcodeTextual().Nat32;
+  m_datatype_textual = opcode_textual().Nat32;
 }
 
 void CandidTypeNat32::encode_I() {
   // https://github.com/dfinity/candid/blob/master/spec/Candid.md#types
   // For <primtype>: the negative Opcode
-  m_I.append_byte((std::byte)m_datatype_hex);
 }
 
 void CandidTypeNat32::encode_M() {

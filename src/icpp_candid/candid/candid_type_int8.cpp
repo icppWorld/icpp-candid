@@ -34,13 +34,12 @@ void CandidTypeInt8::set_pv(int8_t *v) { m_pv = v; }
 void CandidTypeInt8::set_datatype() {
   m_datatype_opcode = CandidOpcode().Int8;
   m_datatype_hex = OpcodeHex().Int8;
-  m_datatype_textual = OpcodeTextual().Int8;
+  m_datatype_textual = opcode_textual().Int8;
 }
 
 void CandidTypeInt8::encode_I() {
   // https://github.com/dfinity/candid/blob/master/spec/Candid.md#types
   // For <primtype>: the negative Opcode
-  m_I.append_byte((std::byte)m_datatype_hex);
 }
 
 void CandidTypeInt8::encode_M() {
