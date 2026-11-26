@@ -112,9 +112,6 @@ int CandidTypeRecord::graph_type(CandidTypeGraph &g) {
 }
 
 void CandidTypeRecord::bind(const CandidValue &v) {
-  // Encoding is lazy: encode the value as it is before the decode, so that
-  // decoding leaves the encoding as it was, also when it was not read yet
-  refresh_M();
   for (size_t i = 0; i < m_field_ids.size(); ++i) {
     const CandidValue *f = v.field(m_field_ids[i]);
     if (!f) {

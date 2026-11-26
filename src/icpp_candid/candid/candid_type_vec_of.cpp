@@ -95,9 +95,6 @@ void CandidTypeVecOf::bind(const CandidValue &v) {
   size_t n = v.vec_size();
   for (size_t i = 0; i < n; ++i) {
     std::shared_ptr<CandidTypeRoot> p = root_ptr(m_make_element());
-    // The element is thrown away after it is bound: what it encodes before
-    // the decode is never read, so bind need not encode it first
-    p->m_M_stale = false;
     if (v.packed) p->bind(v.packed_element(i));
     else p->bind(v.at(i));
     if (m_element_done) m_element_done();

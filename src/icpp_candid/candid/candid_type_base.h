@@ -16,9 +16,6 @@
 
 // non-templated base class
 class CandidTypeRoot {
-  // Binds elements that are thrown away, without encoding them first
-  friend class CandidTypeVecOf;
-
 public:
   CandidTypeRoot();
 
