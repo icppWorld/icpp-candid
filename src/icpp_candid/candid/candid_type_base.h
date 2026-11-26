@@ -170,10 +170,7 @@ private:
   void refresh_I() const {
     if (m_I.size() == 0) m_I.append_byte(std::byte(m_datatype_hex));
   }
-
-protected:
-  // Encodes m_M if it is stale. encode_M() changes only the mutable m_M and
-  // m_has_M
+  // encode_M() changes only the mutable m_M and m_has_M
   void refresh_M() const {
     if (!m_M_stale) return;
     m_M_stale = false;

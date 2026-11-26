@@ -720,9 +720,8 @@ St Decoder::decode_record(int w, const CandidTypeGraph &g, int e,
   }
 
   if (out) {
-    std::shared_ptr<const CandidValue> r =
-        rest ? std::shared_ptr<const CandidValue>(std::move(rest))
-             : known->rest;
+    std::shared_ptr<const CandidValue> r = std::move(rest);
+    if (!r) r = known->rest;
     if (!known->rest) known->rest = r;
     if (!r->ids.empty()) out->rest = std::move(r);
   }
