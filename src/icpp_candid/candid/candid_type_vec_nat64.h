@@ -22,6 +22,9 @@ public:
   std::vector<uint64_t> *get_pv() { return m_pv; }
 
 protected:
+  // Reads an element of m_v without copying the vector
+  friend struct GetCandidTypeVecIndexVisitor;
+
   void set_pv(std::vector<uint64_t> *v) { m_pv = v; }
   void set_v(std::vector<uint64_t> v) {
     m_v_size = v.size();

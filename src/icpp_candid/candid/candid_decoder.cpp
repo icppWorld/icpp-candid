@@ -46,6 +46,8 @@ private:
   // The rest of the records decoded so far (see CandidValue::rest), by wire
   // type and expected type. Values are made only at the expected types.
   std::map<std::pair<int, int>, std::shared_ptr<const CandidValue>> m_rest;
+  // The number of fields a record value of (wire, expected) type gets
+  std::map<std::pair<int, int>, size_t> m_out_fields;
 
   St fail(const std::string &msg) {
     m_err = msg;
@@ -659,17 +661,22 @@ St Decoder::decode_record(int w, const CandidTypeGraph &g, int e,
 
   // Room for exactly the fields that go into out: in both types, and taking
   // bytes on the wire. The others go in the shared rest, or nowhere.
+  // Counted once per type pair.
   if (out) {
-    size_t n = 0;
-    size_t k = 0;
-    for (const auto &wf : wfs) {
-      while (k < efs.size() && efs[k].id < wf.id)
-        ++k;
-      if (k < efs.size() && efs[k].id == wf.id && !m_w.is_zero_width(wf.type))
-        ++n;
+    auto counted = m_out_fields.find({w, e});
+    if (counted == m_out_fields.end()) {
+      size_t n = 0;
+      size_t k = 0;
+      for (const auto &wf : wfs) {
+        while (k < efs.size() && efs[k].id < wf.id)
+          ++k;
+        if (k < efs.size() && efs[k].id == wf.id && !m_w.is_zero_width(wf.type))
+          ++n;
+      }
+      counted = m_out_fields.emplace(std::make_pair(w, e), n).first;
     }
-    out->ids.reserve(n);
-    out->items.reserve(n);
+    out->ids.reserve(counted->second);
+    out->items.reserve(counted->second);
   }
 
   // Both are sorted by id: walk them together

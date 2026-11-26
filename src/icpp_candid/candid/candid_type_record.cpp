@@ -21,7 +21,7 @@
 CandidTypeRecord::CandidTypeRecord() : CandidTypeBase() {
 
   set_datatype();
-  encode_M();
+  m_M_stale = true;
 }
 
 void CandidTypeRecord::set_datatype() {
@@ -126,4 +126,5 @@ void CandidTypeRecord::bind(const CandidValue &v) {
     // A field added with append_optional, not on the wire, is left as is
     if (!fv.absent) m_field_ptrs[i]->bind(fv);
   }
+  m_M_stale = true;
 }
