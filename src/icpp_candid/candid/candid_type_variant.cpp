@@ -140,6 +140,9 @@ int CandidTypeVariant::graph_type(CandidTypeGraph &g) {
 }
 
 void CandidTypeVariant::bind(const CandidValue &v) {
+  // Encoding is lazy: encode the value as it is before the decode, so that
+  // decoding leaves the encoding as it was, also when it was not read yet
+  refresh_M();
   uint32_t id = v.ids.at(0);
   auto it = std::find(m_field_ids.begin(), m_field_ids.end(), id);
   if (it == m_field_ids.end()) {
