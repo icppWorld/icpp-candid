@@ -46,11 +46,11 @@ void CandidDeserialize::deserialize() {
   limits.max_depth = MAX_NESTING_DEPTH;
   limits.max_zero_width_values = size_t(MAX_ZERO_WIDTH_VALUES);
 
-  const std::vector<std::byte> &bytes = m_B.vec();
+  const std::vector<uint8_t> &bytes = m_B.vec_uint8_t();
   std::vector<CandidValue> values;
   std::string err;
-  if (!CandidDecoder::decode(reinterpret_cast<const uint8_t *>(bytes.data()),
-                             bytes.size(), g, types, values, err, limits)) {
+  if (!CandidDecoder::decode(bytes.data(), bytes.size(), g, types, values, err,
+                             limits)) {
     ICPP_HOOKS::trap("ERROR: the Candid message does not decode at the "
                      "expected types: " +
                      err);

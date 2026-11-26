@@ -105,8 +105,7 @@ void CandidTypePrincipal::encode_M() {
   m_M.append_uleb128(__uint128_t(m_v_bytes.size()));
 
   // encoded data - M(v* : vec nat8)
-  m_M.append_bytes((const uint8_t *)(void *)m_v_bytes.vec().data(),
-                   m_v_bytes.vec().size());
+  m_M.append(m_v_bytes);
 }
 
 // convert string representation of principal into bytes

@@ -47,9 +47,7 @@ void CandidTypeVecNat32::encode_M() {
 
   // encoded vec values - M(v : <datatype>)^N
   // Nat32:             - M(n : nat<N>)   = i<N>(n)    (Litte Endian)
-  for (uint32_t const &c : m_v) {
-    m_M.append_int_fixed_width(c);
-  }
+  m_M.append_vec_fixed_width(m_v);
 }
 
 // ---------

@@ -47,9 +47,7 @@ void CandidTypeVecFloat64::encode_M() {
 
   // encoded vec values - M(v : <datatype>)^N
   // M(z : float<N>) = f<N>(z)
-  for (double const &c : m_v) {
-    m_M.append_float_ieee754(c);
-  }
+  m_M.append_vec_fixed_width(m_v);
 }
 
 // ---------

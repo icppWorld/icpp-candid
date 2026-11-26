@@ -52,14 +52,12 @@ void CandidTypeOptText::encode_M() {
   } else {
     m_M.append_int_fixed_width(uint8_t{1});
 
-    std::string s = m_v.value();
+    const std::string &s = m_v.value();
     // encoded size of string - leb128(|utf8(t)|)
     m_M.append_uleb128(__uint128_t(s.size()));
 
     // encoded string - i8*(utf8(t))
-    for (char const &c : s) {
-      m_M.append_byte((std::byte)c);
-    }
+    m_M.append_bytes(reinterpret_cast<const uint8_t *>(s.data()), s.size());
   }
 }
 

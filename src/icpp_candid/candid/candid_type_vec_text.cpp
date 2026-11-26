@@ -54,9 +54,7 @@ void CandidTypeVecText::encode_M() {
     m_M.append_uleb128(__uint128_t(s.size()));
 
     // encoded string - i8*(utf8(t))
-    for (char const &c : s) {
-      m_M.append_byte((std::byte)c);
-    }
+    m_M.append_bytes(reinterpret_cast<const uint8_t *>(s.data()), s.size());
   }
 }
 

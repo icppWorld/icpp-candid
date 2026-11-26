@@ -47,16 +47,12 @@ void CandidSerialize::serialize() {
   std::string err;
   if (!CandidEncoder::encode_header(g, types, header, err))
     ICPP_HOOKS::trap("ERROR: cannot serialize the argument types: " + err);
-  for (uint8_t b : header)
-    m_B.append_byte(std::byte(b));
+  m_B.append_bytes(header.data(), header.size());
 
   // -------------------------------------------------------------------------------------
   // M(kv* : <datatype>*)                 values of argument list
   for (std::shared_ptr<CandidTypeRoot> p_c : m_A.m_args_ptrs) {
-    VecBytes M = p_c->get_M();
-    for (std::byte b : M.vec()) {
-      m_B.append_byte(b);
-    }
+    m_B.append(p_c->get_M());
   }
 
   if constexpr (CANDID_SERIALIZE_SELF_CHECK) {
