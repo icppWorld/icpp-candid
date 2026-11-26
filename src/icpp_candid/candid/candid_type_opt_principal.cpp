@@ -51,8 +51,7 @@ void CandidTypeOptPrincipal::encode_M() {
 
     std::string s = m_v.value();
     CandidTypePrincipal c{s};
-    VecBytes m = c.get_M();
-    m_M.append_bytes(m.vec_uint8_t().data(), m.size());
+    m_M.append(c.get_M());
   }
 }
 

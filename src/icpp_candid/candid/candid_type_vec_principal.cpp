@@ -46,8 +46,7 @@ void CandidTypeVecPrincipal::encode_M() {
   // encoded vec values - M(v : <datatype>)^N
   for (std::string const &s : m_v) {
     CandidTypePrincipal c{s};
-    VecBytes m = c.get_M();
-    m_M.append_bytes(m.vec_uint8_t().data(), m.size());
+    m_M.append(c.get_M());
   }
 }
 

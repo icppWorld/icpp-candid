@@ -16,12 +16,14 @@
 class CandidDeserialize {
 public:
   CandidDeserialize();
-  // A moved-in B is not copied; get_B() of a temporary gives it back
+  // A moved-in B is not copied
   CandidDeserialize(VecBytes B, CandidArgs A);
   CandidDeserialize(const std::string hex_string, CandidArgs A);
 
-  const CandidArgs &get_A() const { return m_A; }
-  const std::string &get_hex_string_wire() const { return m_hex_string_wire; }
+  const CandidArgs &get_A() const & { return m_A; }
+  CandidArgs get_A() && { return std::move(m_A); }
+  const std::string &get_hex_string_wire() const & { return m_hex_string_wire; }
+  std::string get_hex_string_wire() && { return std::move(m_hex_string_wire); }
   // Without a copy: a reference, or the bytes moved out of a temporary
   const VecBytes &get_B() const & { return m_B; }
   VecBytes get_B() && { return std::move(m_B); }
@@ -34,6 +36,10 @@ public:
   // records of only those. Their count is not bounded by the message size, and
   // shared record types can make it grow exponentially with the nesting depth
   static constexpr __uint128_t MAX_ZERO_WIDTH_VALUES = 1000000;
+
+  // Decodes B at the types of A and fills their bound C++ variables, as the
+  // constructors do, reading B without copying or keeping it
+  static void decode(const VecBytes &B, const CandidArgs &A);
 
   int assert_candid(const std::string &candid_expected,
                     const bool &assert_value);

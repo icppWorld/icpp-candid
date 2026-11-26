@@ -16,7 +16,8 @@ public:
   CandidSerialize(CandidArgs A);
   CandidSerialize();
 
-  const CandidArgs &get_A() const { return m_A; }
+  const CandidArgs &get_A() const & { return m_A; }
+  CandidArgs get_A() && { return std::move(m_A); }
   // Without a copy: a reference, or the bytes moved out of a temporary
   const VecBytes &get_B() const & { return m_B; }
   VecBytes get_B() && { return std::move(m_B); }

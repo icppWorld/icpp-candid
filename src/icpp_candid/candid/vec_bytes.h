@@ -156,7 +156,11 @@ public:
   const std::vector<std::byte> &vec() const;
   const std::vector<uint8_t> &vec_uint8_t() const & { return m_vec_uint8_t; };
   // The bytes moved out of a temporary, without a copy
-  std::vector<uint8_t> vec_uint8_t() && { return std::move(m_vec_uint8_t); };
+  std::vector<uint8_t> vec_uint8_t() && {
+    m_vec.clear();
+    m_vec_in_sync = false;
+    return std::move(m_vec_uint8_t);
+  };
   int size() const { return m_vec_uint8_t.size(); }
   void clear();
   bool is_little_endian() const;
