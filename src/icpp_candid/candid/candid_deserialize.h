@@ -16,7 +16,8 @@
 class CandidDeserialize {
 public:
   CandidDeserialize();
-  // A moved-in B is not copied
+  // Decode B at the types of A, as decode() does: what the objects of A, and
+  // get_A(), encode after that is unspecified. A moved-in B is not copied
   CandidDeserialize(VecBytes B, CandidArgs A);
   CandidDeserialize(const std::string hex_string, CandidArgs A);
 
