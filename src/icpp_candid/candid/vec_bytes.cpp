@@ -301,14 +301,19 @@ void VecBytes::append_byte(std::byte b) {
   m_vec_in_sync = false;
 }
 
-void VecBytes::append_bytes(const uint8_t *bytes, const uint32_t num_bytes) {
+void VecBytes::append_bytes(const uint8_t *bytes, const size_t num_bytes) {
   m_vec_uint8_t.insert(m_vec_uint8_t.end(), bytes, bytes + num_bytes);
   m_vec_in_sync = false;
 }
 
 void VecBytes::append(const VecBytes &other) {
-  // The bytes of other are read before any are added, also when other is this
-  append_bytes(other.m_vec_uint8_t.data(), other.m_vec_uint8_t.size());
+  if (&other == this) {
+    // insert may not read from the vector it inserts into
+    const std::vector<uint8_t> copy = m_vec_uint8_t;
+    append_bytes(copy.data(), copy.size());
+  } else {
+    append_bytes(other.m_vec_uint8_t.data(), other.m_vec_uint8_t.size());
+  }
 }
 
 const std::vector<std::byte> &VecBytes::vec() const {

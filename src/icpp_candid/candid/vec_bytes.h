@@ -85,7 +85,7 @@ public:
   void append_didl();
 
   void append_byte(const std::byte b);
-  void append_bytes(const uint8_t *bytes, const uint32_t num_bytes);
+  void append_bytes(const uint8_t *bytes, const size_t num_bytes);
   void append(const VecBytes &other);
 
   void append_sleb128(const __int128_t &v);
