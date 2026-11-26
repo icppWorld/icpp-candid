@@ -20,8 +20,7 @@ CandidTypeOptFloat64::CandidTypeOptFloat64(std::optional<double> *p_v)
     : CandidTypeBase() {
   set_pv(p_v);
 
-  const std::optional<double> v = const_cast<std::optional<double> &>(*p_v);
-  set_v(v);
+  set_v(*p_v);
   initialize();
 }
 

@@ -22,9 +22,7 @@ CandidTypeOptPrincipal::CandidTypeOptPrincipal(std::optional<std::string> *p_v)
     : CandidTypeBase() {
   set_pv(p_v);
 
-  const std::optional<std::string> v =
-      const_cast<std::optional<std::string> &>(*p_v);
-  set_v(v);
+  set_v(*p_v);
   initialize();
 }
 

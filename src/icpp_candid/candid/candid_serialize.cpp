@@ -14,11 +14,13 @@
 
 // Default constructor handles nullary input '()'
 CandidSerialize::CandidSerialize() { serialize(); }
-CandidSerialize::CandidSerialize(const CandidType &a) {
-  m_A.append(a);
+CandidSerialize::CandidSerialize(CandidType a) {
+  m_A.append(std::move(a));
   serialize();
 }
-CandidSerialize::CandidSerialize(const CandidArgs &A) : m_A{A} { serialize(); }
+CandidSerialize::CandidSerialize(CandidArgs A) : m_A{std::move(A)} {
+  serialize();
+}
 
 void CandidSerialize::serialize() {
   // https://github.com/dfinity/candid/blob/master/spec/Candid.md#parameters-and-results

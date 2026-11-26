@@ -52,7 +52,9 @@ CandidTypePrincipal::CandidTypePrincipal(const char *c) {
   std::string v(c);
   initialize(v);
 }
-CandidTypePrincipal::CandidTypePrincipal(std::string v) { initialize(v); }
+CandidTypePrincipal::CandidTypePrincipal(std::string v) {
+  initialize(std::move(v));
+}
 // Constructor used by ICPP_HOOKS::from_wire to store caller
 CandidTypePrincipal::CandidTypePrincipal(const std::vector<uint8_t> &bytes) {
   std::string v = string_from_bytes(bytes);
@@ -62,12 +64,12 @@ CandidTypePrincipal::CandidTypePrincipal(const std::vector<uint8_t> &bytes) {
 std::string CandidTypePrincipal::get_text() { return m_v; }
 
 // Initialize things
-void CandidTypePrincipal::initialize(const std::string &v) {
+void CandidTypePrincipal::initialize(std::string v) {
   if (v == "") {
     m_v = "2vxsx-fae";
     // Fill the user's data placeholder, if a pointer was provided
     if (m_pv) *m_pv = m_v;
-  } else m_v = v;
+  } else m_v = std::move(v);
   bytes_from_string();
   set_datatype();
   encode_I();

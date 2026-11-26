@@ -20,8 +20,7 @@ CandidTypeOptFloat32::CandidTypeOptFloat32(std::optional<float> *p_v)
     : CandidTypeBase() {
   set_pv(p_v);
 
-  const std::optional<float> v = const_cast<std::optional<float> &>(*p_v);
-  set_v(v);
+  set_v(*p_v);
   initialize();
 }
 

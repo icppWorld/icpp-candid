@@ -28,8 +28,7 @@ CandidTypeOptVariant::CandidTypeOptVariant(CandidTypeVariant *p_v,
   m_p_has_value = has_value; // Set to true when found on wire
   set_pv(p_v);
 
-  const CandidTypeVariant v = const_cast<CandidTypeVariant &>(*p_v);
-  set_v(v);
+  set_v(*p_v);
   initialize();
 }
 

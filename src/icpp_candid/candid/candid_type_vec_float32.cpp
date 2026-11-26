@@ -18,8 +18,7 @@ CandidTypeVecFloat32::CandidTypeVecFloat32(std::vector<float> *p_v)
     : CandidTypeBase() {
   set_pv(p_v);
 
-  const std::vector<float> v = const_cast<std::vector<float> &>(*p_v);
-  set_v(v);
+  set_v(*p_v);
   initialize();
 }
 

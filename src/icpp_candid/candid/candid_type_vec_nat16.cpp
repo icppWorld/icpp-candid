@@ -18,8 +18,7 @@ CandidTypeVecNat16::CandidTypeVecNat16(std::vector<uint16_t> *p_v)
     : CandidTypeBase() {
   set_pv(p_v);
 
-  const std::vector<uint16_t> v = const_cast<std::vector<uint16_t> &>(*p_v);
-  set_v(v);
+  set_v(*p_v);
   initialize();
 }
 

@@ -16,13 +16,12 @@
 class CandidDeserialize {
 public:
   CandidDeserialize();
-  CandidDeserialize(const VecBytes &B, CandidArgs A);
-  // Takes over the bytes, without a copy; get_B() of a temporary gives them back
-  CandidDeserialize(VecBytes &&B, CandidArgs A);
+  // A moved-in B is not copied; get_B() of a temporary gives it back
+  CandidDeserialize(VecBytes B, CandidArgs A);
   CandidDeserialize(const std::string hex_string, CandidArgs A);
 
-  CandidArgs get_A() { return m_A; }
-  std::string get_hex_string_wire() { return m_hex_string_wire; }
+  const CandidArgs &get_A() const { return m_A; }
+  const std::string &get_hex_string_wire() const { return m_hex_string_wire; }
   // Without a copy: a reference, or the bytes moved out of a temporary
   const VecBytes &get_B() const & { return m_B; }
   VecBytes get_B() && { return std::move(m_B); }

@@ -28,8 +28,7 @@ CandidTypeOptRecord::CandidTypeOptRecord(CandidTypeRecord *p_v, bool *has_value)
 
   set_pv(static_cast<CandidTypeRoot *>(p_v));
 
-  const CandidTypeRecord v = const_cast<CandidTypeRecord &>(*p_v);
-  set_v(v);
+  set_v(*p_v);
   initialize();
 }
 

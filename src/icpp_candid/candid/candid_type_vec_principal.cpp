@@ -19,9 +19,7 @@ CandidTypeVecPrincipal::CandidTypeVecPrincipal(std::vector<std::string> *p_v)
     : CandidTypeBase() {
   set_pv(p_v);
 
-  const std::vector<std::string> v =
-      const_cast<std::vector<std::string> &>(*p_v);
-  set_v(v);
+  set_v(*p_v);
   initialize();
 }
 

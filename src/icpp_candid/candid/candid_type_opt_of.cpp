@@ -12,14 +12,14 @@ using candid_type_of::root_ptr;
 using candid_type_of::same_type;
 
 CandidTypeOptOf::CandidTypeOptOf(CandidType content_type) : CandidTypeBase() {
-  m_p_content_type = root_ptr(content_type);
+  m_p_content_type = root_ptr(std::move(content_type));
   initialize();
 }
 
 CandidTypeOptOf::CandidTypeOptOf(CandidType content_type, CandidType value)
     : CandidTypeBase() {
-  m_p_content_type = root_ptr(content_type);
-  m_p_value = root_ptr(value);
+  m_p_content_type = root_ptr(std::move(content_type));
+  m_p_value = root_ptr(std::move(value));
   if (!same_type(m_p_value, m_p_content_type)) {
     ICPP_HOOKS::trap("ERROR: CandidTypeOptOf - the value (" +
                      m_p_value->get_datatype_textual() +

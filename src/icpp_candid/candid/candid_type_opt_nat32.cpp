@@ -20,8 +20,7 @@ CandidTypeOptNat32::CandidTypeOptNat32(std::optional<uint32_t> *p_v)
     : CandidTypeBase() {
   set_pv(p_v);
 
-  const std::optional<uint32_t> v = const_cast<std::optional<uint32_t> &>(*p_v);
-  set_v(v);
+  set_v(*p_v);
   initialize();
 }
 

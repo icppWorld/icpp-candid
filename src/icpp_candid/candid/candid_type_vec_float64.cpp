@@ -18,8 +18,7 @@ CandidTypeVecFloat64::CandidTypeVecFloat64(std::vector<double> *p_v)
     : CandidTypeBase() {
   set_pv(p_v);
 
-  const std::vector<double> v = const_cast<std::vector<double> &>(*p_v);
-  set_v(v);
+  set_v(*p_v);
   initialize();
 }
 

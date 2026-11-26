@@ -20,8 +20,7 @@ CandidTypeOptNat8::CandidTypeOptNat8(std::optional<uint8_t> *p_v)
     : CandidTypeBase() {
   set_pv(p_v);
 
-  const std::optional<uint8_t> v = const_cast<std::optional<uint8_t> &>(*p_v);
-  set_v(v);
+  set_v(*p_v);
   initialize();
 }
 

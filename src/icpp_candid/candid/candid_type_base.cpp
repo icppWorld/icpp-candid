@@ -13,6 +13,7 @@
 #include "icpp_hooks.h"
 
 CandidTypeRoot::CandidTypeRoot() {}
+
 void CandidTypeRoot::sort_fields_by_id() {
   for (std::size_t i = 0; i < m_field_ids.size(); ++i) {
     for (std::size_t j = i + 1; j < m_field_ids.size(); ++j) {

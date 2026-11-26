@@ -18,8 +18,7 @@ CandidTypeVecInt64::CandidTypeVecInt64(std::vector<int64_t> *p_v)
     : CandidTypeBase() {
   set_pv(p_v);
 
-  const std::vector<int64_t> v = const_cast<std::vector<int64_t> &>(*p_v);
-  set_v(v);
+  set_v(*p_v);
   initialize();
 }
 

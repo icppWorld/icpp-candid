@@ -19,8 +19,7 @@ CandidTypeVecBool::CandidTypeVecBool(std::vector<bool> *p_v)
     : CandidTypeBase() {
   set_pv(p_v);
 
-  const std::vector<bool> v = const_cast<std::vector<bool> &>(*p_v);
-  set_v(v);
+  set_v(*p_v);
   initialize();
 }
 

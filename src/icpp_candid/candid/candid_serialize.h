@@ -12,11 +12,11 @@
 
 class CandidSerialize {
 public:
-  CandidSerialize(const CandidType &a);
-  CandidSerialize(const CandidArgs &A);
+  CandidSerialize(CandidType a);
+  CandidSerialize(CandidArgs A);
   CandidSerialize();
 
-  CandidArgs get_A() { return m_A; }
+  const CandidArgs &get_A() const { return m_A; }
   // Without a copy: a reference, or the bytes moved out of a temporary
   const VecBytes &get_B() const & { return m_B; }
   VecBytes get_B() && { return std::move(m_B); }

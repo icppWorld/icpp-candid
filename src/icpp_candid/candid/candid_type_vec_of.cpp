@@ -18,9 +18,9 @@ using candid_type_of::root_ptr;
 CandidTypeVecOf::CandidTypeVecOf(CandidType element_type,
                                  std::vector<CandidType> elements)
     : CandidTypeBase() {
-  m_p_element_type = root_ptr(element_type);
+  m_p_element_type = root_ptr(std::move(element_type));
   for (auto &element : elements) {
-    m_elements.push_back(root_ptr(element));
+    m_elements.push_back(root_ptr(std::move(element)));
   }
   m_v_size = m_elements.size();
   initialize();

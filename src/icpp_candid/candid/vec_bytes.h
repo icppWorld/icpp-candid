@@ -6,6 +6,7 @@
 #include <cstring>
 
 #include <string>
+#include <utility>
 #include <vector>
 #include <type_traits>
 
@@ -62,21 +63,21 @@ public:
   template <class T> unsigned encode_uleb128(T, uint8_t *p) = delete;
 
   __uint128_t decode_uleb128(const uint8_t *p, __uint128_t *n,
-                             const uint8_t *end, std::string &error);
+                             const uint8_t *end, std::string &error) const;
   template <class T>
   T decode_uleb128(const uint8_t *p, __uint128_t *n, const uint8_t *end,
-                   std::string &error) = delete;
+                   std::string &error) const = delete;
 
   __int128_t decode_sleb128(const uint8_t *p, __uint128_t *n,
-                            const uint8_t *end, std::string &error);
+                            const uint8_t *end, std::string &error) const;
   template <class T>
   T decode_sleb128(const uint8_t *p, __uint128_t *n, const uint8_t *end,
-                   std::string &error) = delete;
+                   std::string &error) const = delete;
   /// Utility function to get the size of the ULEB128-encoded value.
-  unsigned getULEB128Size(uint64_t Value);
+  unsigned getULEB128Size(uint64_t Value) const;
 
   /// Utility function to get the size of the SLEB128-encoded value.
-  unsigned getSLEB128Size(int64_t Value);
+  unsigned getSLEB128Size(int64_t Value) const;
 
   // append methods
   void append_didl();
@@ -105,33 +106,35 @@ public:
   template <typename T> void append_vec_fixed_width(const std::vector<T> &v);
 
   // parse methods
-  void trap_if_vec_does_not_start_with_DIDL();
+  void trap_if_vec_does_not_start_with_DIDL() const;
 
   bool parse_uleb128(__uint128_t &offset, __uint128_t &v, __uint128_t &numbytes,
-                     std::string &parse_error);
+                     std::string &parse_error) const;
   template <class T>
   bool parse_uleb128(__uint128_t &, T, __uint128_t &numbytes,
-                     std::string &parse_error) = delete;
+                     std::string &parse_error) const = delete;
 
   bool parse_sleb128(__uint128_t &offset, __int128_t &v, __uint128_t &numbytes,
-                     std::string &parse_error);
+                     std::string &parse_error) const;
   template <class T>
   bool parse_sleb128(__uint128_t &, T, __uint128_t &numbytes,
-                     std::string &parse_error) = delete;
+                     std::string &parse_error) const = delete;
 
   template <typename T>
   typename std::enable_if<MyFixedWidthInts<T>::value, bool>::type
-  parse_int_fixed_width(__uint128_t &offset, T &v, std::string &parse_error);
+  parse_int_fixed_width(__uint128_t &offset, T &v,
+                        std::string &parse_error) const;
 
   template <typename T>
   typename std::enable_if<MyFloats<T>::value, bool>::type
-  parse_float_ieee754(__uint128_t &offset, T &v, std::string &parse_error);
+  parse_float_ieee754(__uint128_t &offset, T &v,
+                      std::string &parse_error) const;
 
   bool parse_bytes(__uint128_t &offset, std::vector<std::byte> &v,
                    __uint128_t &n, __uint128_t &numbytes,
-                   std::string &parse_error);
+                   std::string &parse_error) const;
   bool parse_bytes(__uint128_t &offset, std::vector<uint8_t> &v, __uint128_t &n,
-                   __uint128_t &numbytes, std::string &parse_error);
+                   __uint128_t &numbytes, std::string &parse_error) const;
 
   // store methods
   void store(const uint8_t *bytes, const uint32_t num_bytes);
@@ -141,23 +144,25 @@ public:
   void store_hex_tokens(std::vector<std::string> hex_tokens);
 
   // helper methods
-  std::string as_hex_string();
+  std::string as_hex_string() const;
   void debug_print_as_hex_string(__uint128_t B_offset_start,
-                                 __uint128_t B_offset_end);
+                                 __uint128_t B_offset_end) const;
   void debug_print_as_hex_string(std::string hex_string,
                                  __uint128_t B_offset_start,
-                                 __uint128_t B_offset_end);
-  void debug_print();
+                                 __uint128_t B_offset_end) const;
+  void debug_print() const;
   // The bytes as std::byte. A copy of vec_uint8_t(), made when called after a
   // change: prefer vec_uint8_t(), and call vec() again after appending.
   const std::vector<std::byte> &vec() const;
-  const std::vector<uint8_t> &vec_uint8_t() const { return m_vec_uint8_t; };
+  const std::vector<uint8_t> &vec_uint8_t() const & { return m_vec_uint8_t; };
+  // The bytes moved out of a temporary, without a copy
+  std::vector<uint8_t> vec_uint8_t() && { return std::move(m_vec_uint8_t); };
   int size() const { return m_vec_uint8_t.size(); }
   void clear();
-  bool is_little_endian();
-  bool is_big_endian();
-  bool is_mixed_endian();
-  bool is_float_ieee754();
+  bool is_little_endian() const;
+  bool is_big_endian() const;
+  bool is_mixed_endian() const;
+  bool is_float_ieee754() const;
 
   // Provide an equal operator to enable comparisons
   friend bool operator==(VecBytes const &lhs, VecBytes const &rhs) {
@@ -166,7 +171,7 @@ public:
 
 private:
   void check_endian();
-  void trap(const std::string &msg);
+  void trap(const std::string &msg) const;
   // The bytes left from offset to the end, 0 when offset is past the end
   __uint128_t bytes_left(__uint128_t offset) const;
   // An error when fewer than n bytes are left, as for parse_bytes

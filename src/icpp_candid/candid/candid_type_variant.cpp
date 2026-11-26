@@ -16,6 +16,8 @@
 #include <unordered_map>
 #include <utility>
 
+#include "candid_type_of.h"
+
 CandidTypeVariant::CandidTypeVariant() : CandidTypeBase() { initialize(); }
 
 CandidTypeVariant::CandidTypeVariant(std::string *p_label) : CandidTypeBase() {
@@ -34,13 +36,12 @@ CandidTypeVariant::CandidTypeVariant(const std::string label)
   m_label_value_set = false;
 }
 
-CandidTypeVariant::CandidTypeVariant(const std::string label,
-                                     const CandidType field)
+CandidTypeVariant::CandidTypeVariant(const std::string label, CandidType field)
     : CandidTypeBase() {
 
   m_label = label;
   initialize();
-  append(label, field);
+  append(label, std::move(field));
 }
 
 void CandidTypeVariant::initialize() {
@@ -130,24 +131,7 @@ void CandidTypeVariant::_append(uint32_t field_id, std::string field_name,
   m_field_opcodes.push_back(datatype);
 
   // Store the shared pointer to a CandidTypeRoot class
-  m_field_ptrs.push_back(std::visit(
-      [](auto &&arg_) -> std::shared_ptr<CandidTypeRoot> {
-        // Create shared_ptr for the derived type
-        auto derivedPtr = std::make_shared<std::decay_t<decltype(arg_)>>(
-            std::forward<decltype(arg_)>(arg_));
-
-        // Cast it to a shared_ptr of the base type
-        return std::static_pointer_cast<CandidTypeRoot>(derivedPtr);
-      },
-      std::move(field)));
-  // This makes a copy
-  // m_field_ptrs.push_back(std::visit(
-  //     [](auto &&arg) -> std::shared_ptr<CandidTypeRoot> {
-  //       return std::make_shared<std::decay_t<decltype(arg)>>(arg);
-  //     },
-  //     field));
-
-  // For Vec & Opt fields
+  m_field_ptrs.push_back(candid_type_of::root_ptr(std::move(field)));
   m_field_content_datatypes.push_back(
       m_field_ptrs.back()->get_content_datatype());
   m_field_content_opcodes.push_back(m_field_ptrs.back()->get_content_opcode());

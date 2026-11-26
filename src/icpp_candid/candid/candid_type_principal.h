@@ -43,7 +43,7 @@ public:
 
 protected:
   void set_pv(std::string *v);
-  void initialize(const std::string &v);
+  void initialize(std::string v);
   void set_datatype();
   void encode_I();
   void encode_M();

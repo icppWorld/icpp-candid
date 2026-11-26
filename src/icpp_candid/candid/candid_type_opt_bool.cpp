@@ -20,8 +20,7 @@ CandidTypeOptBool::CandidTypeOptBool(std::optional<bool> *p_v)
     : CandidTypeBase() {
   set_pv(p_v);
 
-  const std::optional<bool> v = const_cast<std::optional<bool> &>(*p_v);
-  set_v(v);
+  set_v(*p_v);
   initialize();
 }
 

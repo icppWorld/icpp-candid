@@ -34,11 +34,11 @@ CandidTypeFunc::CandidTypeFunc(std::string *p_canister, std::string *p_method)
 }
 
 void CandidTypeFunc::append_arg(CandidType arg_type) {
-  m_arg_ptrs.push_back(root_ptr(arg_type));
+  m_arg_ptrs.push_back(root_ptr(std::move(arg_type)));
 }
 
 void CandidTypeFunc::append_ret(CandidType ret_type) {
-  m_ret_ptrs.push_back(root_ptr(ret_type));
+  m_ret_ptrs.push_back(root_ptr(std::move(ret_type)));
 }
 
 void CandidTypeFunc::set_query() { m_annotations = {1}; }
