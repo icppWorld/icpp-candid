@@ -48,5 +48,4 @@ protected:
 
   void initialize();
   void set_datatype();
-  void encode_I();
 };

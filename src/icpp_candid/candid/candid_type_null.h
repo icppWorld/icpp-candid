@@ -17,7 +17,6 @@ public:
 
 protected:
   void set_datatype();
-  void encode_I();
   void encode_M();
   std::string m_v{"NULL_VALUE"};
   // No caller variable: a pointer to m_v would dangle in a copy, such as

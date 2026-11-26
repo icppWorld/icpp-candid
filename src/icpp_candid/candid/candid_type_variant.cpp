@@ -46,7 +46,6 @@ CandidTypeVariant::CandidTypeVariant(const std::string label, CandidType field)
 
 void CandidTypeVariant::initialize() {
   set_datatype();
-  encode_I();
   encode_M();
 }
 
@@ -58,14 +57,13 @@ void CandidTypeVariant::set_datatype() {
 
 // Tuple notation with uint32_t field_id
 void CandidTypeVariant::append(uint32_t field_id, CandidType field) {
-  std::string s = "";
-  _append(field_id, s, std::move(field));
+  _append(field_id, std::string(), std::move(field));
 }
 
 // Variant notation with string name -> hash name into uint32_t field_id
 void CandidTypeVariant::append(std::string field_name, CandidType field) {
   uint32_t field_id = idl_hash(field_name);
-  _append(field_id, field_name, std::move(field));
+  _append(field_id, std::move(field_name), std::move(field));
 }
 
 // Tuple notation without field_id -> generate sequential uint32_t field_id
@@ -90,59 +88,24 @@ void CandidTypeVariant::append(CandidType field) {
 
 void CandidTypeVariant::_append(uint32_t field_id, std::string field_name,
                                 CandidType &&field) {
-
-  auto iter = std::find(begin(m_field_ids), end(m_field_ids), field_id);
-
-  if (iter != end(m_field_ids) && field_name == m_label && !m_label_value_set) {
+  auto iter = std::lower_bound(begin(m_field_ids), end(m_field_ids), field_id);
+  if (iter != end(m_field_ids) && *iter == field_id && field_name == m_label &&
+      !m_label_value_set) {
     // Erase the entry of the label, because it was not yet set by user
     auto i = std::distance(begin(m_field_ids), iter);
     m_field_ids.erase(m_field_ids.begin() + i);
     m_field_names.erase(m_field_names.begin() + i);
     m_field_ptrs.erase(m_field_ptrs.begin() + i);
-
-    // Check again
-    iter = std::find(begin(m_field_ids), end(m_field_ids), field_id);
   }
 
-  if (iter != end(m_field_ids)) {
-    auto i = std::distance(begin(m_field_ids), iter);
-    std::string msg;
-    msg.append("ERROR: variant already has a field with the same field_id.\n");
-    msg.append("       field id (hash): " + std::to_string(field_id) + "\n");
-    msg.append("       field name 1   : " + m_field_names[i] + "\n");
-    msg.append("       field name 2   : " + field_name + "\n");
-    ICPP_HOOKS::trap(msg);
-  }
-  // Add the field
-  m_field_ids.push_back(field_id);
-  m_field_names.push_back(field_name);
   m_last_appended_field_id = field_id;
+  if (field_name == m_label) m_label_value_set = true;
+  insert_field(field_id, std::move(field_name),
+               candid_type_of::root_ptr(std::move(field)), "variant");
 
-  // During encoding, the datatype is always a negative opcode !
-  // Store the negative opcode of the field's type
-  [[maybe_unused]] int datatype =
-      std::visit([](auto &&c) { return c.get_datatype_opcode(); }, field);
-  assert(datatype < 0);
-
-  // Store the shared pointer to a CandidTypeRoot class
-  m_field_ptrs.push_back(candid_type_of::root_ptr(std::move(field)));
-
-  if (field_name == m_label) {
-    m_label_value_set = true;
-  }
-
-  sort_fields_by_id();
-
+  // Encoded at once: the encoding depends on the label, which bind() sets
   encode_M();
 }
-
-// For variants, we set the Opcode, but note that it is not used during serialization.
-// At serialization time, we use the index in the overall type table.
-//
-// Encode the datatype
-// https://github.com/dfinity/candid/blob/master/spec/Candid.md#types
-// For <constype>: the negative Opcode
-void CandidTypeVariant::encode_I() {}
 
 // (re-)build the value encoding
 void CandidTypeVariant::encode_M() {

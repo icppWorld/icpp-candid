@@ -23,7 +23,6 @@ CandidTypeInt::CandidTypeInt(const __int128_t &v) { initialize(v); }
 void CandidTypeInt::initialize(const __int128_t &v) {
   m_v = v;
   set_datatype();
-  encode_I();
   encode_M();
 }
 
@@ -34,11 +33,6 @@ void CandidTypeInt::set_datatype() {
   m_datatype_opcode = CandidOpcode().Int;
   m_datatype_hex = OpcodeHex().Int;
   m_datatype_textual = opcode_textual().Int;
-}
-
-void CandidTypeInt::encode_I() {
-  // https://github.com/dfinity/candid/blob/master/spec/Candid.md#types
-  // For <primtype>: the negative Opcode
 }
 
 void CandidTypeInt::encode_M() {

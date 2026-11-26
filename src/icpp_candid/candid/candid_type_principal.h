@@ -45,7 +45,6 @@ protected:
   void set_pv(std::string *v);
   void initialize(std::string v);
   void set_datatype();
-  void encode_I();
   void encode_M();
   void bytes_from_string();
   std::string string_from_bytes(const std::vector<uint8_t> &data_bytes);

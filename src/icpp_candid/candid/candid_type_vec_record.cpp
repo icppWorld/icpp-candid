@@ -78,15 +78,15 @@ void CandidTypeVecRecord::encode_M() {
 
   // encoded size of vec - leb128(N)
   // Check the size of the first vector of the Record of vecs that was passed in
+  const auto field_ptrs = m_v.get_field_ptrs();
   __uint128_t size_vec = 0;
-  if (!m_v.get_field_ptrs().empty() && m_v.get_field_ptrs()[0]) {
-    size_vec = __uint128_t(m_v.get_field_ptrs()[0]->get_v_size());
+  if (!field_ptrs.empty() && field_ptrs[0]) {
+    size_vec = __uint128_t(field_ptrs[0]->get_v_size());
   }
   m_M.append_uleb128(size_vec);
   m_has_M = m_v.has_M();
 
   // encoded vec values - M(v : <datatype>)^N
-  auto field_ptrs = m_v.get_field_ptrs();
   auto field_names = m_v.get_field_names();
   auto field_ids = m_v.get_field_ids();
   CandidOpcode candidOpcode;
@@ -131,7 +131,6 @@ void CandidTypeVecRecord::encode_M() {
 void CandidTypeVecRecord::initialize() {
   set_datatype();
   set_content_type();
-  encode_I();
   encode_M();
 }
 
@@ -140,14 +139,6 @@ void CandidTypeVecRecord::set_datatype() {
   m_datatype_hex = OpcodeHex().Vec;
   m_datatype_textual = opcode_textual().Vec;
 }
-
-// For vecs, we set the Opcode, but note that it is not used during serialization.
-// At serialization time, we use the index in the overall type table.
-//
-// Encode the datatype
-// https://github.com/dfinity/candid/blob/master/spec/Candid.md#types
-// For <constype>: the negative Opcode
-void CandidTypeVecRecord::encode_I() {}
 
 // m_v is the record whose fields are the columns: vecs, one per field of the
 // elements. The type comes from this object's own copy, never from the

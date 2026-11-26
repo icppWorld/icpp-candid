@@ -43,7 +43,6 @@ public:
 
 protected:
   void set_datatype();
-  void encode_I();
   void encode_M();
 
   CandidTypePrincipal m_canister;

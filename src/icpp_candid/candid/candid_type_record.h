@@ -13,6 +13,7 @@ public:
   // Decoding, with CandidDecoder: see CandidTypeRoot
   int graph_type(CandidTypeGraph &g);
   void bind(const CandidValue &v);
+  bool certainly_same_type(const CandidTypeRoot &other) const;
 
   // Constructors
   // docs start: demo_candid_type_record
@@ -31,12 +32,9 @@ public:
   std::vector<std::string> *get_pv() { return &m_field_names; }
 
 protected:
-  // certainly_same_type() reads m_optional_fields
-  friend class CandidTypeRoot;
   void _append(uint32_t field_id, std::string field_name, CandidType &&field);
 
   void set_datatype();
-  void encode_I();
   void encode_M();
 
   // The fields added with append_optional, by id (hash), with their p_on_wire

@@ -45,7 +45,6 @@ public:
 
 protected:
   void set_datatype();
-  void encode_I();
   void encode_M();
 
   // Appends the type reference of a type to the type table encoding

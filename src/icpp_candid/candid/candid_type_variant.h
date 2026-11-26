@@ -38,7 +38,6 @@ protected:
 
   void initialize();
   void set_datatype();
-  void encode_I();
   void encode_M();
 
   // Label & id (hash) of the field that contains the Variant's data

@@ -24,7 +24,6 @@ CandidTypeInt16::CandidTypeInt16(const int16_t v) { initialize(v); }
 void CandidTypeInt16::initialize(const int16_t &v) {
   m_v = v;
   set_datatype();
-  encode_I();
   encode_M();
 }
 
@@ -35,11 +34,6 @@ void CandidTypeInt16::set_datatype() {
   m_datatype_opcode = CandidOpcode().Int16;
   m_datatype_hex = OpcodeHex().Int16;
   m_datatype_textual = opcode_textual().Int16;
-}
-
-void CandidTypeInt16::encode_I() {
-  // https://github.com/dfinity/candid/blob/master/spec/Candid.md#types
-  // For <primtype>: the negative Opcode
 }
 
 void CandidTypeInt16::encode_M() {

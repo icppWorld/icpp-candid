@@ -52,7 +52,6 @@ void CandidTypeVecNat32::encode_M() {
 void CandidTypeVecNat32::initialize() {
   set_datatype();
   set_content_type();
-  encode_I();
   encode_M();
 }
 
@@ -61,11 +60,3 @@ void CandidTypeVecNat32::set_datatype() {
   m_datatype_hex = OpcodeHex().Vec;
   m_datatype_textual = opcode_textual().Vec;
 }
-
-// For vecs, we set the Opcode, but note that it is not used during serialization.
-// At serialization time, we use the index in the overall type table.
-//
-// Encode the datatype
-// https://github.com/dfinity/candid/blob/master/spec/Candid.md#types
-// For <constype>: the negative Opcode
-void CandidTypeVecNat32::encode_I() {}

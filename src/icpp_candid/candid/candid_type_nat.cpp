@@ -24,7 +24,6 @@ CandidTypeNat::CandidTypeNat(const __uint128_t v) { initialize(v); }
 void CandidTypeNat::initialize(const __uint128_t &v) {
   m_v = v;
   set_datatype();
-  encode_I();
   encode_M();
 }
 
@@ -35,11 +34,6 @@ void CandidTypeNat::set_datatype() {
   m_datatype_opcode = CandidOpcode().Nat;
   m_datatype_hex = OpcodeHex().Nat;
   m_datatype_textual = opcode_textual().Nat;
-}
-
-void CandidTypeNat::encode_I() {
-  // https://github.com/dfinity/candid/blob/master/spec/Candid.md#types
-  // For <primtype>: the negative Opcode
 }
 
 void CandidTypeNat::encode_M() {

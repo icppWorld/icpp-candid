@@ -23,7 +23,6 @@ protected:
   void set_pv(int16_t *v);
   void initialize(const int16_t &v);
   void set_datatype();
-  void encode_I();
   void encode_M();
 
   int16_t m_v;

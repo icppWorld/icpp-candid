@@ -41,7 +41,6 @@ void CandidTypeValue::initialize(const CandidTypeGraph &g, int t) {
   m_g = std::make_shared<const CandidTypeGraph>(g);
   m_t = t;
   set_datatype();
-  encode_I();
   encode_M();
 }
 
@@ -73,8 +72,6 @@ void CandidTypeValue::set_datatype() {
   m_datatype_hex = uint8_t(m_datatype_opcode & 0x7f);
   m_datatype_textual = op.name_from_opcode(m_datatype_opcode);
 }
-
-void CandidTypeValue::encode_I() {}
 
 // The value's bytes, if it fits the type. If not, m_has_M is false: such a
 // value can be decoded into, not sent.

@@ -23,7 +23,6 @@ protected:
   void set_pv(float *v);
   void initialize(const float &v);
   void set_datatype();
-  void encode_I();
   void encode_M();
 
   float m_v;

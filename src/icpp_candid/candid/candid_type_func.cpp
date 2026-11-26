@@ -14,7 +14,6 @@ using candid_type_of::root_ptr;
 
 CandidTypeFunc::CandidTypeFunc() : CandidTypeBase() {
   set_datatype();
-  encode_I();
   encode_M();
 }
 
@@ -22,14 +21,12 @@ CandidTypeFunc::CandidTypeFunc(const CandidTypePrincipal &canister,
                                const std::string &method)
     : CandidTypeBase(), m_canister(canister), m_method(method) {
   set_datatype();
-  encode_I();
   encode_M();
 }
 
 CandidTypeFunc::CandidTypeFunc(std::string *p_canister, std::string *p_method)
     : CandidTypeBase(), m_p_canister(p_canister), m_p_method(p_method) {
   set_datatype();
-  encode_I();
   encode_M();
 }
 
@@ -52,9 +49,6 @@ void CandidTypeFunc::set_datatype() {
   m_datatype_hex = OpcodeHex().Func;
   m_datatype_textual = opcode_textual().Func;
 }
-
-// Encode the datatype
-void CandidTypeFunc::encode_I() {}
 
 // (re-)build the value encoding
 // M(id.m : func <functype>) = i8(1) M(id : service <actortype>) M(m : text)

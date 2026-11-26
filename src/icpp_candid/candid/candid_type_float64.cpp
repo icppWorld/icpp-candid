@@ -33,7 +33,6 @@ void CandidTypeFloat64::initialize(const double &v) {
   }
   m_v = v;
   set_datatype();
-  encode_I();
   encode_M();
 }
 
@@ -44,11 +43,6 @@ void CandidTypeFloat64::set_datatype() {
   m_datatype_opcode = CandidOpcode().Float64;
   m_datatype_hex = OpcodeHex().Float64;
   m_datatype_textual = opcode_textual().Float64;
-}
-
-void CandidTypeFloat64::encode_I() {
-  // https://github.com/dfinity/candid/blob/master/spec/Candid.md#types
-  // For <primtype>: the negative Opcode
 }
 
 void CandidTypeFloat64::encode_M() {

@@ -6,6 +6,8 @@
 #include "candid_opcode.h"
 #include "candid_type_base.h"
 
+#include <algorithm>
+#include <cassert>
 #include <charconv>
 #include <cmath>
 #include <system_error>
@@ -15,44 +17,34 @@
 
 CandidTypeRoot::CandidTypeRoot() {}
 
-void CandidTypeRoot::sort_fields_by_id() {
-  for (std::size_t i = 0; i < m_field_ids.size(); ++i) {
-    for (std::size_t j = i + 1; j < m_field_ids.size(); ++j) {
-      if (m_field_ids[i] > m_field_ids[j]) {
-        auto temp_field_id = std::move(m_field_ids[i]);
-        m_field_ids[i] = std::move(m_field_ids[j]);
-        m_field_ids[j] = std::move(temp_field_id);
-
-        auto temp_field_name = std::move(m_field_names[i]);
-        m_field_names[i] = std::move(m_field_names[j]);
-        m_field_names[j] = std::move(temp_field_name);
-
-        auto temp_field = std::move(m_field_ptrs[i]);
-        m_field_ptrs[i] = std::move(m_field_ptrs[j]);
-        m_field_ptrs[j] = std::move(temp_field);
-      }
-    }
+void CandidTypeRoot::insert_field(uint32_t field_id, std::string field_name,
+                                  std::shared_ptr<CandidTypeRoot> p,
+                                  const char *kind) {
+  auto iter =
+      std::lower_bound(m_field_ids.begin(), m_field_ids.end(), field_id);
+  const auto i = std::distance(m_field_ids.begin(), iter);
+  if (iter != m_field_ids.end() && *iter == field_id) {
+    std::string msg;
+    msg.append(std::string("ERROR: ") + kind +
+               " already has a field with the same field_id.\n");
+    msg.append("       field id (hash): " + std::to_string(field_id) + "\n");
+    msg.append("       field name 1   : " + m_field_names[i] + "\n");
+    msg.append("       field name 2   : " + field_name + "\n");
+    ICPP_HOOKS::trap(msg);
   }
+  // During encoding, the datatype is always a negative opcode !
+  assert(p->get_datatype_opcode() < 0);
+  m_field_ids.insert(iter, field_id);
+  m_field_names.insert(m_field_names.begin() + i, std::move(field_name));
+  m_field_ptrs.insert(m_field_ptrs.begin() + i, std::move(p));
 }
 
 bool CandidTypeRoot::certainly_same_type(const CandidTypeRoot &other) const {
-  if (typeid(*this) != typeid(other) ||
-      typeid(*this) == typeid(CandidTypeValue))
-    return false;
   // A class that does not override graph_type has its primitive opcode as type
   CandidKind k;
-  if (CandidTypeGraph::prim_kind(m_datatype_opcode, k))
-    return m_datatype_opcode == other.m_datatype_opcode;
-  if (typeid(*this) != typeid(CandidTypeRecord)) return false;
-  const auto &a = static_cast<const CandidTypeRecord &>(*this);
-  const auto &b = static_cast<const CandidTypeRecord &>(other);
-  if (!a.m_optional_fields.empty() || !b.m_optional_fields.empty() ||
-      a.m_field_ids != b.m_field_ids)
-    return false;
-  for (size_t i = 0; i < a.m_field_ptrs.size(); ++i)
-    if (!a.m_field_ptrs[i]->certainly_same_type(*b.m_field_ptrs[i]))
-      return false;
-  return true;
+  return m_datatype_opcode == other.m_datatype_opcode &&
+         CandidTypeGraph::prim_kind(m_datatype_opcode, k) &&
+         typeid(*this) == typeid(other);
 }
 
 // Virtual method to be implemented by all derived classes

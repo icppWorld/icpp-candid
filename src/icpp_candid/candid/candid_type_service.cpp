@@ -11,21 +11,18 @@
 
 CandidTypeService::CandidTypeService() : CandidTypeBase() {
   set_datatype();
-  encode_I();
   encode_M();
 }
 
 CandidTypeService::CandidTypeService(const CandidTypePrincipal &canister)
     : CandidTypeBase(), m_canister(canister) {
   set_datatype();
-  encode_I();
   encode_M();
 }
 
 CandidTypeService::CandidTypeService(std::string *p_canister)
     : CandidTypeBase(), m_p_canister(p_canister) {
   set_datatype();
-  encode_I();
   encode_M();
 }
 
@@ -46,9 +43,6 @@ void CandidTypeService::set_datatype() {
   m_datatype_hex = OpcodeHex().Service;
   m_datatype_textual = opcode_textual().Service;
 }
-
-// Encode the datatype
-void CandidTypeService::encode_I() {}
 
 // (re-)build the value encoding
 // M(id : service <actortype>) = i8(1) M(id : vec nat8)

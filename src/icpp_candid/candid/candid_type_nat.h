@@ -23,7 +23,6 @@ protected:
   void set_pv(__uint128_t *v);
   void initialize(const __uint128_t &v);
   void set_datatype();
-  void encode_I();
   void encode_M();
 
   __uint128_t m_v;

@@ -29,6 +29,7 @@ public:
   // Virtual methods to be implemented by VecRecord
   virtual void create_dummy_record_encode();
 
+  // Changes only m_M and m_has_M: get_M() of a const object may call it
   virtual void encode_M();
 
   std::optional<bool> get_is_internal() { return m_is_internal; }
@@ -109,7 +110,7 @@ public:
   // True if this and other are certainly the same type, found without
   // building their type graphs: objects of one primitive class, or records
   // with the same field ids whose fields are. False if that is not certain.
-  bool certainly_same_type(const CandidTypeRoot &other) const;
+  virtual bool certainly_same_type(const CandidTypeRoot &other) const;
 
   uint32_t idl_hash(const std::string &s);
 
@@ -135,9 +136,11 @@ protected:
   std::vector<std::string> m_field_names; // field name (label)
   std::vector<std::shared_ptr<CandidTypeRoot>> m_field_ptrs;
 
-  // Sort the field data by field id (hash), as the Candid spec requires for
-  // the fields of a record and of a variant in the type table
-  void sort_fields_by_id();
+  // Inserts a field at its place by id, keeping the fields sorted, as the
+  // Candid spec requires for a record and a variant. Traps on a duplicate id;
+  // kind ("record", "variant") is for that message.
+  void insert_field(uint32_t field_id, std::string field_name,
+                    std::shared_ptr<CandidTypeRoot> p, const char *kind);
 
   // The encoded byte vector for the Candid Type: the type's opcode, made when
   // get_I() reads it

@@ -40,7 +40,6 @@ public:
 protected:
   void set_datatype();
   void set_content_type();
-  void encode_I();
   void encode_M();
   void initialize();
 

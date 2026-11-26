@@ -92,7 +92,6 @@ protected:
   void initialize();
   void by_value(std::shared_ptr<CandidTypeRoot> p_v);
   void set_datatype();
-  void encode_I();
 
   // During   serialization: set to true during construction
   // During deserialization: set to false, and then flipped to true once found on the wire
