@@ -51,6 +51,7 @@ private:
     size_t out_fields{0};
   };
   std::map<std::pair<int, int>, RecordTypes> m_records;
+  static constexpr size_t MAX_RESERVED_FIELDS = 64;
 
   St fail(const std::string &msg) {
     m_err = msg;
@@ -673,8 +674,13 @@ St Decoder::decode_record(int w, const CandidTypeGraph &g, int e,
       rest = std::make_shared<CandidValue>();
       rest->kind = CandidKind::Record;
     }
-    out->ids.reserve(known->out_fields);
-    out->items.reserve(known->out_fields);
+    // Reserved before any field is read, and a field can nest a record of
+    // the same type: so at most MAX_RESERVED_FIELDS, or a short message could
+    // nest wide records and make every level hold room for all its fields.
+    // Wider records grow as their fields are decoded.
+    const size_t n = std::min(known->out_fields, MAX_RESERVED_FIELDS);
+    out->ids.reserve(n);
+    out->items.reserve(n);
   }
   auto slot = [&](uint32_t id, bool in_rest) -> CandidValue * {
     CandidValue *r = in_rest ? rest.get() : out;
