@@ -24,13 +24,11 @@ CandidTypeVecNat32::CandidTypeVecNat32(std::vector<uint32_t> *p_v)
 }
 
 // These constructors are only for encoding
-CandidTypeVecNat32::CandidTypeVecNat32(const std::vector<uint32_t> v)
+CandidTypeVecNat32::CandidTypeVecNat32(std::vector<uint32_t> v)
     : CandidTypeBase() {
-  set_v(v);
+  set_v(std::move(v));
   initialize();
 }
-
-CandidTypeVecNat32::~CandidTypeVecNat32() {}
 
 void CandidTypeVecNat32::set_content_type() {
   m_content_opcode = CandidOpcode().Nat32;

@@ -16,9 +16,6 @@ public:
   CandidTypeFloat64(double *v);
   CandidTypeFloat64(const double v); // docs end: demo_candid_type_float64
 
-  // Destructor
-  ~CandidTypeFloat64();
-
   double get_v() { return m_v; }
   double *get_pv() { return m_pv; }
 

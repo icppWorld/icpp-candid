@@ -26,13 +26,11 @@ CandidTypeVecText::CandidTypeVecText(std::vector<std::string> *p_v)
 }
 
 // These constructors are only for encoding
-CandidTypeVecText::CandidTypeVecText(const std::vector<std::string> v)
+CandidTypeVecText::CandidTypeVecText(std::vector<std::string> v)
     : CandidTypeBase() {
-  set_v(v);
+  set_v(std::move(v));
   initialize();
 }
-
-CandidTypeVecText::~CandidTypeVecText() {}
 
 void CandidTypeVecText::set_content_type() {
   m_content_opcode = CandidOpcode().Text;

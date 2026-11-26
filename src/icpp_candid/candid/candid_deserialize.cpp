@@ -13,9 +13,10 @@
 #include "icpp_hooks.h"
 
 CandidDeserialize::CandidDeserialize() { deserialize(); }
-CandidDeserialize::CandidDeserialize(const VecBytes &B, CandidArgs A) {
-  m_A = A;
-  m_B = B;
+CandidDeserialize::CandidDeserialize(const VecBytes &B, CandidArgs A)
+    : CandidDeserialize(VecBytes(B), std::move(A)) {}
+CandidDeserialize::CandidDeserialize(VecBytes &&B, CandidArgs A)
+    : m_A(std::move(A)), m_B(std::move(B)) {
   if (CANDID_DESERIALIZE_DEBUG_PRINT) {
     m_hex_string_wire = m_B.as_hex_string();
   }
@@ -28,8 +29,6 @@ CandidDeserialize::CandidDeserialize(const std::string hex_string,
   m_B.store_hex_string(hex_string);
   deserialize();
 }
-CandidDeserialize::~CandidDeserialize() {}
-
 void CandidDeserialize::deserialize() {
   // https://github.com/dfinity/candid/blob/master/spec/Candid.md#deserialisation
   // The expected types are those of the CandidType objects in m_A. The

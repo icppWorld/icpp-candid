@@ -20,8 +20,6 @@ CandidTypeNat64::CandidTypeNat64(uint64_t *p_v) {
 // This constructor is only for encoding
 CandidTypeNat64::CandidTypeNat64(const uint64_t v) { initialize(v); }
 
-CandidTypeNat64::~CandidTypeNat64() {}
-
 // Initialize things
 void CandidTypeNat64::initialize(const uint64_t &v) {
   m_v = v;

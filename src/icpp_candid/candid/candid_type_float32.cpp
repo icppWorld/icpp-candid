@@ -25,8 +25,6 @@ CandidTypeFloat32::CandidTypeFloat32(float *p_v) {
 // This constructor is only for encoding
 CandidTypeFloat32::CandidTypeFloat32(const float v) { initialize(v); }
 
-CandidTypeFloat32::~CandidTypeFloat32() {}
-
 // Initialize things
 void CandidTypeFloat32::initialize(const float &v) {
   if (sizeof(v) != 4) {

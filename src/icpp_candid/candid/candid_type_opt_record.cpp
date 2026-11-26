@@ -83,8 +83,6 @@ CandidTypeOptRecord::CandidTypeOptRecord(
   }
 }
 
-CandidTypeOptRecord::~CandidTypeOptRecord() {}
-
 void CandidTypeOptRecord::set_content_type() {
   m_content_opcode = CandidOpcode().Record;
   m_content_hex = OpcodeHex().Record;

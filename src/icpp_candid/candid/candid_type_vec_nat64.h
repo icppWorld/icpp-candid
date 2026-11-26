@@ -14,21 +14,18 @@ public:
 
   // Constructors
   CandidTypeVecNat64();
-  CandidTypeVecNat64(const std::vector<uint64_t> v);
+  CandidTypeVecNat64(std::vector<uint64_t> v);
 
   CandidTypeVecNat64(std::vector<uint64_t> *p_v);
-
-  // Destructor
-  ~CandidTypeVecNat64();
 
   std::vector<uint64_t> get_v() { return m_v; }
   std::vector<uint64_t> *get_pv() { return m_pv; }
 
 protected:
   void set_pv(std::vector<uint64_t> *v) { m_pv = v; }
-  void set_v(const std::vector<uint64_t> &v) {
-    m_v = v;
+  void set_v(std::vector<uint64_t> v) {
     m_v_size = v.size();
+    m_v = std::move(v);
   }
   void set_content_type();
   void encode_M();

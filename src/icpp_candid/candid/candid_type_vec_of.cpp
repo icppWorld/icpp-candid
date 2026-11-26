@@ -35,8 +35,6 @@ CandidTypeVecOf::CandidTypeVecOf(std::function<CandidType()> make_element,
   initialize();
 }
 
-CandidTypeVecOf::~CandidTypeVecOf() {}
-
 void CandidTypeVecOf::initialize() {
   set_datatype();
   set_content_type();

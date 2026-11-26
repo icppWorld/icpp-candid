@@ -32,8 +32,6 @@ CandidTypeVecBlob::CandidTypeVecBlob(const std::vector<std::vector<uint8_t>> v)
   initialize();
 }
 
-CandidTypeVecBlob::~CandidTypeVecBlob() {}
-
 void CandidTypeVecBlob::set_content_type() {
   m_content_opcode = CandidOpcode().Vec;
   m_content_hex = OpcodeHex().Vec;

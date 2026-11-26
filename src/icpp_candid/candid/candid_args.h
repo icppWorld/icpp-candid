@@ -14,9 +14,6 @@ public:
   // Constructors
   CandidArgs();
 
-  // Destructor
-  ~CandidArgs();
-
   void append(CandidType arg);
   std::vector<std::shared_ptr<CandidTypeRoot>> m_args_ptrs;
 };

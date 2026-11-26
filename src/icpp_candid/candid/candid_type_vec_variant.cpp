@@ -68,8 +68,6 @@ CandidTypeVecVariant::CandidTypeVecVariant(
   set_content_type();
 }
 
-CandidTypeVecVariant::~CandidTypeVecVariant() {}
-
 void CandidTypeVecVariant::set_content_type() {
   m_content_opcode = CandidOpcode().Variant;
   m_content_hex = OpcodeHex().Variant;

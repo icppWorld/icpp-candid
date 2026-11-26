@@ -20,8 +20,6 @@ CandidTypeNat::CandidTypeNat(__uint128_t *p_v) {
 // This constructor is only for encoding
 CandidTypeNat::CandidTypeNat(const __uint128_t v) { initialize(v); }
 
-CandidTypeNat::~CandidTypeNat() {}
-
 // Initialize things
 void CandidTypeNat::initialize(const __uint128_t &v) {
   m_v = v;

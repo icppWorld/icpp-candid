@@ -27,9 +27,6 @@ public:
   // Internal: During deserialization for an additional wire argument (dummy !)
   CandidTypeOptVariant(std::shared_ptr<CandidTypeRoot> v);
 
-  // Destructor
-  ~CandidTypeOptVariant();
-
   CandidTypeVariant get_v() { return m_v; }
   CandidTypeRoot *get_pv() { return m_pv; }
   std::shared_ptr<CandidTypeRoot> get_pvs() { return m_pvs; }

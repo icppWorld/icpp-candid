@@ -38,8 +38,6 @@ CandidTypeOptOf::CandidTypeOptOf(std::function<CandidType()> make_content,
   initialize();
 }
 
-CandidTypeOptOf::~CandidTypeOptOf() {}
-
 void CandidTypeOptOf::initialize() {
   set_datatype();
   set_content_type();

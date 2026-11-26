@@ -28,13 +28,11 @@ CandidTypeOptText::CandidTypeOptText(std::optional<std::string> *p_v)
 }
 
 // These constructors are only for encoding
-CandidTypeOptText::CandidTypeOptText(const std::optional<std::string> v)
+CandidTypeOptText::CandidTypeOptText(std::optional<std::string> v)
     : CandidTypeBase() {
-  set_v(v);
+  set_v(std::move(v));
   initialize();
 }
-
-CandidTypeOptText::~CandidTypeOptText() {}
 
 void CandidTypeOptText::set_content_type() {
   m_content_opcode = CandidOpcode().Text;

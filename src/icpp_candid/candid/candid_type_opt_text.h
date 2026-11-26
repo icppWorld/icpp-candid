@@ -17,18 +17,15 @@ public:
   // clang-format off
   // docs start: demo_candid_type_opt
   CandidTypeOptText(std::optional<std::string> *v);
-  CandidTypeOptText(const std::optional<std::string> v); // docs end: demo_candid_type_opt
+  CandidTypeOptText(std::optional<std::string> v); // docs end: demo_candid_type_opt
   // clang-format on
-
-  // Destructor
-  ~CandidTypeOptText();
 
   std::optional<std::string> get_v() { return m_v; }
   std::optional<std::string> *get_pv() { return m_pv; }
 
 protected:
   void set_pv(std::optional<std::string> *v) { m_pv = v; }
-  void set_v(const std::optional<std::string> &v) { m_v = v; }
+  void set_v(std::optional<std::string> v) { m_v = std::move(v); }
   void set_content_type();
   void encode_M();
 

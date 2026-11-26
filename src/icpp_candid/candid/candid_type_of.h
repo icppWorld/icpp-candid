@@ -18,7 +18,7 @@ inline std::shared_ptr<CandidTypeRoot> root_ptr(CandidType c) {
             std::forward<decltype(arg_)>(arg_));
         return std::static_pointer_cast<CandidTypeRoot>(derivedPtr);
       },
-      c);
+      std::move(c));
 }
 
 // True if a and b encode the same type

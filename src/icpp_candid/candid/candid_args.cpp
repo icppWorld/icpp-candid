@@ -2,9 +2,9 @@
 
 #include "candid_args.h"
 
-CandidArgs::CandidArgs() {}
+#include <utility>
 
-CandidArgs::~CandidArgs() {}
+CandidArgs::CandidArgs() {}
 
 // Store the shared pointer to a CandidTypeRoot class
 void CandidArgs::append(CandidType arg) {
@@ -17,7 +17,7 @@ void CandidArgs::append(CandidType arg) {
         // Cast it to a shared_ptr of the base type
         return std::static_pointer_cast<CandidTypeRoot>(derivedPtr);
       },
-      arg));
+      std::move(arg)));
   // This makes a copy
   // m_args_ptrs.push_back(std::visit(
   //     [](auto &&arg_) -> std::shared_ptr<CandidTypeRoot> {

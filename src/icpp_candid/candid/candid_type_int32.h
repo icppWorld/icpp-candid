@@ -16,9 +16,6 @@ public:
   CandidTypeInt32(int32_t *v);
   CandidTypeInt32(const int32_t v); // docs end: demo_candid_type_int32
 
-  // Destructor
-  ~CandidTypeInt32();
-
   int32_t get_v() { return m_v; }
   int32_t *get_pv() { return m_pv; }
 

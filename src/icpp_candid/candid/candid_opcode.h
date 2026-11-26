@@ -14,7 +14,6 @@
 class CandidOpcode {
 public:
   CandidOpcode();
-  ~CandidOpcode();
 
   bool is_primtype(const int &t);
   bool is_constype(const int &t);

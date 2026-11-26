@@ -19,8 +19,6 @@ CandidTypeInt::CandidTypeInt(__int128_t *p_v) {
 // This constructor is only for encoding
 CandidTypeInt::CandidTypeInt(const __int128_t &v) { initialize(v); }
 
-CandidTypeInt::~CandidTypeInt() {}
-
 // Initialize things
 void CandidTypeInt::initialize(const __int128_t &v) {
   m_v = v;

@@ -20,8 +20,6 @@ CandidTypeNat32::CandidTypeNat32(uint32_t *p_v) {
 // This constructor is only for encoding
 CandidTypeNat32::CandidTypeNat32(const uint32_t v) { initialize(v); }
 
-CandidTypeNat32::~CandidTypeNat32() {}
-
 // Initialize things
 void CandidTypeNat32::initialize(const uint32_t &v) {
   m_v = v;

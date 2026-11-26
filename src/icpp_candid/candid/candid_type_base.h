@@ -4,6 +4,7 @@
 
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 #include <limits>
 
@@ -17,7 +18,6 @@
 class CandidTypeRoot {
 public:
   CandidTypeRoot();
-  ~CandidTypeRoot();
 
   // virtual methods that all derived classes MUST implement
   virtual CandidType toCandidType();
@@ -52,8 +52,11 @@ public:
   // get_T() is empty, get_type_table_index() is size_t(-1)
   VecBytes get_T() { return VecBytes(); }
   __uint128_t get_type_table_index() { return static_cast<size_t>(-1); }
-  VecBytes get_I() { return m_I; }
-  VecBytes get_M() { return m_M; }
+  // Without a copy: a reference, or the bytes moved out of a temporary
+  const VecBytes &get_I() const & { return m_I; }
+  VecBytes get_I() && { return std::move(m_I); }
+  const VecBytes &get_M() const & { return m_M; }
+  VecBytes get_M() && { return std::move(m_M); }
   // False if get_M() is not this object's value: a CandidTypeValue that only
   // gives a type or receives a decoded value, or anything that holds one
   bool has_M() const { return m_has_M; }
@@ -132,7 +135,6 @@ protected:
 template <typename Derived> class CandidTypeBase : public CandidTypeRoot {
 public:
   CandidTypeBase();
-  ~CandidTypeBase();
 
   // Returns a copy as a CandidType (a variant), to be used in std::visit
   // we can convert pointers of derived classes that inherit from CandidTypeBase

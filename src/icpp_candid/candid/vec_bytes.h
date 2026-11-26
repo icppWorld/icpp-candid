@@ -40,9 +40,6 @@ public:
   // Constructors
   VecBytes();
 
-  // Destructor
-  ~VecBytes();
-
   // Static utils
   static __int128_t atoint128_t(const std::string &in);
   static __uint128_t atouint128_t(const std::string &in);

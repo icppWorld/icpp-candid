@@ -83,8 +83,6 @@ CandidTypeOptVariant::CandidTypeOptVariant(
   }
 }
 
-CandidTypeOptVariant::~CandidTypeOptVariant() {}
-
 void CandidTypeOptVariant::set_content_type() {
   m_content_opcode = CandidOpcode().Variant;
   m_content_hex = OpcodeHex().Variant;

@@ -26,13 +26,11 @@ CandidTypeOptFloat32::CandidTypeOptFloat32(std::optional<float> *p_v)
 }
 
 // These constructors are only for encoding
-CandidTypeOptFloat32::CandidTypeOptFloat32(const std::optional<float> v)
+CandidTypeOptFloat32::CandidTypeOptFloat32(std::optional<float> v)
     : CandidTypeBase() {
-  set_v(v);
+  set_v(std::move(v));
   initialize();
 }
-
-CandidTypeOptFloat32::~CandidTypeOptFloat32() {}
 
 void CandidTypeOptFloat32::set_content_type() {
   m_content_opcode = CandidOpcode().Float32;

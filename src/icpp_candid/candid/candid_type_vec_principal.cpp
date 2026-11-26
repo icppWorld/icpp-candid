@@ -26,13 +26,11 @@ CandidTypeVecPrincipal::CandidTypeVecPrincipal(std::vector<std::string> *p_v)
 }
 
 // These constructors are only for encoding
-CandidTypeVecPrincipal::CandidTypeVecPrincipal(const std::vector<std::string> v)
+CandidTypeVecPrincipal::CandidTypeVecPrincipal(std::vector<std::string> v)
     : CandidTypeBase() {
-  set_v(v);
+  set_v(std::move(v));
   initialize();
 }
-
-CandidTypeVecPrincipal::~CandidTypeVecPrincipal() {}
 
 void CandidTypeVecPrincipal::set_content_type() {
   m_content_opcode = CandidOpcode().Principal;

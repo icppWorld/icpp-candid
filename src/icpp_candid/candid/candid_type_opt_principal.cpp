@@ -29,14 +29,11 @@ CandidTypeOptPrincipal::CandidTypeOptPrincipal(std::optional<std::string> *p_v)
 }
 
 // These constructors are only for encoding
-CandidTypeOptPrincipal::CandidTypeOptPrincipal(
-    const std::optional<std::string> v)
+CandidTypeOptPrincipal::CandidTypeOptPrincipal(std::optional<std::string> v)
     : CandidTypeBase() {
-  set_v(v);
+  set_v(std::move(v));
   initialize();
 }
-
-CandidTypeOptPrincipal::~CandidTypeOptPrincipal() {}
 
 void CandidTypeOptPrincipal::set_content_type() {
   m_content_opcode = CandidOpcode().Principal;

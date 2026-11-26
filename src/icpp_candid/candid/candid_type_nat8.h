@@ -16,9 +16,6 @@ public:
   CandidTypeNat8(uint8_t *v);
   CandidTypeNat8(const uint8_t v); // docs end: demo_candid_type_nat8
 
-  // Destructor
-  ~CandidTypeNat8();
-
   uint8_t get_v() { return m_v; }
   uint8_t *get_pv() { return m_pv; }
 

@@ -67,8 +67,6 @@ CandidTypeVecRecord::CandidTypeVecRecord(
   // No need to set anything else...
 }
 
-CandidTypeVecRecord::~CandidTypeVecRecord() {}
-
 void CandidTypeVecRecord::set_content_type() {
   m_content_opcode = CandidOpcode().Record;
   m_content_hex = OpcodeHex().Record;

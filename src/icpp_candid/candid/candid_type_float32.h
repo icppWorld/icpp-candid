@@ -16,9 +16,6 @@ public:
   CandidTypeFloat32(float *v);
   CandidTypeFloat32(const float v); // docs end: demo_candid_type_float32
 
-  // Destructor
-  ~CandidTypeFloat32();
-
   float get_v() { return m_v; }
   float *get_pv() { return m_pv; }
 

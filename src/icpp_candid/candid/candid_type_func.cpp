@@ -33,8 +33,6 @@ CandidTypeFunc::CandidTypeFunc(std::string *p_canister, std::string *p_method)
   encode_M();
 }
 
-CandidTypeFunc::~CandidTypeFunc() {}
-
 void CandidTypeFunc::append_arg(CandidType arg_type) {
   m_arg_ptrs.push_back(root_ptr(arg_type));
 }

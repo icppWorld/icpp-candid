@@ -29,8 +29,6 @@ CandidTypeService::CandidTypeService(std::string *p_canister)
   encode_M();
 }
 
-CandidTypeService::~CandidTypeService() {}
-
 void CandidTypeService::append_method(const std::string &name,
                                       const CandidTypeFunc &method) {
   auto it = std::lower_bound(

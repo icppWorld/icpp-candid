@@ -22,8 +22,6 @@ CandidTypeRecord::CandidTypeRecord() : CandidTypeBase() {
   encode_M();
 }
 
-CandidTypeRecord::~CandidTypeRecord() {}
-
 void CandidTypeRecord::set_datatype() {
   m_datatype_opcode = CandidOpcode().Record;
   m_datatype_hex = OpcodeHex().Record;
@@ -33,18 +31,18 @@ void CandidTypeRecord::set_datatype() {
 // Tuple notation with uint32_t field_id
 void CandidTypeRecord::append(uint32_t field_id, CandidType field) {
   std::string s = "";
-  _append(field_id, s, field);
+  _append(field_id, s, std::move(field));
 }
 
 // Record notation with string name -> hash name into uint32_t field_id
 void CandidTypeRecord::append(std::string field_name, CandidType field) {
   uint32_t field_id = idl_hash(field_name);
-  _append(field_id, field_name, field);
+  _append(field_id, field_name, std::move(field));
 }
 
 void CandidTypeRecord::append_optional(std::string field_name, CandidType field,
                                        bool *p_on_wire) {
-  append(field_name, field);
+  append(field_name, std::move(field));
   m_optional_fields[idl_hash(field_name)] = p_on_wire;
 }
 
@@ -52,10 +50,10 @@ void CandidTypeRecord::append_optional(std::string field_name, CandidType field,
 void CandidTypeRecord::append(CandidType field) {
   if (m_field_ptrs.size() == 0) {
     uint32_t field_id = 0;
-    append(field_id, field);
+    append(field_id, std::move(field));
   } else if (in_range<std::uint32_t>(m_field_ids.back() + 1)) {
     uint32_t field_id = m_field_ids.back() + 1;
-    append(field_id, field);
+    append(field_id, std::move(field));
   } else {
     std::string msg;
     msg.append("ERROR: field_id outside range of uint32_t\n");
@@ -103,7 +101,7 @@ void CandidTypeRecord::_append(uint32_t field_id, std::string field_name,
         // Cast it to a shared_ptr of the base type
         return std::static_pointer_cast<CandidTypeRoot>(derivedPtr);
       },
-      field));
+      std::move(field)));
   // This makes a copy
   // m_field_ptrs.push_back(std::visit(
   //     [](auto &&arg) -> std::shared_ptr<CandidTypeRoot> {

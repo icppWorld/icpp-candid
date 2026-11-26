@@ -14,21 +14,18 @@ public:
 
   // Constructors
   CandidTypeVecInt16();
-  CandidTypeVecInt16(const std::vector<int16_t> v);
+  CandidTypeVecInt16(std::vector<int16_t> v);
 
   CandidTypeVecInt16(std::vector<int16_t> *p_v);
-
-  // Destructor
-  ~CandidTypeVecInt16();
 
   std::vector<int16_t> get_v() { return m_v; }
   std::vector<int16_t> *get_pv() { return m_pv; }
 
 protected:
   void set_pv(std::vector<int16_t> *v) { m_pv = v; }
-  void set_v(const std::vector<int16_t> &v) {
-    m_v = v;
+  void set_v(std::vector<int16_t> v) {
     m_v_size = v.size();
+    m_v = std::move(v);
   }
   void set_content_type();
   void encode_M();

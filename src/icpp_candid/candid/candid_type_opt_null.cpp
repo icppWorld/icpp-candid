@@ -17,8 +17,6 @@ CandidTypeOptNull::CandidTypeOptNull() : CandidTypeBase() {
   initialize();
 }
 
-CandidTypeOptNull::~CandidTypeOptNull() {}
-
 void CandidTypeOptNull::set_content_type() {
   m_content_opcode = CandidOpcode().Null;
   m_content_hex = OpcodeHex().Null;

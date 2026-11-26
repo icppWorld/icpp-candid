@@ -20,8 +20,6 @@ CandidSerialize::CandidSerialize(const CandidType &a) {
 }
 CandidSerialize::CandidSerialize(const CandidArgs &A) : m_A{A} { serialize(); }
 
-CandidSerialize::~CandidSerialize() {}
-
 void CandidSerialize::serialize() {
   // https://github.com/dfinity/candid/blob/master/spec/Candid.md#parameters-and-results
   // B(kv* : <datatype>*) =

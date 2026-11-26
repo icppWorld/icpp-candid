@@ -26,13 +26,11 @@ CandidTypeOptNat8::CandidTypeOptNat8(std::optional<uint8_t> *p_v)
 }
 
 // These constructors are only for encoding
-CandidTypeOptNat8::CandidTypeOptNat8(const std::optional<uint8_t> v)
+CandidTypeOptNat8::CandidTypeOptNat8(std::optional<uint8_t> v)
     : CandidTypeBase() {
-  set_v(v);
+  set_v(std::move(v));
   initialize();
 }
-
-CandidTypeOptNat8::~CandidTypeOptNat8() {}
 
 void CandidTypeOptNat8::set_content_type() {
   m_content_opcode = CandidOpcode().Nat8;

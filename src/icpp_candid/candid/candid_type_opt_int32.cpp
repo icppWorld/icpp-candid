@@ -26,13 +26,11 @@ CandidTypeOptInt32::CandidTypeOptInt32(std::optional<int32_t> *p_v)
 }
 
 // These constructors are only for encoding
-CandidTypeOptInt32::CandidTypeOptInt32(const std::optional<int32_t> v)
+CandidTypeOptInt32::CandidTypeOptInt32(std::optional<int32_t> v)
     : CandidTypeBase() {
-  set_v(v);
+  set_v(std::move(v));
   initialize();
 }
-
-CandidTypeOptInt32::~CandidTypeOptInt32() {}
 
 void CandidTypeOptInt32::set_content_type() {
   m_content_opcode = CandidOpcode().Int32;

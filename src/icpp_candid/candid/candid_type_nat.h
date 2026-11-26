@@ -16,9 +16,6 @@ public:
   CandidTypeNat(__uint128_t *v);
   CandidTypeNat(const __uint128_t v); // docs end: demo_candid_type_nat
 
-  // Destructor
-  ~CandidTypeNat();
-
   __uint128_t get_v() { return m_v; }
   __uint128_t *get_pv() { return m_pv; }
 

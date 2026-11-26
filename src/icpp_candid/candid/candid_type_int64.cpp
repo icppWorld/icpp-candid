@@ -20,8 +20,6 @@ CandidTypeInt64::CandidTypeInt64(int64_t *p_v) {
 // This constructor is only for encoding
 CandidTypeInt64::CandidTypeInt64(const int64_t v) { initialize(v); }
 
-CandidTypeInt64::~CandidTypeInt64() {}
-
 // Initialize things
 void CandidTypeInt64::initialize(const int64_t &v) {
   m_v = v;

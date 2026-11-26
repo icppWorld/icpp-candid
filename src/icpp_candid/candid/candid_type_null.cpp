@@ -11,8 +11,6 @@ CandidTypeNull::CandidTypeNull() {
   encode_M();
 }
 
-CandidTypeNull::~CandidTypeNull() {}
-
 void CandidTypeNull::set_datatype() {
   m_datatype_opcode = CandidOpcode().Null;
   m_datatype_hex = OpcodeHex().Null;

@@ -8,6 +8,7 @@
 #pragma once
 
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "candid_args.h"
@@ -16,12 +17,15 @@ class CandidDeserialize {
 public:
   CandidDeserialize();
   CandidDeserialize(const VecBytes &B, CandidArgs A);
+  // Takes over the bytes, without a copy; get_B() of a temporary gives them back
+  CandidDeserialize(VecBytes &&B, CandidArgs A);
   CandidDeserialize(const std::string hex_string, CandidArgs A);
-  ~CandidDeserialize();
 
   CandidArgs get_A() { return m_A; }
   std::string get_hex_string_wire() { return m_hex_string_wire; }
-  VecBytes get_B() { return m_B; }
+  // Without a copy: a reference, or the bytes moved out of a temporary
+  const VecBytes &get_B() const & { return m_B; }
+  VecBytes get_B() && { return std::move(m_B); }
 
   // Limits for a message from an untrusted caller, so that it cannot make the
   // decoder recurse or loop without end, at the canister's cost.

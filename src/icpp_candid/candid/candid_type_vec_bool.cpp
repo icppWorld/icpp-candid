@@ -25,13 +25,10 @@ CandidTypeVecBool::CandidTypeVecBool(std::vector<bool> *p_v)
 }
 
 // These constructors are only for encoding
-CandidTypeVecBool::CandidTypeVecBool(const std::vector<bool> v)
-    : CandidTypeBase() {
-  set_v(v);
+CandidTypeVecBool::CandidTypeVecBool(std::vector<bool> v) : CandidTypeBase() {
+  set_v(std::move(v));
   initialize();
 }
-
-CandidTypeVecBool::~CandidTypeVecBool() {}
 
 void CandidTypeVecBool::set_content_type() {
   m_content_opcode = CandidOpcode().Bool;

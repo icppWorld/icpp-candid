@@ -16,9 +16,6 @@ public:
   CandidTypeNat64(uint64_t *v);
   CandidTypeNat64(const uint64_t v); // docs end: demo_candid_type_nat64
 
-  // Destructor
-  ~CandidTypeNat64();
-
   uint64_t get_v() { return m_v; }
   uint64_t *get_pv() { return m_pv; }
 

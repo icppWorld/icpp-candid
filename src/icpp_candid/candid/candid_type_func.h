@@ -43,9 +43,6 @@ public:
   void set_composite_query();
   void set_oneway(); // docs end: demo_candid_type_func
 
-  // Destructor
-  ~CandidTypeFunc();
-
 protected:
   void set_datatype();
   void encode_I();

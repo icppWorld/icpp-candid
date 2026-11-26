@@ -43,8 +43,6 @@ CandidTypeVariant::CandidTypeVariant(const std::string label,
   append(label, field);
 }
 
-CandidTypeVariant::~CandidTypeVariant() {}
-
 void CandidTypeVariant::initialize() {
   set_datatype();
   encode_I();
@@ -60,13 +58,13 @@ void CandidTypeVariant::set_datatype() {
 // Tuple notation with uint32_t field_id
 void CandidTypeVariant::append(uint32_t field_id, CandidType field) {
   std::string s = "";
-  _append(field_id, s, field);
+  _append(field_id, s, std::move(field));
 }
 
 // Variant notation with string name -> hash name into uint32_t field_id
 void CandidTypeVariant::append(std::string field_name, CandidType field) {
   uint32_t field_id = idl_hash(field_name);
-  _append(field_id, field_name, field);
+  _append(field_id, field_name, std::move(field));
 }
 
 // Tuple notation without field_id -> generate sequential uint32_t field_id
@@ -74,10 +72,10 @@ void CandidTypeVariant::append(CandidType field) {
   // The implicit id follows the previously appended field, not the largest id
   if (m_field_ptrs.size() == 0) {
     uint32_t field_id = 0;
-    append(field_id, field);
+    append(field_id, std::move(field));
   } else if (in_range<std::uint32_t>(m_last_appended_field_id + 1)) {
     uint32_t field_id = m_last_appended_field_id + 1;
-    append(field_id, field);
+    append(field_id, std::move(field));
   } else {
     std::string msg;
     msg.append("ERROR: field_id outside range of uint32_t\n");
@@ -141,7 +139,7 @@ void CandidTypeVariant::_append(uint32_t field_id, std::string field_name,
         // Cast it to a shared_ptr of the base type
         return std::static_pointer_cast<CandidTypeRoot>(derivedPtr);
       },
-      field));
+      std::move(field)));
   // This makes a copy
   // m_field_ptrs.push_back(std::visit(
   //     [](auto &&arg) -> std::shared_ptr<CandidTypeRoot> {

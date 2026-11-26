@@ -26,13 +26,11 @@ CandidTypeOptNat16::CandidTypeOptNat16(std::optional<uint16_t> *p_v)
 }
 
 // These constructors are only for encoding
-CandidTypeOptNat16::CandidTypeOptNat16(const std::optional<uint16_t> v)
+CandidTypeOptNat16::CandidTypeOptNat16(std::optional<uint16_t> v)
     : CandidTypeBase() {
-  set_v(v);
+  set_v(std::move(v));
   initialize();
 }
-
-CandidTypeOptNat16::~CandidTypeOptNat16() {}
 
 void CandidTypeOptNat16::set_content_type() {
   m_content_opcode = CandidOpcode().Nat16;

@@ -13,8 +13,6 @@
 #include "icpp_hooks.h"
 
 CandidTypeRoot::CandidTypeRoot() {}
-CandidTypeRoot::~CandidTypeRoot() {}
-
 void CandidTypeRoot::sort_fields_by_id() {
   for (std::size_t i = 0; i < m_field_ids.size(); ++i) {
     for (std::size_t j = i + 1; j < m_field_ids.size(); ++j) {
@@ -114,8 +112,6 @@ uint32_t CandidTypeRoot::idl_hash(const std::string &s) {
 }
 
 template <typename Derived> CandidTypeBase<Derived>::CandidTypeBase() {}
-
-template <typename Derived> CandidTypeBase<Derived>::~CandidTypeBase() {}
 
 template <typename Derived> CandidType CandidTypeBase<Derived>::toCandidType() {
   // static_cast to the derived type

@@ -22,8 +22,6 @@
 
 VecBytes::VecBytes() { check_endian(); }
 
-VecBytes::~VecBytes() {}
-
 // TODO: use __int128_t
 std::string VecBytes::int_to_hex(const int i, const std::string prefix) {
   const int LEN_STR = 80;

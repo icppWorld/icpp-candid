@@ -21,7 +21,7 @@ public:
   CandidTypePrincipal(const char *c);
   // clang-format off
   // docs start: demo_candid_type_principal
-  CandidTypePrincipal(const std::string v);
+  CandidTypePrincipal(std::string v);
 
   // Checks if the user is anonymous
   // If the user is not anonymous, that means that the user is authenticated 
@@ -36,9 +36,6 @@ public:
   CandidTypePrincipal(std::string *v);
 
   CandidTypePrincipal(const std::vector<uint8_t> &bytes);
-
-  // Destructor
-  ~CandidTypePrincipal();
 
   std::string get_v() { return m_v; }
   std::string *get_pv() { return m_pv; }

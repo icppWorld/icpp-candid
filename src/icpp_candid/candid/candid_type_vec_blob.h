@@ -22,9 +22,6 @@ public:
 
   CandidTypeVecBlob(std::vector<std::vector<uint8_t>> *p_v);
 
-  // Destructor
-  ~CandidTypeVecBlob();
-
   std::vector<std::vector<uint8_t>> get_v() { return m_v; }
   std::vector<std::vector<uint8_t>> *get_pv() { return m_pv; }
 

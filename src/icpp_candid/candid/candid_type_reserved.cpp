@@ -12,8 +12,6 @@ CandidTypeReserved::CandidTypeReserved() {
   encode_M();
 }
 
-CandidTypeReserved::~CandidTypeReserved() {}
-
 void CandidTypeReserved::set_datatype() {
   m_datatype_opcode = CandidOpcode().Reserved;
   m_datatype_hex = OpcodeHex().Reserved;

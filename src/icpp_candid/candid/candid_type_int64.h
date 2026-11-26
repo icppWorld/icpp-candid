@@ -16,9 +16,6 @@ public:
   CandidTypeInt64(int64_t *v);
   CandidTypeInt64(const int64_t v); // docs end: demo_candid_type_int64
 
-  // Destructor
-  ~CandidTypeInt64();
-
   int64_t get_v() { return m_v; }
   int64_t *get_pv() { return m_pv; }
 

@@ -20,8 +20,6 @@ CandidTypeInt16::CandidTypeInt16(int16_t *p_v) {
 // This constructor is only for encoding
 CandidTypeInt16::CandidTypeInt16(const int16_t v) { initialize(v); }
 
-CandidTypeInt16::~CandidTypeInt16() {}
-
 // Initialize things
 void CandidTypeInt16::initialize(const int16_t &v) {
   m_v = v;

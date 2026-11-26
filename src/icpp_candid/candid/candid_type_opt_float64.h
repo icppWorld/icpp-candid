@@ -17,18 +17,15 @@ public:
   // clang-format off
   // docs start: demo_candid_type_opt
   CandidTypeOptFloat64(std::optional<double> *v);
-  CandidTypeOptFloat64(const std::optional<double> v); // docs end: demo_candid_type_opt
+  CandidTypeOptFloat64(std::optional<double> v); // docs end: demo_candid_type_opt
   // clang-format on
-
-  // Destructor
-  ~CandidTypeOptFloat64();
 
   std::optional<double> get_v() { return m_v; }
   std::optional<double> *get_pv() { return m_pv; }
 
 protected:
   void set_pv(std::optional<double> *v) { m_pv = v; }
-  void set_v(const std::optional<double> &v) { m_v = v; }
+  void set_v(std::optional<double> v) { m_v = std::move(v); }
   void set_content_type();
   void encode_M();
 

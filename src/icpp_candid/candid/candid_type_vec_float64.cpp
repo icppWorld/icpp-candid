@@ -24,13 +24,11 @@ CandidTypeVecFloat64::CandidTypeVecFloat64(std::vector<double> *p_v)
 }
 
 // These constructors are only for encoding
-CandidTypeVecFloat64::CandidTypeVecFloat64(const std::vector<double> v)
+CandidTypeVecFloat64::CandidTypeVecFloat64(std::vector<double> v)
     : CandidTypeBase() {
-  set_v(v);
+  set_v(std::move(v));
   initialize();
 }
-
-CandidTypeVecFloat64::~CandidTypeVecFloat64() {}
 
 void CandidTypeVecFloat64::set_content_type() {
   m_content_opcode = CandidOpcode().Float64;
