@@ -66,8 +66,7 @@ void CandidTypeOptOf::encode_M() {
     return;
   }
   m_M.append_int_fixed_width(uint8_t{1});
-  m_M.append(m_p_value->get_M());
-  m_has_M = m_p_value->has_M();
+  m_has_M = m_p_value->append_M_to(m_M);
 }
 
 int CandidTypeOptOf::graph_type(CandidTypeGraph &g) {

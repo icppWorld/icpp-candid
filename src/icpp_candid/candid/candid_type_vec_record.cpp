@@ -84,7 +84,9 @@ void CandidTypeVecRecord::encode_M() {
     size_vec = __uint128_t(field_ptrs[0]->get_v_size());
   }
   m_M.append_uleb128(size_vec);
-  m_has_M = m_v.has_M();
+  // Whether there is a value comes from the rows, as they are encoded: asking
+  // m_v would encode every column once more, only for that
+  m_has_M = true;
 
   // encoded vec values - M(v : <datatype>)^N
   auto field_ids = m_v.get_field_ids();
@@ -114,7 +116,7 @@ void CandidTypeVecRecord::encode_M() {
     for (size_t j = 0; j < columns.size(); ++j)
       c_record.append(field_ids[j],
                       std::visit(GetCandidTypeVecIndexVisitor(i), columns[j]));
-    m_M.append(c_record.get_M());
+    if (!c_record.append_M_to(m_M)) m_has_M = false;
   }
 }
 

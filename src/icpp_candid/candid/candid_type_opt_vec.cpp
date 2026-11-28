@@ -143,7 +143,7 @@ void CandidTypeOptVec::by_value(std::shared_ptr<CandidTypeRoot> p_v) {
 }
 
 // Internal: During serialization
-CandidTypeOptVec::CandidTypeOptVec(const CandidTypeRoot v) : CandidTypeBase() {
+CandidTypeOptVec::CandidTypeOptVec(const CandidTypeRoot &v) : CandidTypeBase() {
   set_v(v);
   initialize();
 }
@@ -171,8 +171,7 @@ void CandidTypeOptVec::encode_M() {
   // M(?v   : opt <datatype>) = i8(1) M(v : <datatype>)
 
   m_M.append_int_fixed_width(uint8_t{1});
-  m_M.append(m_v.get_M());
-  m_has_M = m_v.has_M();
+  m_has_M = m_v.append_M_to(m_M);
 }
 
 //------------
