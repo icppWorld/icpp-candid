@@ -84,10 +84,13 @@ void CandidTypeVecRecord::encode_M() {
     size_vec = __uint128_t(field_ptrs[0]->get_v_size());
   }
   m_M.append_uleb128(size_vec);
-  // Whether there is a value comes from the rows, as they are encoded: asking
-  // m_v would encode every column once more, only for that. Without rows,
-  // m_v is asked: its columns are empty, and one may have no value
-  m_has_M = size_vec > 0 || m_v.has_M();
+  // Whether there is a value: every column must have one, as rows take a
+  // default element from a column without values. Each column is asked, not
+  // m_v, which would copy every column's encoding only for that
+  m_has_M = true;
+  for (const auto &p_column : field_ptrs)
+    if (p_column && !p_column->has_M()) m_has_M = false;
+  if (!m_has_M) return; // there is no value to encode rows from
 
   // encoded vec values - M(v : <datatype>)^N
   auto field_ids = m_v.get_field_ids();
