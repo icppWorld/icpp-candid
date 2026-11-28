@@ -36,13 +36,8 @@ void CandidSerialize::serialize() {
   // from the types of the arguments, by the encoder
   CandidTypeGraph g;
   std::vector<int> types;
-  for (const auto &p_c : m_A.m_args_ptrs) {
-    if (!p_c->has_M())
-      ICPP_HOOKS::trap("ERROR: cannot serialize an argument without a value: "
-                       "a CandidTypeValue made with only a type, or for "
-                       "decoding, holds no value that fits its type");
+  for (const auto &p_c : m_A.m_args_ptrs)
     types.push_back(p_c->graph_type(g));
-  }
   std::vector<uint8_t> header;
   std::string err;
   if (!CandidEncoder::encode_header(g, types, header, err))
@@ -51,8 +46,12 @@ void CandidSerialize::serialize() {
 
   // -------------------------------------------------------------------------------------
   // M(kv* : <datatype>*)                 values of argument list
-  for (std::shared_ptr<CandidTypeRoot> p_c : m_A.m_args_ptrs) {
-    m_B.append(p_c->get_M());
+  // Each value is encoded straight into m_B where it can be (append_M_to)
+  for (const auto &p_c : m_A.m_args_ptrs) {
+    if (!p_c->append_M_to(m_B))
+      ICPP_HOOKS::trap("ERROR: cannot serialize an argument without a value: "
+                       "a CandidTypeValue made with only a type, or for "
+                       "decoding, holds no value that fits its type");
   }
 
   if constexpr (CANDID_SERIALIZE_SELF_CHECK) {

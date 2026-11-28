@@ -38,7 +38,9 @@ CandidTypeVecOf::CandidTypeVecOf(std::function<CandidType()> make_element,
 void CandidTypeVecOf::initialize() {
   set_datatype();
   set_content_type();
-  encode_M();
+  check_elements();
+  // Encoded when it is read, or straight into a message (append_M_to)
+  m_M_stale = true;
 }
 
 void CandidTypeVecOf::set_datatype() {
@@ -53,13 +55,15 @@ void CandidTypeVecOf::set_content_type() {
   m_content_textual = m_p_element_type->get_datatype_textual();
 }
 
-// M(v^N : vec <datatype>) = leb128(N) M(v : <datatype>)^N
 void CandidTypeVecOf::encode_M() {
   m_M.clear();
-  m_has_M = true;
-  m_M.append_uleb128(__uint128_t(m_elements.size()));
-  // An element that is not certainly of the element type is compared to it
-  // in a type graph, which gets the element type once, when first needed
+  m_has_M = encode_M_into(m_M);
+}
+
+// Traps on an element that does not have the element type, where the vec is
+// made. An element that is not certainly of the element type is compared to it
+// in a type graph, which gets the element type once, when first needed
+void CandidTypeVecOf::check_elements() {
   CandidTypeGraph g;
   int t_element = 0;
   bool have_t_element = false;
@@ -78,9 +82,16 @@ void CandidTypeVecOf::encode_M() {
                        ") does not have the element type (" +
                        m_p_element_type->get_datatype_textual() + ")");
     }
-    if (!m_elements[i]->has_M()) m_has_M = false;
-    m_M.append(m_elements[i]->get_M());
   }
+}
+
+// M(v^N : vec <datatype>) = leb128(N) M(v : <datatype>)^N
+bool CandidTypeVecOf::encode_M_into(VecBytes &out) const {
+  bool has_M = true;
+  out.append_uleb128(__uint128_t(m_elements.size()));
+  for (const auto &p_element : m_elements)
+    if (!p_element->append_M_to(out)) has_M = false;
+  return has_M;
 }
 
 int CandidTypeVecOf::graph_type(CandidTypeGraph &g) {

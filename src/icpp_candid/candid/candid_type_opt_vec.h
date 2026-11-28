@@ -67,8 +67,9 @@ public:
     by_value(std::make_shared<T>(v));
   }
 
-  // Internal: During serialization
-  CandidTypeOptVec(const CandidTypeRoot v);
+  // Internal: During serialization. By reference: a copy made here would be
+  // sliced before set_v could build the value's encoding
+  CandidTypeOptVec(const CandidTypeRoot &v);
 
   // Internal: During deserialization for an additional wire argument (dummy !)
   CandidTypeOptVec(std::shared_ptr<CandidTypeRoot> v);
@@ -80,7 +81,12 @@ public:
 
 protected:
   void set_pv(CandidTypeRoot *p_v) { m_pv = p_v; }
-  void set_v(const CandidTypeRoot &v) { m_v = v; }
+  // m_v is a copy of v's CandidTypeRoot part, which cannot encode v again:
+  // v's encoding is built first, so the copy holds it
+  void set_v(const CandidTypeRoot &v) {
+    v.has_M();
+    m_v = v;
+  }
   void set_pvs(std::shared_ptr<CandidTypeRoot> p_vs) { m_pvs = p_vs; }
   void set_content_type();
   void encode_M();

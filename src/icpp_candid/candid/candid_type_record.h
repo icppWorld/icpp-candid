@@ -36,6 +36,7 @@ protected:
 
   void set_datatype();
   void encode_M();
+  bool encode_M_into(VecBytes &out) const override;
 
   // The fields added with append_optional, by id (hash), with their p_on_wire
   std::map<uint32_t, bool *> m_optional_fields;

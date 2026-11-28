@@ -27,6 +27,7 @@ protected:
   void initialize(std::string v);
   void set_datatype();
   void encode_M();
+  bool encode_M_into(VecBytes &out) const override;
 
   std::string m_v;
   std::string *m_pv{nullptr};

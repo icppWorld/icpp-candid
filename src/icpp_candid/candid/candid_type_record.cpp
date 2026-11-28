@@ -89,13 +89,15 @@ bool CandidTypeRecord::certainly_same_type(const CandidTypeRoot &other) const {
 // (re-)build the value encoding
 void CandidTypeRecord::encode_M() {
   m_M.clear();
-  m_has_M = true;
+  m_has_M = encode_M_into(m_M);
+}
 
+bool CandidTypeRecord::encode_M_into(VecBytes &out) const {
+  bool has_M = true;
   // The fields are never null: insert_field adds them
-  for (const auto &p_field : m_field_ptrs) {
-    if (!p_field->has_M()) m_has_M = false;
-    m_M.append(p_field->get_M());
-  }
+  for (const auto &p_field : m_field_ptrs)
+    if (!p_field->append_M_to(out)) has_M = false;
+  return has_M;
 }
 
 // An expected field that may be absent on the wire
