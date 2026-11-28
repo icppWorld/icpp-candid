@@ -85,8 +85,9 @@ void CandidTypeVecRecord::encode_M() {
   }
   m_M.append_uleb128(size_vec);
   // Whether there is a value comes from the rows, as they are encoded: asking
-  // m_v would encode every column once more, only for that
-  m_has_M = true;
+  // m_v would encode every column once more, only for that. Without rows,
+  // m_v is asked: its columns are empty, and one may have no value
+  m_has_M = size_vec > 0 || m_v.has_M();
 
   // encoded vec values - M(v : <datatype>)^N
   auto field_ids = m_v.get_field_ids();
