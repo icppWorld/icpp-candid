@@ -41,6 +41,8 @@ protected:
   void set_datatype();
   void set_content_type();
   void encode_M();
+  bool encode_M_into(VecBytes &out) const override;
+  void check_elements();
   void initialize();
 
   // The element type, and the elements to encode

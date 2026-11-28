@@ -24,7 +24,8 @@ CandidTypeText::CandidTypeText(std::string v) { initialize(std::move(v)); }
 void CandidTypeText::initialize(std::string v) {
   m_v = std::move(v);
   set_datatype();
-  encode_M();
+  // Encoded when it is read, or straight into a message (append_M_to)
+  m_M_stale = true;
 }
 
 // pointer to data in caller, for storing decoded value
@@ -37,12 +38,14 @@ void CandidTypeText::set_datatype() {
 }
 
 void CandidTypeText::encode_M() {
+  m_M.clear();
+  m_has_M = encode_M_into(m_M);
+}
+
+bool CandidTypeText::encode_M_into(VecBytes &out) const {
   // https://github.com/dfinity/candid/blob/master/spec/Candid.md#memory
   // M(t : text)     = leb128(|utf8(t)|) i8*(utf8(t))
-
-  // encoded size of string - leb128(|utf8(t)|)
-  m_M.append_uleb128(__uint128_t(m_v.size()));
-
-  // encoded string - i8*(utf8(t))
-  m_M.append_bytes(reinterpret_cast<const uint8_t *>(m_v.data()), m_v.size());
+  out.append_uleb128(__uint128_t(m_v.size()));
+  out.append_bytes(reinterpret_cast<const uint8_t *>(m_v.data()), m_v.size());
+  return true;
 }

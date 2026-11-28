@@ -39,6 +39,7 @@ protected:
   void initialize();
   void set_datatype();
   void encode_M();
+  bool encode_M_into(VecBytes &out) const override;
 
   // Label & id (hash) of the field that contains the Variant's data
   std::string m_label{""};

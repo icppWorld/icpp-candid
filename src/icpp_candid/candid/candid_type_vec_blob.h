@@ -36,6 +36,7 @@ protected:
   }
   void set_content_type();
   void encode_M();
+  bool encode_M_into(VecBytes &out) const override;
 
   std::vector<std::vector<uint8_t>> m_v;
   std::vector<std::vector<uint8_t>> *m_pv{nullptr};

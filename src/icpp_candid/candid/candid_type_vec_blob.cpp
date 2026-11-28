@@ -39,14 +39,20 @@ void CandidTypeVecBlob::set_content_type() {
 }
 
 void CandidTypeVecBlob::encode_M() {
+  m_M.clear();
+  m_has_M = encode_M_into(m_M);
+}
+
+bool CandidTypeVecBlob::encode_M_into(VecBytes &out) const {
   // https://github.com/dfinity/candid/blob/master/spec/Candid.md#memory
   // M(v^N  : vec <datatype>) = leb128(N) M(v : <datatype>)^N
   // with <datatype> = vec nat8: leb128(size) followed by the bytes
-  m_M.append_uleb128(__uint128_t(m_v.size()));
+  out.append_uleb128(__uint128_t(m_v.size()));
   for (const std::vector<uint8_t> &blob : m_v) {
-    m_M.append_uleb128(__uint128_t(blob.size()));
-    m_M.append_bytes(blob.data(), blob.size());
+    out.append_uleb128(__uint128_t(blob.size()));
+    out.append_bytes(blob.data(), blob.size());
   }
+  return true;
 }
 
 // ---------
@@ -54,7 +60,8 @@ void CandidTypeVecBlob::encode_M() {
 void CandidTypeVecBlob::initialize() {
   set_datatype();
   set_content_type();
-  encode_M();
+  // Encoded when it is read, or straight into a message (append_M_to)
+  m_M_stale = true;
 }
 
 void CandidTypeVecBlob::set_datatype() {

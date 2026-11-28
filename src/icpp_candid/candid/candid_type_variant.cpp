@@ -109,23 +109,21 @@ void CandidTypeVariant::_append(uint32_t field_id, std::string field_name,
 
 // (re-)build the value encoding
 void CandidTypeVariant::encode_M() {
+  m_M.clear();
+  m_has_M = encode_M_into(m_M);
+}
+
+bool CandidTypeVariant::encode_M_into(VecBytes &out) const {
   // https://github.com/dfinity/candid/blob/master/spec/Candid.md#memory
   // M(kv   : variant {<fieldtype>*}) = leb128(i) M(kv : <fieldtype>*[i])
-  m_M.clear();
-  m_has_M = true;
-
   for (size_t i = 0; i < m_field_names.size(); ++i) {
     if (m_field_names[i] == m_label) {
-      // encode index of variant options - leb128(i)
-      m_M.append_uleb128(__uint128_t(i));
-
-      // encode the variant's value
-      m_has_M = m_field_ptrs[i]->has_M();
-      m_M.append(m_field_ptrs[i]->get_M());
-
-      break;
+      // encode index of variant options - leb128(i), then the value
+      out.append_uleb128(__uint128_t(i));
+      return m_field_ptrs[i]->append_M_to(out);
     }
   }
+  return true;
 }
 
 int CandidTypeVariant::graph_type(CandidTypeGraph &g) {

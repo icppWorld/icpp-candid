@@ -76,6 +76,13 @@ public:
     refresh_M();
     return m_has_M;
   }
+  // Appends get_M() to out and returns has_M(). An encoding that is not built
+  // yet is written straight into out, and not kept: no copy in m_M first
+  bool append_M_to(VecBytes &out) const {
+    if (m_M_stale) return encode_M_into(out);
+    out.append(m_M);
+    return m_has_M;
+  }
   uint64_t get_v_size() { return m_v_size; }
 
   // Record: The field data
@@ -157,6 +164,15 @@ protected:
   mutable VecBytes m_M;
   mutable bool m_has_M{true};
   mutable bool m_M_stale{false};
+
+  // Appends the value's encoding to out and returns whether there is one, as
+  // has_M() does. A class that sets m_M_stale overrides it, and its encode_M()
+  // is: m_M.clear(); m_has_M = encode_M_into(m_M);
+  virtual bool encode_M_into(VecBytes &out) const {
+    refresh_M();
+    out.append(m_M);
+    return m_has_M;
+  }
 
   // flag set when the instance is created internally, to decode wire
   std::optional<bool> m_is_internal;
